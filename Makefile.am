@@ -24,6 +24,16 @@ DISTCLEANFILES = $(PKG_RPM_NAME).info $(PKG_RPM_NAME).spec -r packages/rpm
 
 #MAINTAINERCLEANFILES = $(shell cat packages/.cvsignore)
 
+install-data-local:
+	if test -d $(DESTDIR)/etc/emacs/site-start.d; then	\
+	  $(INSTALL_DATA) $(srcdir)/site-start.d/mupacs.el	\
+            $(DESTDIR)/etc/emacs/site-start.d;			\
+	fi
+
+uninstall-local:
+	    rm -f $(DESTDIR)/etc/emacs/site-start.d/mupacs.el
+
+
 ##############################################################################
 # Extra compilation rules
 ##############################################################################
