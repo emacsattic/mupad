@@ -340,6 +340,7 @@ after 'end_proc' and so on. See `sli-more-maidp'."
   (require 'disp-table)   ;; Almost always required.
   (require 'backquote)    ;; For macros.
   (require 'gud)          ;; For the debugger.
+  (require 'pcomplete)
   (require 'regexp-opt)
   (require 'imenu)
   (require 'mupad-fontification)
@@ -461,7 +462,7 @@ by a carriage return in mupad-mode."
   (define-key map "("        'mupad-electric-open-brace)
   (define-key map "["        'mupad-electric-open-brace)
   (define-key map "{"        'mupad-electric-open-brace)
-  (define-key map [(meta ?i)]          'mupad-mycomplete)
+  (define-key map [(meta ?i)]          'mupad-complete)
   (define-key map [(meta control ?i)]  'mupad-complete) ; taken by linux !!
   (define-key map "\d"     'backward-delete-char-untabify)
   (define-key map [(meta ?*)]                 'mupad-star-comment)
@@ -1171,6 +1172,35 @@ ie a list of lists whose cars are strings used for completion."
                  (list "" nil)       ; Unique completion.
                  (list "" fun-list))))))
 
+(defun mupad-needs-a-file-namep nil
+  "Decide if a file name is required. Returns nil
+if not and the beginning of the filename if it is."
+  (save-excursion
+    (let (word (pt (point)))
+      (setq word "")
+      (if (and (mupad-within-string)
+               (progn
+                 (search-backward "\"" nil t)
+                 (setq word (buffer-substring-no-properties (+ 1 (point)) pt))
+                 (skip-chars-backward " \n\r\t")
+                 (= (preceding-char) ?())
+               (progn
+                 (forward-char -1)
+                 (skip-chars-backward " \n\r\t")
+                 (= (preceding-char) ?d))
+               (progn
+                 (forward-char -1)
+                 (= (preceding-char) ?a))
+               (progn
+                 (forward-char -1)
+                 (= (preceding-char) ?e))
+               (progn
+                 (forward-char -1)
+                 (= (preceding-char) ?r))
+               )
+          word
+        nil))))
+
 (defun mupad-complete nil
 " Attempts to complete a partially typed command.
 Displays possible completions in the completion buffer if no
@@ -1179,14 +1209,24 @@ unique completion can be done."
  ;; used, like when reading a file name from the minibuffer.
   (interactive)
   (condition-case err
-      (progn
-        (mupad-bus-backward-extended-mupadword)
-        (let* (cpl-lst
-               (word (buffer-substring-no-properties (point)
-			    (mupad-bus-forward-extended-mupadword)))
-               (comp (mupad-ask-cpl-via-list word 'mupad-completion-array)))
-          (setq comp (list (car comp) (mupad-simplify-cpl-lst (cadr comp))))
-                                        ;(print (list word comp))
+      (let (word comp myname dir)
+        (cond
+         ((setq word (mupad-needs-a-file-namep))
+          (if (file-name-absolute-p word)
+              (setq dir (file-name-directory word)
+                    word (file-name-nondirectory word))
+            (setq dir "./")) ;(print (list dir (file-name-completion word dir)))
+          (setq comp (list (if (stringp (setq myname (file-name-completion word dir)))
+                               (substring myname (length word))
+                             "")
+                           (file-name-all-completions word dir))))
+         (t
+          (mupad-bus-backward-extended-mupadword)
+          (setq word (buffer-substring-no-properties
+                      (point) (mupad-bus-forward-extended-mupadword))
+                comp (mupad-ask-cpl-via-list word 'mupad-completion-array))
+          (setq comp (list (car comp) (mupad-simplify-cpl-lst (cadr comp))))))
+        ;(print (list word comp))
           ;; Insert the beginning of the completion
           ;; BEFORE any window change :    
           (if (not (string= (car comp) ""))
@@ -1213,27 +1253,16 @@ unique completion can be done."
                     (mupad-store-wind-conf))
                 (with-output-to-temp-buffer "*Completions*"
                   (display-completion-list (nth 1 comp))))
-              )) )) ; To check it, use "to" "beg" be" "gen"
+              )) ) ; To check it, use "to" "beg" "be" "gen"
     (error (princ "An error occured in mupad-complete: ")(princ err) nil)))
 
-(defun mupad-mycomplete nil
-  (interactive)
-  (cond
-   ((save-excursion
-      (and (> (point) (+ (point-min) 6))
-           (progn
-             (goto-char (- (point) 6))
-             (looking-at "read(\""))))
-    (insert (read-file-name "File name: ")))
-   (unless mupad-electric-p (insert "\""))
-   (t (mupad-complete))))
 
 (defun mupad-tab nil
   "First indent on odd number of hits, complete on even numbers ..."
   (interactive)
   (if (eq last-command 'mupad-tab)
       (progn
-	(mupad-mycomplete)
+	(mupad-complete)
 	(setq this-command 'mupad-even-tab))
     (sli-electric-tab)))
 
