@@ -2,6 +2,10 @@ Overview of changes in mupacs 3.2.4:
 ====================================
 
 Support for file-name completion for read in mupad-run inputs
+Displays file/line/col on errors (when MuPAD gives this information)
+Improved code factorisation
+Now fully independent of gud
+Bug fixes
 
 Overview of changes in mupacs 3.2.3:
 ====================================
