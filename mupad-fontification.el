@@ -235,6 +235,28 @@ commands export/unexport. This variable is used only by font-lock.")
    mupad-fontification-keywords-3)
   "Gaudy level of fontification for mupad-mode.")
 
+(defface font-lock-constant-face ; in font-lock.el but not for xemacs ... so we put it here !
+  '((((type tty) (class color)) (:foreground "magenta"))
+    (((class grayscale) (background light))
+     (:foreground "LightGray" :bold t :underline t))
+    (((class grayscale) (background dark))
+     (:foreground "Gray50" :bold t :underline t))
+    (((class color) (background light)) (:foreground "CadetBlue"))
+    (((class color) (background dark)) (:foreground "Aquamarine"))
+    (t (:bold t :underline t)))
+  "Font Lock mode face used to highlight constants and labels."
+  :group 'font-lock-highlighting-faces)
+
+(defface font-lock-builtin-face ; in font-lock.el but not for xemacs ... so we put it here !
+  '((((type tty) (class color)) (:foreground "blue" :weight light))
+    (((class grayscale) (background light)) (:foreground "LightGray" :bold t))
+    (((class grayscale) (background dark)) (:foreground "DimGray" :bold t))
+    (((class color) (background light)) (:foreground "Orchid"))
+    (((class color) (background dark)) (:foreground "LightSteelBlue"))
+    (t (:bold t)))
+  "Font Lock mode face used to highlight builtins."
+  :group 'font-lock-highlighting-faces)
+
 (defconst mupad-color-scheme-default-alist
   '(('mupad-comment font-lock-comment-face
      "Face used in MuPAD to fontify comments.
@@ -248,7 +270,7 @@ Default is `font-lock-function-name-face'.")
     ('mupad-variable-name font-lock-variable-name-face
        "Face used in MuPAD to fontify function arguments in definitions.
 Default is `font-lock-variable-name-face'.")
-    ('mupad-global-var font-lock-constant-face
+    ('mupad-global-var  font-lock-constant-face
        "Face used in MuPAD to fontify global variables.
 Default is `font-lock-constant-face'.")
     ('mupad-primitive-name font-lock-builtin-face
@@ -268,11 +290,11 @@ Default is `font-lock-builtin-face'.")))
 (defsubst mupad-default-face (face default-face doc)
   (when (not (facep face))
     (copy-face default-face face)
-    (set-face-documentation face doc)))
+    (set-face-doc-string face doc))) ; use set-face-doc-string for xemacs
 
 (defun mupad-face-spec-set (face spe doc)
   (face-spec-set face spe)
-  (set-face-documentation face doc))
+  (set-face-doc-string face doc))
 
 (defun mupad-set-color-scheme (symbol scheme fn)
   (let (spe)

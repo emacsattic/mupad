@@ -51,8 +51,6 @@ Used to set `mupad-help-file-name-tar' and `mupad-help-file-name-toc'."
   (let ((map (make-sparse-keymap)))
     (define-key map "q" (function mupad-help-quit))
     (define-key map "Q" (function mupad-help-quit))
-    (define-key map [C-left] (function mupad-help-previous-exemple))
-    (define-key map [C-right] (function mupad-help-next-exemple))
     (define-key map "\r" (function mupad-help-return))
     (define-key map ">" (function end-of-buffer))
     (define-key map "<" (function beginning-of-buffer))
@@ -62,7 +60,14 @@ Used to set `mupad-help-file-name-tar' and `mupad-help-file-name-toc'."
     (define-key map "\C-c\C-i" (function mupad-help-emacs-ask))
     (define-key map [mouse-2] (function mupad-help-mouse-2))
     (define-key map "\M-o" (function mupad-restore-wind-conf))
-    (setq mupad-help-mode-map map)))
+  (if xemacsp
+      (progn
+	(define-key map [(control left)] (function mupad-help-previous-exemple))
+	(define-key map [(control right)] (function mupad-help-next-exemple))
+	)
+    (define-key map [C-left] (function mupad-help-previous-exemple))
+    (define-key map [C-right] (function mupad-help-next-exemple)))
+  (setq mupad-help-mode-map map)))
 
 (defconst mupad-help-face
   (if (or (eq frame-background-mode 'light) (not frame-background-mode))

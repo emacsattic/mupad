@@ -116,8 +116,14 @@ insertion of javadoc-style description of it.
 See `mupad-describe-this-proc' and `mupad-user-mail-address'."
 :type 'boolean :group 'mupad-miscellana)
 
+;;;###autoload
+(defconst xemacsp (string-match "Lucid\\|XEmacs" emacs-version)
+  "Non nil if using XEmacs.") ;; taken from ispell
+
 (defcustom mupad-user-mail-address
-(concat user-login-name "@" system-name)
+(if xemacsp
+    (user-full-name) ; ok that's bad but I couldn't find how to do it
+  (concat user-login-name "@" system-name))
 "What it says it is. See `mupad-javadoc-stylep'."
 :type 'string :group 'mupad-miscellana)
 
@@ -325,7 +331,6 @@ after 'end_proc' and so on. See `sli-more-maidp'."
 
 (defsubst mupad-setup nil
   "Common packages required while compiling and running."
-  (require 'facemenu)     ;; For a fancy logo.
   (require 'disp-table)   ;; Almost always required.
   (require 'backquote)    ;; For macros.
   (require 'gud)          ;; For the debugger.
