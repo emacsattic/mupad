@@ -1041,6 +1041,28 @@ If beg1 = beg2= ... = begN, we answer (beg1 end1 end2 ... endN)."
            (not (text-property-any (match-beginning 0) (match-end 0) 'read-only t)))
       (delete-horizontal-space)))
 
+(defsubst sli-remove-trailing-spaces-previous-line nil
+  (save-excursion
+    (forward-line -1)
+    (end-of-line)
+    (save-restriction
+      (condition-case err
+          (unwind-protect
+              (progn
+                (narrow-to-region (line-beginning-position) (point))
+                (while (and (progn
+                              (forward-char -1)
+                              (looking-at "\\s-"))
+                            (not (text-property-any (match-beginning 0) (match-end 0) 'read-only t))))
+                (unless (looking-at "\\s-") (forward-char 1)); in case we are not at bol
+                (when sli-verbose
+                  (princ "\n")
+                  (princ (list "(sli-remove-trailing-spaces-previous-line) removing spaces from/to: "
+                               (point) (line-end-position))))
+                (delete-char (- (line-end-position) (point))))
+            (widen))
+        (error (princ "\n(sli-remove-trailing-spaces-previous-line): ") (princ err) nil)))))
+
 (defsubst sli-only-spacep (&optional pt)
   ;; t if the line contains only spaces.
   (unless pt (setq pt (point)))
@@ -2312,6 +2334,7 @@ In a program, use `sli-indent-line'."
                 (unless only-spacep (if (= (char-syntax (preceding-char)) ?\ )(delete-char -1)))
 		;(princ "\n") (princ (list "(sli-electric-terminate-line) inserting a newline at: " (point)))
                 (sli-put-newline)
+                (sli-remove-trailing-spaces-previous-line)
 		;(princ "\n") (princ (list "(sli-electric-terminate-line) inserting indent at: " (point)))
                 (sli-insert-indent next-indent))
               (when sli-verbose
@@ -2332,6 +2355,7 @@ Next line is properly indented."
               (narrow-to-region (sli-get-safe-backward-place) (sli-get-safe-forward-place))
               (sli-remove-trailing-spaces)
               (sli-put-newline)
+              (sli-remove-trailing-spaces-previous-line)
               (sli-insert-indent (sli-tell-indent nil nil t))
           (widen))
       (error (princ "\n(sli-newline): ") (princ err) nil))))
