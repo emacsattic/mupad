@@ -352,9 +352,9 @@
     ((= mupad-run-buffer-name 1) 
       (or (string= str "*MuPAD*") (string= str "*MuPAD*<2>")))
     ((= mupad-run-buffer-name 2) 
-      (or (string= str "*MuPAD*"))
-          (and (string= (substring str (min 7 (length str))) "*MuPAD*<")
-               (string= (substring str -1) ">")))
+      (or (string= str "*MuPAD*")
+          (and (string= (substring str 0 (min 8 (length str))) "*MuPAD*<")
+               (string= (substring str -1) ">"))))
     ((= mupad-run-buffer-name 3) t)))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
