@@ -1,3 +1,4 @@
+;; $Id$
 ;;; mupad.el --- mupad editing support package
 
 ;; Copyright (C) 2002, Fran\c cois Maltey, Nicolas Thiery, Olivier Ramar\'e

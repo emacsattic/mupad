@@ -1,3 +1,5 @@
+;; $Id$
+
 So we are trying to adapt mupad.el to xemacs, but it will not be so easy.
 
 

@@ -1,3 +1,5 @@
+;; $Id$
+
 (provide 'mupad-xemacs)
 
 (defun line-end-position (&optional n)

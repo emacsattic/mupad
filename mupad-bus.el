@@ -1,3 +1,4 @@
+;; $Id$
 ;;; mupad-bus.el --  exchange of stuff between mupad-script and mupad-run
 
 ;; Copyright (C) 2002, Fran\c cois Maltey, Nicolas Thiery, Olivier Ramar\'e

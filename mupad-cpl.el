@@ -1,3 +1,4 @@
+;; $Id$
 ;;; mupad-cpl.el --- part of mupad.el used for completion
 
 ;; Copyright (C) 2002, Fran\c cois Maltey, Nicolas Thiery, Olivier Ramar\'e

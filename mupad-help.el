@@ -1,3 +1,4 @@
+;; $Id$
 ;;; mupad-help.el -- online help for mupad-run-mode and mupad-mode
 
 ;; Copyright (C) 2002, Fran\c cois Maltey, Nicolas Thiery, Olivier Ramar\'e

@@ -1,3 +1,5 @@
+;; $Id$
+
 (1) Does these scripts work with xemacs ? Not yet.
 (2) How to replace xmupad by emacs + mupad-run.el ?
     use the following trivial script:
@@ -19,4 +21,4 @@
     file is not read. So you can uncomment the line
     #echo -e "\n(load-file \"~/.emacs.el\")" >> "configure-to-compile-mupad-el-and-all"
     in the configure script (i.e. erase the '#').
-    
+

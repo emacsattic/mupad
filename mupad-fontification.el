@@ -1,3 +1,4 @@
+;; $Id$
 ;;; mupad-fontification.el --- part of mupad.el dedicated to
 ;;;                            font-lock stuff.
 
