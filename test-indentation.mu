@@ -3,6 +3,13 @@
 // Copyright (C) 2002, François Maltey, Nicolas Thiéry, Olivier Ramaré
 // Maintainer: Olivier Ramare <ramare@agat.univ-lille1.fr>
 
+//////////////////////////////////////////////////////////////////////////////
+// Indentation in domains
+//////////////////////////////////////////////////////////////////////////////
+
+/**
+  Bug: the indentation of bla below is incorrect
+**/
 domain bla
   inherits zut;
   category ble::bli;
@@ -11,7 +18,7 @@ domain bla
 end_domain;
 
 category bla
-category truc;
+  category truc;
   category tric;
   axiom tric;
   axiom bla;
@@ -124,21 +131,24 @@ domain bla
   /**
     Bugs: indent-region with all this domain selected raises an error
     Hitting return below this comment does not indent properly
+    (2003/08/28: seems to be fixed)
   **/
   bla := 1;
 end;
 
-domain ble
-  /**
-    Bug: the indentation after the line x := proc() begin end is incorrect
-  **/
-  bla :=
+/**
+ * Embedded proc's with end inside instead of end_proc
+ * Bug: Hitting return after end does not indent properly
+ * (2003/08/28: seems to be fixed)
+ **/
+proc()
+begin
   proc()
   begin
-    x := proc() begin end:
-    makeUnknownsG2 := 1;
-    end_proc;
-end_domain:
+  end:
+  bla;
+end_proc:
+
 
 // Local Variables:
 // mode: mupad
