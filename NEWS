@@ -1,7 +1,16 @@
+Overview of changes in mupacs 3.2.3:
+====================================
+
+Fixes of several bugs, including some annoying ones (see BUGS file)
+New mupad-run-arrow-behaviour options: Usual-Search and MuPAD-Style
+New customization variable: mupad-run-completion-strip-prefix
+Support for D and P in the debugger
+  (P requires a recent MuPAD kernel and the -E option)
+
 Overview of changes in mupacs 3.2.2:
 ====================================
 
-Fixes of two anoying bugs (see BUGS file)
+Fixes of two annoying bugs (see BUGS file)
 Setup sane defaults for some variables
 Partial reorganisation of the documentation
 
