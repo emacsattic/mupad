@@ -178,6 +178,7 @@ end_proc:
  * Hitting tab inside a non closed comment raises the following error
  * (sli-indent-line): (wrong-type-argument number-or-marker-p nil)
  * (2003/12/02: discovered)
+ * (2004/01/10: fixed)
 
 // Local Variables:
 // mode: mupad
