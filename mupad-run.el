@@ -126,6 +126,7 @@
 ;; 1 - mupad-run-mode possible uniquement pour un tampon *MuPAD* et *MuPAD*<2>
 ;; 2 - mupad-run-mode possible uniquement pour un tampon *MuPAD* et *MuPAD*<n>
 ;; 3 - mupad-run-mode possible pour tout tampon 
+;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 (eval-and-compile
@@ -136,11 +137,15 @@
     mupad-run-hist-commands mupad-run-save-except mupad-run-debug 
     mupad-run-save-buffer mupad-run-comp-begin mupad-run-prompt
     mupad-run-rawcommand mupad-run-debugger-file mupad-run-debugger-line
-    mupad-run-last-session)))
+    mupad-run-last-session mupad-run-buffer-face)))
 ;;
 (defvar mupad-run-process nil)
 
 ;; test with (list-colors-display)
+;; mupad-run-face : type -> nom-de-face-general -> nom-de-face-buffer 
+;;      'mupad-run-face-result 
+;;   -> 'mupad-run-face-result ou 'mupad-run-face-result-bg
+;;   et 'mupad-run-face-result-fg -> grey95 ou grey50 ou ... selon le tampon
 (defvar mupad-run-face 
   (if (or (eq frame-background-mode 'light) (not frame-background-mode))
    '((mupad-run-face-result            "darkblue"    "grey95"   ) 
@@ -189,6 +194,10 @@
      (mupad-run-face-system-flag       "brown"       "blue")
      (mupad-run-face-completion-flag   "lightgreen"  "blue")
      (mupad-run-face-error-flag        "white"       "blue"))))
+
+(setq mupad-run-color-change 
+  '((("grey95" . "A") "grey85") 
+    (("grey25" . "A") "grey40")))
 
 (defvar mupad-run-mode-map nil "Touches définies par mupad-run-mode.")
 (unless mupad-run-mode-map
@@ -341,13 +350,12 @@
   (cond 
     ((= mupad-run-buffer-name 0) (string= str "*MuPAD*")) 
     ((= mupad-run-buffer-name 1) 
-      (or (string= str "*MuPAD*")) (string= str "*MuPAD*<2>")) 
+      (or (string= str "*MuPAD*") (string= str "*MuPAD*<2>")))
     ((= mupad-run-buffer-name 2) 
       (or (string= str "*MuPAD*"))
-          (and (string= (substring str (min 6 (length str))) "*MuPAD*<")
+          (and (string= (substring str (min 7 (length str))) "*MuPAD*<")
                (string= (substring str -1) ">")))
     ((= mupad-run-buffer-name 3) t)))
-
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -393,7 +401,7 @@ Available special keys:
         (error "Mupad runs inside a buffer in an other mode"))
       ((not (mupad-run-buffer-name-p (buffer-name (current-buffer))))
         (error "Buffer name isn't allowed for mupad-run mode")))
-    (setq delete-exited-processes t)
+;    (setq delete-exited-processes t)
     (kill-all-local-variables)
 ; initialisation du tampon et du clavier
     (use-local-map mupad-run-mode-map)
@@ -411,11 +419,14 @@ Available special keys:
         mupad-run-itema mupad-run-itemb mupad-run-last-type 
         mupad-run-time-start mupad-run-comp-begin mupad-run-prompt
         mupad-run-save-except mupad-run-debug
-        mupad-run-last-session 
+        mupad-run-last-session mupad-run-buffer-face
 ; NT 04/11/2002 added for the debugger
         mupad-run-rawcommand
 	mupad-run-debugger-file	mupad-run-debugger-line
 	gud-comint-buffer gud-find-file))
+    (when (string= (buffer-name) "*MuPAD*<2>")
+      (setq mupad-run-buffer-face "A"))
+    (run-hooks 'mupad-run-mode-hook-before)
     (setq mupad-run-edit (make-marker))
     (set-marker mupad-run-edit (point))
     (setq mupad-run-todo (make-marker))
@@ -543,7 +554,7 @@ Available special keys:
       (insert "///--- commandes en cours d'évaluation\n"))
     (goto-char (point-min))
     (while (not (eobp))
-      (setq br1 (get-text-property (point) 'face))
+      (setq br1 (get-text-property (point) 'mupad-run-char-prop))
       (setq br2 (or (next-property-change (point)) (point-max)))
       (setq br (get-text-property (point) 'to-insert))
            (when br (insert br) (setq br2 (+ br2 (length br))))
@@ -555,10 +566,14 @@ Available special keys:
              mupad-run-face-for-emacs   mupad-run-face-prompt
              mupad-run-face-call-system mupad-run-face-system 
              mupad-run-face-completion  mupad-run-face-error
-             mupad-run-face-result-flag    mupad-run-face-local-prompt-flag 
-             mupad-run-face-for-emacs-flag   mupad-run-face-prompt-flag
-             mupad-run-face-call-system-flag mupad-run-face-system-flag
-             mupad-run-face-completion-flag  mupad-run-face-error-flag))
+             mupad-run-face-result-flag    
+             mupad-run-face-local-prompt-flag 
+             mupad-run-face-for-emacs-flag   
+             mupad-run-face-prompt-flag
+             mupad-run-face-call-system-flag 
+             mupad-run-face-system-flag
+             mupad-run-face-completion-flag  
+             mupad-run-face-error-flag))
            (delete-region (point) br2))
          ((get-text-property (point) 'not-save)
            (delete-region (point) (1+ br2)))
@@ -645,8 +660,8 @@ Available special keys:
   (let 
     ((output-index 0) output-type output-str brt (inhibit-read-only t)
      (brc (current-buffer)) (brb (process-buffer proc)) brp)
-    (set-buffer brb)
-    (setq mupad-run-output (concat mupad-run-output str))
+     (set-buffer brb)
+     (setq mupad-run-output (concat mupad-run-output str))
 ; tant-qu'il y a des données complètes à traiter, le faire
     (while (setq output-type (mupad-run-output-complete-data output-index))
       (setq output-str     
@@ -660,12 +675,14 @@ Available special keys:
         ((or (eq brt 2)   ; output
 	     (eq brt 61)) ; NT: debugger output MPRCmdb_output
           (mupad-run-print output-str 
-            'mupad-run-face-result (marker-position mupad-run-todo) brt nil))
+            'mupad-run-face-result 
+            (marker-position mupad-run-todo) brt nil))
         ((eq brt 13) ; prompt 
            (setq mupad-run-prompt output-str)
            (set-marker mupad-run-last-prompt (1- mupad-run-todo))
            (mupad-run-print (concat output-str "\n")
-             'mupad-run-face-prompt (marker-position mupad-run-todo) brt nil)
+             'mupad-run-face-prompt 
+             (marker-position mupad-run-todo) brt nil)
            (set-marker mupad-run-last-prompt (1+ mupad-run-last-prompt))
            (setq mupad-run-state 'wait-input))
         ((or (eq brt 9)   ; error message
@@ -673,7 +690,8 @@ Available special keys:
           (put-text-property mupad-run-last-prompt (1+ mupad-run-last-prompt) 
               'to-insert "///--- Erreur dans ce bloc\n")
           (mupad-run-print output-str 
-              'mupad-run-face-error (marker-position mupad-run-todo) brt nil)
+              'mupad-run-face-error 
+              (marker-position mupad-run-todo) brt nil)
           (put-text-property (1- mupad-run-todo) mupad-run-todo  
               'to-insert "///--- Fin du bloc avec une erreur\n"))
         ((eq brt 3) (mupad-run-call-system output-str)) ; system-call
@@ -775,18 +793,28 @@ Available special keys:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 (defun mupad-run-print (str aspect pos type ajout)
-  (save-excursion 
-    (unless (eq type mupad-run-last-type)
-      (setq mupad-run-itemb (1+ mupad-run-itemb))
-      (setq mupad-run-last-type type))
-    (goto-char pos) 
-    (insert-before-markers str)
-    (put-text-property pos (point) 'item mupad-run-itemb)
-    (put-text-property pos (point) 'face aspect)
-    (put-text-property pos (point) 'rear-nonsticky t)
-    (put-text-property pos (point) 'front-sticky t)
-    (put-text-property pos (point) 'read-only t)
-    (add-text-properties pos (point) ajout)))
+    (save-excursion 
+      (unless (eq type mupad-run-last-type)
+        (setq mupad-run-itemb (1+ mupad-run-itemb))
+        (setq mupad-run-last-type type))
+      (goto-char pos) 
+      (insert-before-markers str)
+      (put-text-property pos (point) 'item mupad-run-itemb)
+      (put-text-property pos (point) 'mupad-run-char-prop aspect)
+      (mupad-run-put-face pos (point) aspect)
+      (put-text-property pos (point) 'rear-nonsticky t)
+      (put-text-property pos (point) 'front-sticky t)
+      (put-text-property pos (point) 'read-only t)
+      (add-text-properties pos (point) ajout)))
+;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+(defun mupad-run-put-face (pt1 pt2 aspect)
+  (cond
+    (mupad-run-buffer-face 
+      (put-text-property pt1 pt2 'face 
+        (mupad-run-to-local-symb aspect mupad-run-buffer-face)))
+    (t (put-text-property pt1 pt2 'face aspect))))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -1004,7 +1032,9 @@ Available special keys:
           (put-text-property (- (cadr br) 6) (cadr br) 'front-sticky t)
           (put-text-property (- (cadr br) 6) (cadr br) 'read-only t)
           (put-text-property (- (cadr br) 6) (- (cadr br) 5) 
-            'face 'mupad-run-face-beginning-rem)
+            'mupad-run-char-prop 'mupad-run-face-beginning-rem)
+          (mupad-run-put-face (- (cadr br) 6) (- (cadr br) 5) 
+            'mupad-run-face-beginning-rem)
           (goto-char (cadr br)) 
           (end-of-line)
           (setq mupad-run-itema (1+ mupad-run-itema))
@@ -1016,12 +1046,16 @@ Available special keys:
           (set-marker mupad-run-edit (1+ (point))))
        (t   
           (if (= (car br) 25) (setq br1 (- (cadr br) 6)) (setq br1 (cadr br)))
-          (if (<= (1+ (marker-position mupad-run-edit)) br1)
-           (put-text-property mupad-run-edit (1+ mupad-run-edit) 
-             'face 'mupad-run-face-beginning-waiting))
-         (if (<= (+ 2 (marker-position mupad-run-edit)) br1)
+          (when (<= (1+ (marker-position mupad-run-edit)) br1)
+            (put-text-property mupad-run-edit (1+ mupad-run-edit) 
+              'mupad-run-char-prop 'mupad-run-face-beginning-waiting)
+            (mupad-run-put-face mupad-run-edit (1+ mupad-run-edit) 
+              'mupad-run-face-beginning-waiting))
+         (when (<= (+ 2 (marker-position mupad-run-edit)) br1)
            (put-text-property (1+ mupad-run-edit) br1
-             'face 'mupad-run-face-waiting-commands))
+             'mupad-run-char-prop 'mupad-run-face-waiting-commands)
+           (mupad-run-put-face (1+ mupad-run-edit) br1
+             'mupad-run-face-waiting-commands))
          (put-text-property mupad-run-edit br1 'rear-nonsticky t)
          (put-text-property mupad-run-edit br1 'front-sticky t)
          (put-text-property mupad-run-edit br1 'read-only t)
@@ -1048,7 +1082,9 @@ Available special keys:
           (setq br2 (1+ (point)))
           (setq mupad-run-itemb (1+ mupad-run-itemb))
           (put-text-property br1 br2 'item mupad-run-itemb)
-          (put-text-property br1 br2 'face 'mupad-run-face-separator)
+          (put-text-property br1 br2 
+            'mupad-run-char-prop 'mupad-run-face-separator)
+          (mupad-run-put-face br1 br2 'mupad-run-face-separator)
           (forward-char 1)
           (set-marker mupad-run-todo (point))
           (if 
@@ -1110,7 +1146,9 @@ Available special keys:
         (while (< (point) mupad-run-todo)
           (setq br3 (point))
           (insert mupad-run-prompt)
-          (put-text-property br3 (point) 'face 'mupad-run-face-local-prompt)
+          (put-text-property br3 (point) 
+            'mupad-run-char-prop 'mupad-run-face-local-prompt)
+          (mupad-run-put-face br3 (point) 'mupad-run-face-local-prompt)
           (put-text-property br3 (point) 'rear-nonsticky t)
           (put-text-property br3 (point) 'front-sticky t)
           (put-text-property br3 (point) 'read-only t)
@@ -1228,11 +1266,13 @@ Available special keys:
   (cond 
     ((>= (point) (marker-position mupad-run-edit)) (insert "\n"))
     ((or 
-        (memq (get-text-property (point) 'face)
+        (memq (get-text-property (point) 'mupad-run-char-prop)
           '(mupad-run-face-local-prompt mupad-run-face-prompt-flag
-            mupad-run-face-last-input   mupad-run-face-result-last-input))
+            mupad-run-face-last-input   
+            mupad-run-face-result-last-input))
         (and 
-          (eq (get-text-property (point) 'face) 'mupad-run-face-prompt)
+          (eq (get-text-property (point) 'mupad-run-char-prop) 
+              'mupad-run-face-prompt)
           (eq (char-after) ?\n)))
       (mupad-run-copy-cmd))
     (t (mupad-run-insert-comment))))
@@ -1248,11 +1288,14 @@ Available special keys:
       (if (memq mupad-run-state '(wait-input wait-debugger-input)) 
         (mupad-run-from-todo-to-output)))
     ((or 
-      (memq (get-text-property (point) 'face)
-        '(mupad-run-face-local-prompt mupad-run-face-local-prompt-flag
-          mupad-run-face-last-input   mupad-run-face-result-last-input))
+      (memq (get-text-property (point) 'mupad-run-char-prop)
+        '(mupad-run-face-local-prompt 
+          mupad-run-face-local-prompt-flag
+          mupad-run-face-last-input   
+          mupad-run-face-result-last-input))
         (and 
-          (eq (get-text-property (point) 'face) 'mupad-run-face-prompt)
+          (eq (get-text-property (point) 'mupad-run-char-prop) 
+              'mupad-run-face-prompt)
           (eq (char-after) ?\n)))
       (mupad-run-copy-cmd))
     (t (mupad-run-insert-comment))))
@@ -1274,13 +1317,13 @@ Available special keys:
         (delete-char 1) (setq br nil))
 ; dans la zone ///--- d'un commentaire : si commentaire avant -> recoller
      ((and
-         (memq (get-char-property (point) 'face)
+         (memq (get-char-property (point) 'mupad-run-char-prop)
             '(mupad-run-face-separator-flag mupad-run-face-separator))
          (not (beginning-of-line))
          (<= (- br (point)) 5)
          (> (point) 1)
          (not (backward-char))
-         (memq (get-char-property (point) 'face)
+         (memq (get-char-property (point) 'mupad-run-char-prop)
             '(mupad-run-face-separator-flag mupad-run-face-separator)))
         (mupad-run-move-flag-down (1+ (point)))
         (delete-region (point) (+ 7 (point)))
@@ -1289,20 +1332,23 @@ Available special keys:
      ((and 
          (goto-char br)
          (eolp)
-         (memq (get-char-property (point) 'face)
-            '(mupad-run-face-separator-flag mupad-run-face-separator))
+         (memq (get-char-property (point) 'mupad-run-char-prop)
+            '(mupad-run-face-separator-flag 
+              mupad-run-face-separator))
          (< (point) (point-max))
          (not (forward-char))
-         (memq (get-char-property (point) 'face)
-            '(mupad-run-face-separator-flag mupad-run-face-separator)))
+         (memq (get-char-property (point) 'mupad-run-char-prop)
+            '(mupad-run-face-separator-flag 
+              mupad-run-face-separator)))
        (mupad-run-move-flag-down (point))
        (delete-region (1- (point)) (+ 6 (point)))
        (setq br nil))
 ; une ligne vide de commentaires
       ((and
            (goto-char br)
-           (memq (get-char-property (point) 'face)
-             '(mupad-run-face-separator-flag mupad-run-face-separator))
+           (memq (get-char-property (point) 'mupad-run-char-prop)
+             '(mupad-run-face-separator-flag 
+               mupad-run-face-separator))
            (not (beginning-of-line))
            (looking-at "///---[ \t]*$"))
         (mupad-run-move-flag-down (point))
@@ -1345,7 +1391,9 @@ Available special keys:
         (goto-char mupad-run-todo) 
         (setq br (point))
         (call-process "sh" nil t nil "-c" str)
-        (put-text-property br (point) 'face 'mupad-run-face-system)
+        (put-text-property br (point) 'mupad-run-char-prop 
+          'mupad-run-face-system)
+        (mupad-run-put-face br (point) 'mupad-run-face-system)
         (put-text-property br (point) 'rear-nonsticky t)
         (put-text-property br (point) 'front-sticky t)
         (put-text-property br (point) 'read-only t)
@@ -1640,7 +1688,7 @@ Available special keys:
     (cond 
       ((and mupad-run-last-prompt (>= (point) mupad-run-last-prompt)) 
         (error "Hiding impossible at this point"))
-      ((memq (get-text-property (point) 'face)
+      ((memq (get-text-property (point) 'mupad-run-char-prop)
         '(mupad-run-face-result mupad-run-face-call-system 
           mupad-run-face-system mupad-run-face-completion
           mupad-run-face-result-flag mupad-run-face-call-system-flag 
@@ -1651,9 +1699,11 @@ Available special keys:
               (marker-position mupad-run-last-prompt)))
         (put-text-property brb (1+ brb) 'hide 
           (cons (buffer-substring bra brb) (get-text-property brb 'hide)))
-        (setq br (symbol-name (get-text-property brb 'face)))
-        (if (not (string= (substring br -5) "-flag"))
-          (put-text-property brb (1+ brb) 'face (intern (concat br "-flag"))))
+        (setq br (symbol-name (get-text-property brb 'mupad-run-char-prop)))
+        (when (not (string= (substring br -5) "-flag"))
+          (put-text-property brb (1+ brb) 'mupad-run-char-prop 
+            (intern (concat br "-flag")))
+          (mupad-run-put-face brb (1+ brb) (intern (concat br "-flag"))))
         (delete-region bra brb)))))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1666,41 +1716,52 @@ Available special keys:
     (when br1 
       (put-text-property (point) (1+ (point)) 'hide (cdr br1))
       (insert-before-markers (car br1))
-      (setq br2 (symbol-name (get-text-property (point) 'face)))
+      (setq br2 (symbol-name (get-text-property (point) 'mupad-run-char-prop)))
       (when (not (cdr br1))
         (put-text-property (point) (1+ (point))  
-          'face (intern (substring br2 0 (- (length br2) 5))))))))
+          'mupad-run-char-prop 
+          (intern (substring br2 0 (- (length br2) 5))))
+        (mupad-run-put-face (point) (1+ (point))
+          (intern (substring br2 0 (- (length br2) 5))))))))
 
 (defun mupad-run-move-flag-up (pt)
-  (let ((inhibit-read-only t) (br (symbol-name (get-text-property pt 'face))))
+  (let ( (inhibit-read-only t) 
+         (br (symbol-name (get-text-property pt 'mupad-run-char-prop))))
     (save-excursion 
       (when (string= (substring br -5) "-flag")
         (put-text-property pt (1+ pt)
-          'face (intern (substring br 0 (- (length br) 5))))
+          'mupad-run-char-prop (intern (substring br 0 (- (length br) 5))))
         (goto-char pt)
         (mupad-run-left)
         (put-text-property (point) (1+ (point))
           'hide (get-text-property pt 'hide))
         (put-text-property pt (1+ pt) 'hide ())
-        (setq br (symbol-name (get-text-property (point) 'face)))
+        (setq br 
+          (symbol-name (get-text-property (point) 'mupad-run-char-prop)))
         (put-text-property (point) (1+ (point)) 
-          'face (intern (concat br "-flag")))))))
+          'mupad-run-char-prop (intern (concat br "-flag")))
+        (mupad-run-put-face (point) (1+ (point)) 
+          (intern (concat br "-flag")))))))
 
 (defun mupad-run-move-flag-down (pt)
   (let 
-    (br1 (inhibit-read-only t) (br (symbol-name (get-text-property pt 'face))))
+    ( br1 (inhibit-read-only t) 
+      (br (symbol-name (get-text-property pt 'mupad-run-char-prop))))
     (save-excursion 
       (when (string= (substring br -5) "-flag")
         (put-text-property pt (1+ pt)
-          'face (intern (substring br 0 (- (length br) 5))))
+          'mupad-run-char-prop (intern (substring br 0 (- (length br) 5))))
         (mupad-run-right)
         (setq br1 (get-text-property (point) 'hide)))
         (put-text-property (point) (1+ (point)) 
           'hide (append (get-text-property pt 'hide) br1))
         (unless br1
-           (setq br (symbol-name (get-text-property (point) 'face)))
+           (setq br 
+              (symbol-name (get-text-property (point) 'mupad-run-char-prop)))
            (put-text-property (point) (1+ (point)) 
-             'face (intern (concat br "-flag")))))))
+             'mupad-run-char-prop (intern (concat br "-flag")))
+           (mupad-run-put-face (point) (1+ (point)) 
+             (intern (concat br "-flag")))))))
 
 (defun mupad-run-copy-cmd ()
   (interactive) 
@@ -1725,14 +1786,15 @@ Available special keys:
     (insert (buffer-substring bra brb))
     (goto-char mupad-run-edit)
     (while (not (eobp))
-      (setq bra (get-text-property (point) 'face))
+      (setq bra (get-text-property (point) 'mupad-run-char-prop))
       (setq brb (or (next-property-change (point)) (point-max)))
       (cond 
         ((and (eq bra 'mupad-run-face-prompt) (eq (char-after) ?\n))
           (forward-char 1))
         ((memq bra
            '(mupad-run-face-local-prompt      mupad-run-face-prompt
-             mupad-run-face-local-prompt-flag mupad-run-face-prompt-flag))
+             mupad-run-face-local-prompt-flag 
+             mupad-run-face-prompt-flag))
            (delete-region (point) brb))
         ((eq bra 'mupad-run-face-last-input) 
             (goto-char brb))
@@ -1757,7 +1819,7 @@ Available special keys:
 ;;
 (defun mupad-run-insert-comment ()
   (let 
-    ((br (point)) (br1 (get-text-property (point) 'face))
+    ((br (point)) (br1 (get-text-property (point) 'mupad-run-char-prop))
      (inhibit-read-only t) brs br2)
     (cond 
 ; dans la zone edit
@@ -1765,7 +1827,8 @@ Available special keys:
         (goto-char mupad-run-edit) (insert "///---\n") (backward-char 1))
 ; dans un prompt (sauf fin de ligne) : aller au début de la ligne
       ((and 
-          (memq br1 '(mupad-run-face-prompt mupad-run-face-prompt-flag))
+          (memq br1 
+            '(mupad-run-face-prompt mupad-run-face-prompt-flag))
           (not (eolp)))
         (beginning-of-line) (mupad-run-insert-comment-br (point) ""))
 ; au debut d'une zone de completion, d'un prompt ou d'un commentaire
@@ -1776,17 +1839,19 @@ Available special keys:
           (eq 
             (get-text-property (point) 'item)  
             (get-text-property (1- (point)) 'item)))
-        (memq (get-text-property (point) 'face)
+        (memq (get-text-property (point) 'mupad-run-char-prop)
           '(mupad-run-face-prompt mupad-run-face-prompt-flag 
             mupad-run-face-separator mupad-run-face-separator-flag 
-            mupad-run-face-completion mupad-run-face-completion-flag)))
+            mupad-run-face-completion 
+            mupad-run-face-completion-flag)))
          (mupad-run-insert-comment-br (point) ""))
 ; à la fin d'une ligne de saisie (face = prompt)
       ((memq br1 '(mupad-run-face-prompt mupad-run-face-prompt-flag))
         (mupad-run-right) (mupad-run-insert-comment))
 ; dans la zone todo sur le caractère de tête
       ((memq br1 
-           '(mupad-run-face-beginning-waiting mupad-run-face-beginning-rem))
+           '(mupad-run-face-beginning-waiting 
+             mupad-run-face-beginning-rem))
         (mupad-run-insert-comment-br (point) ""))
 ; dans un commentaire, sur l'un des caractères de ///---
       ((and 
@@ -1798,7 +1863,8 @@ Available special keys:
       ((and 
          (goto-char br)
          (memq br1 
-           '(nil mupad-run-face-separator mupad-run-face-separator-flag)))
+           '(nil mupad-run-face-separator 
+             mupad-run-face-separator-flag)))
        (end-of-line)
        (setq br2 (buffer-substring br (point)))
        (delete-region br (point))
@@ -1818,14 +1884,17 @@ Available special keys:
       (t
         (goto-char br) 
         (while 
-          (memq (get-text-property (point) 'face)
-            '(mupad-run-face-last-input   mupad-run-face-last-input-flag
-              mupad-run-face-result       mupad-run-face-result-flag
-              mupad-run-face-local-prompt mupad-run-face-local-prompt-flag
-              mupad-run-face-for-emacs    mupad-run-face-for-emacs-flag
-              mupad-run-face-call-system  mupad-run-face-call-system-flag  
-              mupad-run-face-system       mupad-run-face-system-flag  
-              mupad-run-face-error        mupad-run-face-error-flag))
+          (memq (get-text-property (point) 'mupad-run-char-prop)
+            '(mupad-run-face-last-input   
+              mupad-run-face-last-input-flag
+              mupad-run-face-result mupad-run-face-result-flag
+              mupad-run-face-local-prompt 
+              mupad-run-face-local-prompt-flag
+              mupad-run-face-for-emacs mupad-run-face-for-emacs-flag
+              mupad-run-face-call-system  
+              mupad-run-face-call-system-flag  
+              mupad-run-face-system mupad-run-face-system-flag  
+              mupad-run-face-error mupad-run-face-error-flag))
        (mupad-run-right))
        (mupad-run-insert-comment)))))
 
@@ -1843,7 +1912,8 @@ Available special keys:
   (put-text-property (point) (1+ (point)) 'front-sticky nil)
   (put-text-property (- (point) 6) (1+ (point)) 'read-only t)
   (put-text-property (- (point) 6) (1+ (point))
-    'face 'mupad-run-face-separator)
+    'mupad-run-char-prop 'mupad-run-face-separator)
+  (mupad-run-put-face (- (point) 6) (1+ (point)) 'mupad-run-face-separator)
   (cond 
     ((< (point) mupad-run-todo)
       (setq mupad-run-itemb (1+ mupad-run-itemb))
@@ -1853,7 +1923,9 @@ Available special keys:
       (put-text-property (- (point) 6) (1+ (point))
         'item (cons 'rem mupad-run-itema))
       (put-text-property (- (point) 6) (- (point) 5)
-        'face 'mupad-run-face-beginning-rem)))
+        'mupad-run-char-prop 'mupad-run-face-beginning-rem)
+      (mupad-run-put-face (- (point) 6) (- (point) 5)
+        'mupad-run-face-beginning-rem)))
   (save-excursion 
     (insert str) (mupad-run-right) (mupad-run-move-flag-up (point))))
 ;; 
@@ -1884,7 +1956,7 @@ Available special keys:
             (cond
               ((and
                   (memq 
-                    (get-text-property br1 'face)
+                    (get-text-property br1 'mupad-run-char-prop)
                     '(mupad-run-face-prompt mupad-run-face-local-prompt))
                   (not (eq (char-after) ?\n)))
                 (delete-char 1)
@@ -1893,7 +1965,7 @@ Available special keys:
           (set-text-properties br br2 nil))
 ; curseur dans une zone de commentaire
       ((and 
-          (not (get-text-property (point) 'face))
+          (not (get-text-property (point) 'mupad-run-char-prop))
           (or (not (get-text-property (point) 'read-only)) (eolp)))
         (yank arg)
         (setq br1 (min (point) (mark)))
@@ -1924,12 +1996,6 @@ Available special keys:
 ;;
 ;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 ;
-;(eval-and-compile
-;  (unless (fboundp 'mupad-info-wind-conf)
-;    (defun mupad-info-wind-conf nil))
-;  (unless (fboundp 'mupad-restore-wind-conf)
-;    (defun mupad-restore-wind-conf nil)))
-
 (defun mupad-run-show-mupad-info nil
   "Show mupad-run.el-info on another window."
   (interactive)
@@ -2056,6 +2122,21 @@ Available special keys:
     (make-face (car a-face))
     (set-face-foreground (car a-face) (cadr a-face))
     (set-face-background (car a-face) (car (cddr a-face))))
+  mupad-run-face)
+
+(defun mupad-run-to-local-symb (symb arg)
+  (intern (concat "local-" arg "-" (symbol-name symb))))
+
+(mapcar
+  (lambda (a-face)
+    (let ((br (mupad-run-to-local-symb (car a-face) "A")) br1)
+      (make-face br)
+      (setq br1 (cadr a-face))
+      (setq br1 (or (cadr (assoc (cons br1 "A") mupad-run-color-change)) br1))
+      (set-face-foreground br br1)
+      (setq br1 (car (cddr a-face)))
+      (setq br1 (or (cadr (assoc (cons br1 "A") mupad-run-color-change)) br1))
+      (set-face-background br br1)))
   mupad-run-face)
 ;;
 ;;
