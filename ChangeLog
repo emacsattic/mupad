@@ -1,3 +1,271 @@
+2005-01-21  Isil  <nthiery@eole.rouba.net>
+
+	* mupad-run.el, BUGS:
+	Fixed missing dependency of mupad-run on mupad (for mupad-start-manual).
+
+2005-01-20  Isil  <nthiery@eole.rouba.net>
+
+	* Makefile.in: Update of the autotools build system.
+
+	* Makefile.am:
+	For extra safety, install mupacs.el in every site-start.d that it finds.
+
+	* README, Makefile.in, index.html, configure, configure.ac, index.html.in, NEWS:
+	Update for 3.2.3 release.
+
+	* Makefile.am:
+	Use explicitely -I config in ACLOCAL_AMFLAGS to please autoreconf.
+
+	* config/packages.am:
+	Fixed to use rpmbuild instead of rpm to build the rpm package.
+
+	* mupad-fontification.el, mupad.el:
+	First attempt by Olivier to speed up the initial fontification.
+
+	* BUGS: Update
+
+	* Makefile.am:
+	Patch/hack to properly include the site-start.d/mupacs.el file in the rpm.
+
+2005-01-20  Nicolas M. Thiéry  <nthiery@users.sf.net>
+
+	* Makefile.in: Update of the autotools build system.
+
+	* Makefile.am:
+	For extra safety, install mupacs.el in every site-start.d that it finds.
+
+	* README, Makefile.in, index.html, configure, configure.ac, index.html.in, NEWS:
+	Update for 3.2.3 release.
+
+	* Makefile.am:
+	Use explicitely -I config in ACLOCAL_AMFLAGS to please autoreconf.
+
+	* config/packages.am:
+	Fixed to use rpmbuild instead of rpm to build the rpm package.
+
+	* mupad-fontification.el, mupad.el:
+	First attempt by Olivier to speed up the initial fontification.
+
+	* BUGS: Update
+
+	* Makefile.am:
+	Patch/hack to properly include the site-start.d/mupacs.el file in the rpm.
+
+2004-12-15  Nicolas M. Thiéry  <nthiery@users.sf.net>
+
+	* BUGS, mupad-run.el:
+	New function mupad-run-debugger-display-line, extracted from mupad-run-filter.
+	Fixes file-line display with MuPAD < 3.1.1 and the -E option.
+	Micro improvement to the debug messages.
+
+2004-12-02  Nicolas M. Thiéry  <nthiery@users.sf.net>
+
+	* README.in: Update for the new mailing-list.
+
+	* mupad-run.el: Improved documentation for mupad-run-commandline.
+
+	* TODO: Cleanup and update.
+
+	* NEWS: Start of update for 3.2.3.
+
+	* BUGS: Cleanup and update.
+
+	* mupad-run.el: Bug fixes:
+	 - mupad-run-commandline could not be customized to an arbitrary user string
+	 - Those options should be set by default when the user has no
+	   mupad-run-mode-hook:
+	   (custom-add-option 'mupad-run-mode-hook 'mupad-help-init)
+	 - (hopefully) Make sure that the in-buffer completion list is always completely
+	   visible; There are cases where there seems to be a conflict with the
+	   recentering heuristic, and all the completion lists is below the last
+	   visible line ...
+	New mupad-run-arrow-behaviour options: Usual-Search and MuPAD-Style
+	New customization variable: mupad-run-completion-strip-prefix
+
+2004-10-04  Nicolas M. Thiéry  <nthiery@users.sf.net>
+
+	* mupad-run.el: Fixed missing gud-gdb-find-file in emacs from CVS.
+
+2004-07-05  Nicolas M. Thiéry  <nthiery@users.sf.net>
+
+	* mupad-run.el: Add support for displaying variables.
+	Fixed toggle-readonly of /tmp/debug* files.
+
+	* TODO: Update.
+
+	* BUGS: Registered new bug.
+
+2004-05-12  Nicolas M. Thiéry  <nthiery@users.sf.net>
+
+	* Makefile.in, configure: Update of the automake/autoconf build system.
+
+	* BUGS, TODO: *** empty log message ***
+
+2004-01-30  Nicolas M. Thiéry  <nthiery@users.sf.net>
+
+	* config/packages.spec.in, config/packages.m4, config/packages.am:
+	Update of packages configuration files from MuPAD-Combinat for
+	compatibility with automake >= 1.7.
+
+	* configure.ac:
+	Added the mupad*.el-info files to the documentation files.
+
+	* TODO: *** empty log message ***
+
+	* site-start.d/mupacs.el.in.in, sli-tools.el:
+	Moved the definition of missing functions in "old" versions of emacs
+	to the mupacs initialization file.
+	Added default definition of bound-and-true-p.
+
+2004-01-29  Nicolas M. Thiéry  <nthiery@users.sf.net>
+
+	* BUGS: *** empty log message ***
+
+	* sli-tools.el:
+	Added a default lisp implementation of mapc for emacsen that miss it
+	as builtin.
+
+2004-01-27  Nicolas M. Thiéry  <nthiery@users.sf.net>
+
+	* QuickInstall: *** empty log message ***
+
+2004-01-12  Nicolas M. Thiéry  <nthiery@users.sf.net>
+
+	* test-indentation.mu:
+	Added test case (categories separated by colons).
+
+2004-01-11  Nicolas M. Thiéry  <nthiery@users.sf.net>
+
+	* test-indentation.mu: Marked bug as fixed.
+
+	* test-indentation.mu: Bug marked as fixed.
+
+2004-01-10  ramare  <ramare@eole.rouba.net>
+
+	* mupad-fontification.el, mupad.el, sli-tools.el:
+	mupad-fontification.el: added mupad-fontification-verbose and some verbosity.
+	  Corrected \\* into \* in regexps
+	sli-tools.el: corrected sli-tell-indent-within-long-comment
+	  when a long comment was not closed at the end of the file.
+	mupad.el: added mupad-verbose and some verbosity.
+
+2003-12-15  Nicolas M. Thiéry  <nthiery@users.sf.net>
+
+	* BUGS: *** empty log message ***
+
+	* mupad-run.el:
+	Patch par Francois Maltey pour autoriser les commentaires en /* ... */
+
+2003-12-02  Nicolas M. Thiéry  <nthiery@users.sf.net>
+
+	* test-indentation.mu: Added new bug.
+
+2003-11-04  Nicolas M. Thiéry  <nthiery@users.sf.net>
+
+	* mupad-run.el: New customization variable: mupad-run-input-terminator.
+
+2003-10-28  Nicolas M. Thiéry  <nthiery@users.sf.net>
+
+	* index.html, index.html.in: Typo fix.
+
+	* index.html, index.html.in: Update for mupad 3.2.2
+
+	* Makefile.in, Makefile.am: Update of the autotools build system.
+	Removed site-start.d/mupacs.el from lisp_LISP since it's useless
+	to compile it, and we install it by hand anyway.
+
+	* Makefile.am, Makefile.in:
+	Ensure that site-start.d/mupacs.el is created for distdir.
+	Update of the autotools build system.
+
+	* Makefile.in, index.html, README, configure:
+	Update of the autotools build system.
+
+	* NEWS, configure.ac: Update for mupacs 3.2.2
+
+	* BUGS: *** empty log message ***
+
+	* configure.ac: Added screenshots to the documentation.
+
+	* README.in, QuickInstall, mupad-run.el-info, mupad.el-info, index.html.in, FAQ:
+	First cleanup of the documentation:
+	 - moved installation information out of mupad.el-info and
+	   mupad-run.el-info into QuickInstall.
+	 - removed some outdated information
+
+	* INSTALL.txt: Removed things that are already documented elsewhere.
+
+	* index.html.in: Added links to local documentation + fixes.
+
+	* screenshot-debugger.png, screenshot-mupad-run.png, screenshot-mupad.png:
+	Added screenshots.
+
+	* index.html.in: Imported things from the mupad.el-info file.
+
+2003-10-27  Nicolas M. Thiéry  <nthiery@users.sf.net>
+
+	* Makefile.in, configure, index.html: Updated autotools build system.
+
+	* config/mupad.am, config/mupad.m4:
+	Imported newer version of mupad autotools files from MuPAD-Combinat.
+
+	* index.html.in: Add links to other emacs/vi modes for mupad.
+
+	* BUGS: *** empty log message ***
+
+	* sli-tools.el: Fixed missing sli-verbose test around a print.
+
+	* test-indentation.mu: Fixed commit with unresolved conflict.
+
+2003-10-27  ramare  <ramare@eole.rouba.net>
+
+	* test-indentation.mu, sli-tools.el:
+	sli-tools : mapc --> mapcar in get-maid-alist
+
+2003-10-27  Nicolas M. Thiéry  <nthiery@users.sf.net>
+
+	* mupad-run.el: Set sensible default for mupad-run-info.
+
+	* Makefile.am:
+	Added mupad-run.el-info to the list of to-be-installed files.
+
+	* mupad.el: Set sensible default for mupad-el-info.
+
+	* INSTALL.txt: Added outdated warning.
+
+2003-09-27  Nicolas M. Thiéry  <nthiery@users.sf.net>
+
+	* README, Makefile.in: Update of the autotools build system.
+
+	* Makefile.am: Try to uninstall mupacs.el file.
+
+	* index.html, configure: Update of the autotools build system.
+
+	* ChangeLog, NEWS, index.html.in: Switch to 3.2.1
+
+	* configure.ac:
+	mupacs.el is now created in two passes to ensure that the shell
+	variables are fully substituted.
+	Switch to 3.2.1
+
+	* Makefile.am:
+	mupacs.el is now created in two passes to ensure that the shell
+	variables are fully substituted.
+	Improved heuristics to find the site-start.d directory.
+	Added test-indentation.mu to the distribution.
+
+	* site-start.d/mupacs.el.in.in, site-start.d/mupacs.el.in:
+	mupacs.el is now created in two passes to ensure that the shell
+	variables are fully substituted.
+
+	* BUGS: *** empty log message ***
+
+	* mupad-run.el:
+	Bug fix: mupad-run-recenter-br has been completely broken for a while
+	when mupad-run-recenter-behaviour was nil; on starting of mupad-run,
+	and after each input line, the following error message was issued
+	error in process-filter: cond: Wrong number of arguments: #<subr if>, 1
+
 2003-09-27  Nicolas M. Thiéry  <nthiery@users.sf.net>
 
 	* NEWS, index.html.in: Switch to 3.2.1
