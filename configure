@@ -120,8 +120,12 @@ if test -f mupad-help.el; then
    #Variable mupad-help-method:
    if [ `$MUPAD_EXE -V` = 2.5.1 ]; then
       sed -e "s|(defvar mupad-help-method 'mupad-help-from-file-to-buffer)|(defvar mupad-help-method 'mupad-help-from-toc-to-buffer)|" -e "s|^(require 'mupad-xemacs)|;(require 'mupad-xemacs)|" mupad-run.el > mupad-run-bis.el
-   else 
-       sed -e "s|(defvar mupad-help-method 'mupad-help-from-file-to-buffer)|(defvar mupad-help-method 'mupad-help-from-toc-to-buffer)|" -e "s|^(require 'mupad-xemacs)|;(require 'mupad-xemacs)|" mupad-run.el > mupad-run-bis.el
+   else
+       if [ `$MUPAD_EXE -V` = 2.5.2 ]; then
+      sed -e "s|(defvar mupad-help-method 'mupad-help-from-file-to-buffer)|(defvar mupad-help-method 'mupad-help-from-toc-to-buffer)|" -e "s|^(require 'mupad-xemacs)|;(require 'mupad-xemacs)|" mupad-run.el > mupad-run-bis.el
+       else 
+           sed -e "s|(defvar mupad-help-method 'mupad-help-from-file-to-buffer)|(defvar mupad-help-method 'mupad-help-from-toc-to-buffer)|" -e "s|^(require 'mupad-xemacs)|;(require 'mupad-xemacs)|" mupad-run.el > mupad-run-bis.el
+       fi
    fi
 
    rm mupad-run.el
@@ -160,14 +164,22 @@ if test -f mupad-run.el; then
       rm mupad-run.el
       mv mupad-run-bis.el mupad-run.el
    else 
-       echo "Your MuPAD version is assumed to be 3.0"
-       
-       sed 's|'\''("-R" "-U" "EMACS")|'\''("-E" "-U" "EMACS")|' mupad-run.el > mupad-run-bis.el
-       
-       rm mupad-run.el
-       mv mupad-run-bis.el mupad-run.el
-   fi  
+       if [ `$MUPAD_EXE -V` = 2.5.2 ]; then
+           echo "Your MuPAD version is 2.5.2"
+           
+           sed 's|'\''("-E" "-U" "EMACS")|'\''("-R" "-U" "EMACS")|' mupad-run.el > mupad-run-bis.el
 
+           rm mupad-run.el
+           mv mupad-run-bis.el mupad-run.el
+       else
+           echo "Your MuPAD version is assumed to be 3.0"
+           
+           sed 's|'\''("-R" "-U" "EMACS")|'\''("-E" "-U" "EMACS")|' mupad-run.el > mupad-run-bis.el
+           
+           rm mupad-run.el
+           mv mupad-run-bis.el mupad-run.el
+       fi  
+   fi
 else
    echo "- File mupad-run.el was NOT found."
    echo "  This script is to be run MuPAD sessions under emacs."
