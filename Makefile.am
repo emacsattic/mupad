@@ -27,6 +27,11 @@ MAINTAINERCLEANFILES = site-start.d/mupacs.el.in
 
 KNOWN_EMACS_SITE_START_DIRECTORIES = /etc/emacs/site-start.d /usr/share/emacs/site-lisp/site-start.d ${lispdir}/site-start.d /usr/local/share/emacs/site-lisp/site-start.d
 
+# Yes, $(DESTDIR) is missing in test -d $$dir.
+# This is voluntary so that when building the rpm package, the
+# initialization file gets properly installed $(DESTDIR)/$$dir
+# coherently with actual host's site-start.d dir.
+# I hope this won't break something else.
 install-data-local:
 	@echo Finalizing the variable substitution in site-start.d/mupacs.el;
 	@sed site-start.d/mupacs.el.in -e 's,$${datadir},${datadir},' > site-start.d/mupacs.el
@@ -35,6 +40,7 @@ install-data-local:
 	  if test -d $$dir; then					\
 		found=yes;						\
 		echo Installing the emacs startup file site-start.d/mupacs.el in $(DESTDIR)$$dir; \
+		$(INSTALL) -d $(DESTDIR)$$dir;	\
 		$(INSTALL_DATA) $(srcdir)/site-start.d/mupacs.el $(DESTDIR)$$dir;	\
 		break;							\
 	  fi;								\
