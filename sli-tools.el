@@ -203,6 +203,10 @@ construct, an existing head can be used as a special head. The typical case in
 MuPAD is 'category' which is normally a head but can be used like a special head
 inside a 'domain' statement.
 
+CONSTRUCTORs are treated in a special way and keys declared as head or end
+or whatever can also be termed constructor. Usual example: ( is a head and
+is also declared as a constructor.
+
 Cdr's are to be evaled.
 
 If downcase/uppercase is relevant is controled by the variable `sli-case-fold'.
@@ -337,14 +341,15 @@ Used in `sli-anchored-posix-search-backward', a fix for `posix-search-backward'.
 (defvar sli-heads-strong-alist nil "The alist ((strong . (head1 head2 ...)) ...).")
 (defvar sli-special-head-alist nil "The alist ((special-head . (separator1 separator2 ...)) ...).")
 (defvar sli-special-head-heads-alist nil
-"The alist ((special-head . heads) ...) for those special heads that are also heads.")
+  "The alist ((special-head . heads) ...) for those special heads that are also heads.")
 (defvar sli-special-head-previous-keys-alist nil
-"The alist ((special-head . keys) ...) for special-heads that can be heads.
+  "The alist ((special-head . keys) ...) for special-heads that can be heads.
 keys are the keys that can be before special-head.")
 (defvar sli-companion-strong-keys-alist nil
-"The alist  ((strong/head . (strongs that could be after)) ...).
+  "The alist  ((strong/head . (strongs that could be after)) ...).
 The car should be a member of the cdr if the car is a strong.")
-(defvar sli-soft-alist nil "The alist ((ambiguous-soft . (head-or-strong1 head-or-strong2 ...)) ...).")
+(defvar sli-soft-alist nil 
+  "The alist ((ambiguous-soft . (head-or-strong1 head-or-strong2 ...)) ...).")
 (defvar sli-soft-head-or-strong-alist nil "The alist ((head-or-strong . soft) ...)")
 (defvar sli-first-offset-alist nil)  ; to apply before the soft
         ; it applies to head/strong keys that are followed by a soft with no
@@ -365,8 +370,8 @@ KEY if it doesn't have any soft. KEY can be a head/end/strong/soft.")  ; to appl
 
 (defvar sli-maid-alist nil)
 (defvar sli-ambiguous-keys nil
-"List of keys that may ask for a different following key according to context.
-They *should be* soft or strong keys.")
+  "List of keys that may ask for a different following key according
+to context. They *should be* soft or strong keys.")
 
 ;; Only to shut up compiler. These two variables should be defined when the
 ;; correct buffer is set ! Used by sli-show-sexp.
@@ -381,7 +386,7 @@ text properties alloted by sli-tools.")
 (defvar sli-key-is-a-special-headp nil
   "Set by `sli-get-corresponding-key' and `sli-get-first-non-end-key'.")
 
-(mapcar 'make-variable-buffer-local 
+(mapc 'make-variable-buffer-local 
 '(sli-verbose sli-prop-verbose sli-handles-sexp sli-overlay-beg sli-overlay-end
 sli-prop-do-not-recompute-time sli-structures sli-shift-alist sli-separators
 sli-is-a-separatorp-fn sli-more-maidp sli-add-to-key-alist
@@ -407,7 +412,7 @@ sli-special-head-offset-alist))
 
 (defun sli-split-list (lst)
   (let ((wordother '()) (otherword '()) (wordword '()) (otherother '()) ls)
-    (mapcar
+    (mapc
      (lambda (wd)
        (setq ls (string-to-list wd))
       (cond
@@ -471,7 +476,7 @@ sli-special-head-offset-alist))
 
 (defun sli-flatten (ls)
   (let ((res '()))
-    (mapcar
+    (mapc
       (lambda (ph)
         (cond
           ((listp ph) (setq res (append res (sli-flatten ph))))
@@ -481,7 +486,7 @@ sli-special-head-offset-alist))
 
 (defun sli-scan-structures-locally (stru symbol)
   (let ((res '()))
-    (mapcar (lambda (ph)
+    (mapc (lambda (ph)
               (setq res
                 (append res
                   (cond
@@ -502,7 +507,7 @@ sli-special-head-offset-alist))
 
 (defun sli-scan-structures (symbol)
   (let ((res '()))
-    (mapcar
+    (mapc
       (lambda (st)
         (when (equal (elt st 1) symbol)
           (add-to-list 'res (elt st 0))))
@@ -511,11 +516,11 @@ sli-special-head-offset-alist))
 
 (defun sli-get-ends-head-alist nil
   (let ((res '()) all-ends) ; forme la liste (head-key . (end1 end2 ...))
-   (mapcar
+   (mapc
      (lambda (ph)
        (when (equal (elt (elt ph 0) 1) 'head)
          (setq all-ends '())
-         (mapcar
+         (mapc
            (lambda (s)
              (when (and (vectorp s) (equal (elt s 1) 'end))
                (setq all-ends (append all-ends (list (elt s 0))))))
@@ -526,10 +531,10 @@ sli-special-head-offset-alist))
 
 (defun sli-get-head-end-alist nil
   (let ((res '()) all-heads) ; forme la liste (end-key . (head1 head2 ...))
-   (mapcar
+   (mapc
      (lambda (end)
        (setq all-heads '())
-       (mapcar
+       (mapc
 	(lambda (s)
 	  (if (member end (cdr s))
 	      (add-to-list 'all-heads (car s))))
@@ -540,7 +545,7 @@ sli-special-head-offset-alist))
 
 (defun sli-get-strong (ph)
   (let ((res '()))
-    (mapcar
+    (mapc
       (lambda (st)
         (when (equal (elt st 1) 'strong)
           (add-to-list 'res (elt st 0))))
@@ -550,21 +555,21 @@ sli-special-head-offset-alist))
 (defun sli-get-heads-strong-alist nil
   (let ((res '()) (aux '()) possible-heads) ; forme la liste des (strong-key . (head-key1 head-key2 ...))
    ; Peut-etre plusieurs strong pour chaque head.
-   (mapcar
+   (mapc
      (lambda (ph)
        (if (equal (elt (elt ph 0) 1) 'head)
            (let ((strongs (sli-get-strong (sli-flatten ph))))
               (unless (null strongs)
-                 (mapcar (lambda (st)
-                            (setq aux (add-to-list 'aux
-                                  (cons st (elt (elt ph 0) 0)))))
-                         strongs)))))
+                 (mapc (lambda (st)
+                         (setq aux (add-to-list 'aux
+                                                (cons st (elt (elt ph 0) 0)))))
+                       strongs)))))
      sli-structures)
    ; Une strong peut etre liee a plusieurs heads. Il faut les reunir:
-   (mapcar
+   (mapc
     (lambda (strong)
       (setq possible-heads '())
-      (mapcar
+      (mapc
        (lambda (ajoint)
          (when (equal (car ajoint) strong)
            (setq possible-heads (append possible-heads (list (cdr ajoint))))))
@@ -577,10 +582,10 @@ sli-special-head-offset-alist))
 
 (defun sli-get-soft-alist nil ; forme la liste (soft . (head of strong using it))
   (let ((resaux '()) loc (res '()) astrong-list (asoft-list '()))
-   (mapcar
+   (mapc
     (lambda (ph)
       (setq astrong-list '())
-      (mapcar
+      (mapc
        (lambda (ve)
 	 (cond
           ((equal (elt ve 1) 'soft) (unless (null astrong-list)
@@ -590,10 +595,10 @@ sli-special-head-offset-alist))
        (sli-flatten ph)))
     sli-structures)
     ;; now gather identical soft:
-    (mapcar
+    (mapc
       (lambda (asoft)
         (setq loc '())
-        (mapcar
+        (mapc
 	  (lambda (dd)
 	    (when (string-equal asoft (car dd))
               (setq loc (append loc (cdr dd)))))
@@ -606,17 +611,17 @@ sli-special-head-offset-alist))
 (defun sli-common-pointp (l1 l2)
   "t if l1 and l2 have a common element. Test is done through member."
   (let ((ok nil))
-    (mapcar (lambda (c) (setq ok (or ok (member c l1)))) l2)
+    (mapc (lambda (c) (setq ok (or ok (member c l1)))) l2)
     ok))
 
 (defun sli-get-companion-alist nil ; case ?? It was not there.
   (let ((res '()))
     ; on prend les car de sli-heads-strong-alist on leur
     ; associe la liste des car qui ont au moins une tete en commun :
-    (mapcar
+    (mapc
       (lambda (co)
         (let ((end (cdr co)) (companions '()))
-          (mapcar
+          (mapc
             (lambda (coo)
                (when (sli-common-pointp (cdr coo) end)
                  (setq companions (add-to-list 'companions (car coo)))))
@@ -625,10 +630,10 @@ sli-special-head-offset-alist))
       sli-heads-strong-alist)
     ; on prend les cdr de sli-heads-strong-alist on leur
     ; associe la liste des car possibles :
-    (mapcar
+    (mapc
       (lambda (head)
         (let ((companions '()))
-          (mapcar
+          (mapc
             (lambda (coo)
                (when (member head (cdr coo))
                  (setq companions (add-to-list 'companions (car coo)))))
@@ -639,7 +644,7 @@ sli-special-head-offset-alist))
 
 (defun sli-get-soft-head-or-strong-alist nil
   (let ((res '()) asoft astrong-list)
-    (mapcar
+    (mapc
      (lambda (ass)
        (setq asoft (car ass))
        (setq res (append res (mapcar (lambda (st) (cons st asoft)) (cdr ass)))))
@@ -670,9 +675,9 @@ sli-special-head-offset-alist))
 (defun sli-get-relevant-alist nil
   (let (key-lst (res '()))
     ;; relevant keys are head/strong or end keys.
-    (mapcar
+    (mapc
      (lambda (class)
-       (mapcar
+       (mapc
 	(lambda (el)
 	  (add-to-list 'res (cons el class)))
 	class))
@@ -715,7 +720,7 @@ sli-special-head-offset-alist))
 
 (defun sli-get-first-offset-alist nil
   (let ((res '()) last-head-or-strong stru pl)
-    (mapcar
+    (mapc
      (lambda (ph)
        (setq last-head-or-strong nil stru (sli-flatten ph))
        (while (not (null stru))
@@ -733,7 +738,7 @@ sli-special-head-offset-alist))
 
 (defun sli-get-second-offset-alist nil
   (let ((res '()) last-cand stru pl)
-    (mapcar
+    (mapc
      (lambda (ph)
        (setq last-cand nil stru (sli-flatten ph))
        (while (not (null stru))
@@ -760,9 +765,9 @@ sli-special-head-offset-alist))
 
 (defun sli-get-relation-offset-alist nil
   (let ((res '()))
-    (mapcar
+    (mapc
       (lambda (ph)
-        (mapcar
+        (mapc
 	 (lambda (pl)
 	   (cond
 	    ((member (elt pl 1) '(math-relation beacon))
@@ -773,9 +778,9 @@ sli-special-head-offset-alist))
 
 (defun sli-get-special-head-offset-alist nil
   (let ((res '()))
-    (mapcar
+    (mapc
       (lambda (ph)
-        (mapcar
+        (mapc
 	 (lambda (pl)
 	   (cond
 	    ((member (elt pl 1) '(special-head))
@@ -798,7 +803,7 @@ sli-special-head-offset-alist))
       (t (setq aux (elt (car ph) 0) ; the new 'last-word (lst=(last-word))
                ph (cdr ph))
          ; Link 'lst' to the new compulsory:
-         (mapcar (lambda (s) (add-to-list 'res (cons s aux))) lst)
+         (mapc (lambda (s) (add-to-list 'res (cons s aux))) lst)
 	 (while (and (not (null ph)) (listp (car ph)))
            ; (car ph) is an optional construct. Scan it with no 'lst'
            (setq resaux (sli-get-maid-alist-locally (car ph) '())
@@ -810,7 +815,7 @@ sli-special-head-offset-alist))
 	 (when (car ph) ; aux is linked to the new guy:
 	   (add-to-list 'res (cons aux (elt (car ph) 0)))
            ; the new guy is linked with all the 'last-words':
-	   (mapcar (lambda (s) (add-to-list 'res (cons s (elt (car ph) 0)))) nlst))
+	   (mapc(lambda (s) (add-to-list 'res (cons s (elt (car ph) 0)))) nlst))
          ; process things farther:
          (setq resaux (sli-get-maid-alist-locally ph '())
                res (list (append (car resaux) res)
@@ -838,13 +843,13 @@ sli-special-head-offset-alist))
 ;; sli-ambiguous-keys is also created here.
   ;(setq sli-ambiguous-keys nil)
   (let ((res '()))
-    (mapcar
+    (mapc
       (lambda (ph)
         (setq res (append res (car (sli-get-maid-alist-locally ph '())))))
       sli-structures)
     (add-to-list 'res (cons block-comment-start block-comment-end))
     ; well, soft keys may correspond to different strong keys...
-    (mapcar (lambda (co) (let ((to (sli-full-assoc co res)))
+    (mapc (lambda (co) (let ((to (sli-full-assoc co res)))
                            (cons co (if (null (cdr to)) (car to)
                                         (progn
                                           (add-to-list 'sli-ambiguous-keys co)
@@ -870,7 +875,7 @@ sli-special-head-offset-alist))
 
 (defun sli-get-special-head-alist nil
   (let ((res '()) aux)
-    (mapcar
+    (mapc
      (lambda (ph)
        (if (equal (elt ph 1) 'special-head)
            (progn
@@ -880,8 +885,8 @@ sli-special-head-offset-alist))
                  (progn
                    (setq res (delq aux res));(print res)
                    (setq aux (cdr aux))
-                   (mapcar (lambda (wd) (add-to-list 'aux wd))
-                           (if (listp (elt ph 3)) (elt ph 3)(list (elt ph 3))))
+                   (mapc (lambda (wd) (add-to-list 'aux wd))
+                         (if (listp (elt ph 3)) (elt ph 3)(list (elt ph 3))))
                    (add-to-list 'res (cons (elt ph 0) aux)))
                (add-to-list 'res (cons (elt ph 0)
                                        (if (listp (elt ph 3))
@@ -894,11 +899,11 @@ sli-special-head-offset-alist))
   "LST is a list of list (beg end).
 If beg1 = beg2= ... = begN, we answer (beg1 end1 end2 ... endN)."
   (let ((res '()) beg (listend '()))
-    (mapcar
+    (mapc
      (lambda (ph)
        (unless (assoc (setq beg (elt ph 0)) res) ;; already done
          (setq listend '())
-         (mapcar 
+         (mapc 
           (lambda (nph)
             (when (equal (elt nph 0) beg)
               (add-to-list 'listend (elt nph 1))))
@@ -909,7 +914,7 @@ If beg1 = beg2= ... = begN, we answer (beg1 end1 end2 ... endN)."
 
 (defun sli-get-special-head-head-alist nil
   (let ((res '()) previous-head (previous-keys '()))
-    (mapcar
+    (mapc
      (lambda (ph)
        (cond
 	((equal (elt ph 1) 'head)
@@ -926,8 +931,8 @@ If beg1 = beg2= ... = begN, we answer (beg1 end1 end2 ... endN)."
 
 (defun sli-get-max-keys-length (lst)
   (let ((res 0))
-    (mapcar (lambda (to) (setq res (max res to)))
-            (mapcar 'length lst))
+    (mapc (lambda (to) (setq res (max res to)))
+          (mapcar 'length lst))
     res))
 
 (defun sli-precomputations nil
@@ -1099,10 +1104,10 @@ If beg1 = beg2= ... = begN, we answer (beg1 end1 end2 ... endN)."
   ;; t if the line contains only spaces.
   (unless pt (setq pt (point)))
   (let ((only-spacep t))
-    (mapcar (lambda (ch) (setq only-spacep
-                               (and only-spacep (= (char-syntax ch) ?\ ))))
-            (string-to-list
-              (buffer-substring-no-properties (line-beginning-position) pt)))
+    (mapc (lambda (ch) (setq only-spacep
+                             (and only-spacep (= (char-syntax ch) ?\ ))))
+          (string-to-list
+           (buffer-substring-no-properties (line-beginning-position) pt)))
     only-spacep))
 
 (defun sli-only-spaces-on-line-before nil
@@ -1267,10 +1272,10 @@ Answer is nil otherwise."
         ;; its end should be below or it is the key we seek.
         (setq end-lst (sli-get-ends-from-strong word)
               strong-lst (sli-get-strongs-from-strong-or-head word))
-        (mapcar (lambda (s)
-                  (setq found-endp (or found-endp (sli-member s end-lst))
-                        found-strongp (or found-strongp (sli-member s strong-lst))))
-                skel)
+        (mapc (lambda (s)
+                (setq found-endp (or found-endp (sli-member s end-lst))
+                      found-strongp (or found-strongp (sli-member s strong-lst))))
+              skel)
         (cond
          (found-endp
           (while (and skel (not (sli-member (car skel) end-lst)))
@@ -1367,7 +1372,7 @@ Supports imbedded comments. Answer nil if not found."
   "Answer nil if WORD located at PT is not a special-head.  WORD should not be
 in comment, and PT is before WORD.  If WORD is a special-head that can be a
 head, answer is nil if it acts like a head; else answer is
-(previousword . previouspt) where nextword is the one that showed that word
+(previousword . previouspt) where previousword is the one that showed that word
 was a special-head: it is thus a special-head or a head located before (word . pt). "
   (save-match-data
     (cond 
