@@ -68,10 +68,10 @@ of \\([a-zA-Z_0-9]\\|::\\). Returns point."
    ))))
 
 
-(defun mupad-bus-visible-command (acommand prop)
+(defun mupad-bus-visible-command (acommand prop &optional buff-to-select)
   (condition-case err
       (progn
-        (mupad-bus-switch-to-mupad)
+        (mupad-bus-switch-to-mupad buff-to-select)
 	(let ((pt (point)) (ref (marker-position mupad-run-edit))
 	      (old (buffer-substring-no-properties
 		    mupad-run-edit (goto-char (point-max)))))
@@ -174,17 +174,27 @@ CLOSING-STATEMENT can be \";\". See `mupad-region' for more information."
 (defun mupad-bus-set-digits nil
   (interactive)
   (mupad-bus-visible-command 
-    (concat "DIGITS:=" (read-string "New Value: ") ":") nil))
+    (concat "DIGITS:=" (read-string "New Value: ") ":") nil
+    (if (eq major-mode 'mupad-run)
+        (buffer-name)
+      "*MuPAD*")))
 
 (defun mupad-bus-adapt-textwidth nil
   (interactive)
   (mupad-bus-visible-command
     (concat "TEXTWIDTH:=" (number-to-string (1- (window-width))) ":")
-    '(not-save textwidth)))
+    '(not-save textwidth)
+    (if (eq major-mode 'mupad-run)
+        (buffer-name)
+      "*MuPAD*")))
 
 (defun mupad-bus-prettyprint-switch nil
   (interactive)
-  (mupad-bus-visible-command "PRETTYPRINT:=not PRETTYPRINT;" nil))
+  (mupad-bus-visible-command
+   "PRETTYPRINT:=not PRETTYPRINT;" nil
+   (if (eq major-mode 'mupad-run)
+       (buffer-name)
+     "*MuPAD*")))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Functions for the window manager:
