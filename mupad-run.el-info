@@ -69,6 +69,12 @@ résultats mémorisés dans mupad sont perdus, mais la nouvelle session
 de mupad garde l'historique des commandes en mémoire et les anciennes
 commandes sont prêtes à être réévaluées.
 
+Ajouter la ligne suivante dans le fichier ~/.emacs permet d'adapter
+directement la largeur de l'affichage de mupad à l'écran d'emacs.
+
+  (add-hook 'mupad-run-mode-hook 'mupad-bus-adapt-textwidth)
+
+
 II.b. Utiliser mupad
 --------------------
 

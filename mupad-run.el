@@ -464,7 +464,7 @@ Available special keys:
       (when (eq major-mode 'mupad-run-mode)
 ; kill-process est superflu car il attaché au tampon
         (kill-buffer (current-buffer))
-        (sleep-for 0.1)
+;        (sleep-for 0.1)
         (setq mupad-run-process nil)
         (setq bfl nil))))))
 ;;
@@ -484,9 +484,8 @@ Available special keys:
       (setq mupad-run-hist-commands brc)
       (insert-buffer br1)
       (kill-buffer br1)
-      (goto-char (point-max))
-      (sleep-for 0.2)
-      (recenter -1))))
+      (goto-char (point-max)))))
+;      (sleep-for 0.2))))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -595,7 +594,7 @@ Available special keys:
 (defun mupad-run-filter (proc str) 
   (let 
     ((output-index 0) output-type output-str brt (inhibit-read-only t)
-     (brc (current-buffer)) (brb (process-buffer proc)))
+     (brc (current-buffer)) (brb (process-buffer proc)) brp)
      (set-buffer brb)
      (setq mupad-run-output (concat mupad-run-output str))
 ; tant-qu'il y a des données complètes à traiter, le faire
@@ -634,7 +633,7 @@ Available special keys:
         ((eq brt 32) (mupad-run-output-completion output-str))
         ((eq brt 33) (mupad-run-output-end-comp output-str))
 ; Début des modifications NT 04/11/2002 
-;  modifications for the debugger
+; modifications for the debugger
         ((eq brt 64)) ; Initialize debugger
         ((eq brt 57)) ; Quit debugger
         ((eq brt 61) ; output for the debugger log window
@@ -650,8 +649,7 @@ Available special keys:
 	       ((file (match-string 1 output-str))
 		(line (string-to-number (match-string 2 output-str))))
 	     (setq gud-comint-buffer (current-buffer))
-	     (gud-display-line file line)
-	     )))
+	     (gud-display-line file line))))
         ((eq brt 62) 
 ; kernel has stopped and waits for the next debugger command (see below)
            (setq mupad-run-prompt output-str)
@@ -676,7 +674,12 @@ Available special keys:
     (mupad-run-from-todo-to-output))
 ; raccourcissement de la chaîne à traiter à la fin de la boucle 
   (setq mupad-run-output (substring mupad-run-output output-index))
-  (set-buffer brc)))
+  (when (eq brc brb)
+    (setq brp (point))
+    (goto-char (point-max))
+    (recenter -1)
+    (goto-char brp))
+  (set-buffer brc))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -1011,6 +1014,7 @@ Available special keys:
         (setq br1 
           (or (next-single-property-change mupad-run-todo 'item) (point-max)))
         (setq br2 (buffer-substring-no-properties mupad-run-todo (1- br1)))
+ (message br2)
 ;        (process-send-string mupad-run-process 
 ;          (concat "\006\001" br2 "\007\n"))
 ;        (setq mupad-run-state 'running)
@@ -1085,10 +1089,12 @@ Available special keys:
 	  (t
 	   (error (concat "this point should never be reached"))
 	   nil)))
-	(if mupad-run-rawcommand
+	(when mupad-run-rawcommand
 	    (process-send-string
 	     mupad-run-process
-	     (concat "\006" mupad-run-rawcommand "\007\n")))
+	     (concat "\006" mupad-run-rawcommand "\007\n"))
+           (setq mupad-run-state 'running)
+           (setq mupad-run-rawcommand nil))
 	;; NT: end debugger code
         (delete-region mupad-run-todo br1)
         (setq br3 (1- (marker-position mupad-run-todo)))
