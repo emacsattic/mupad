@@ -135,7 +135,6 @@
     mupad-run-output mupad-run-state mupad-run-time-start 
     mupad-run-hist-commands mupad-run-question-before-kill mupad-run-debug 
     mupad-run-save-buffer mupad-run-comp-begin mupad-run-prompt
-    mupad-run-arrow-behaviour
     mupad-run-rawcommand mupad-run-debugger-file mupad-run-debugger-line)))
 ;;
 (defvar mupad-run-process nil)
@@ -533,13 +532,14 @@ Available special keys:
              mupad-run-face-for-emacs   mupad-run-face-prompt
              mupad-run-face-call-system mupad-run-face-system 
              mupad-run-face-completion  mupad-run-face-error
-             mupad-run-face-result-flag      mupad-run-face-local-prompt-flag 
+             mupad-run-face-result-flag    mupad-run-face-local-prompt-flag 
              mupad-run-face-for-emacs-flag   mupad-run-face-prompt-flag
              mupad-run-face-call-system-flag mupad-run-face-system-flag
              mupad-run-face-completion-flag  mupad-run-face-error-flag))
            (delete-region (point) br2))
-        ((eq br1 'mupad-run-face-last-input) 
-            (goto-char br2))
+         ((get-text-property (point) 'not-save)
+           (delete-region (point) (1+ br2)))
+;        ((eq br1 'mupad-run-face-last-input) (goto-char br2))
         (t (goto-char br2))))
   (set-text-properties (point-min) (point-max) nil)
   (when (and (> (point) 1)(not (eq (char-before (point)) ?\n))) (insert "\n"))
@@ -618,12 +618,12 @@ Available special keys:
         ((or (eq brt 2)   ; output
 	     (eq brt 61)) ; NT: debugger output MPRCmdb_output
           (mupad-run-print output-str 
-            'mupad-run-face-result (marker-position mupad-run-todo) brt))
+            'mupad-run-face-result (marker-position mupad-run-todo) brt nil))
         ((eq brt 13) ; prompt 
            (setq mupad-run-prompt output-str)
            (set-marker mupad-run-last-prompt (1- mupad-run-todo))
            (mupad-run-print (concat output-str "\n")
-             'mupad-run-face-prompt (marker-position mupad-run-todo) brt)
+             'mupad-run-face-prompt (marker-position mupad-run-todo) brt nil)
            (set-marker mupad-run-last-prompt (1+ mupad-run-last-prompt))
            (setq mupad-run-state 'wait-input))
         ((or (eq brt 9)   ; error message
@@ -631,7 +631,7 @@ Available special keys:
           (put-text-property mupad-run-last-prompt (1+ mupad-run-last-prompt) 
               'to-insert "///--- Erreur dans ce bloc\n")
           (mupad-run-print output-str 
-              'mupad-run-face-error (marker-position mupad-run-todo) brt)
+              'mupad-run-face-error (marker-position mupad-run-todo) brt nil)
           (put-text-property (1- mupad-run-todo) mupad-run-todo  
               'to-insert "///--- Fin du bloc avec une erreur\n"))
         ((eq brt 3) (mupad-run-call-system output-str)) ; system-call
@@ -663,10 +663,9 @@ Available special keys:
 	 (setq mupad-run-prompt output-str)
 	 (set-marker mupad-run-last-prompt (1- mupad-run-todo))
 	 (mupad-run-print (concat output-str "\n")
-	  'mupad-run-face-prompt (marker-position mupad-run-todo) brt)
+	  'mupad-run-face-prompt (marker-position mupad-run-todo) brt nil)
 	 (set-marker mupad-run-last-prompt (1+ mupad-run-last-prompt))
-	 (setq mupad-run-state 'wait-debugger-input)
-	 )
+	 (setq mupad-run-state 'wait-debugger-input))
 ; We ignore all begin and end tags, and a few others
 	((memq brt '(36	             ; MPRCmdb_disp_list_begin
 		     37		     ; MPRCmdb_disp_list_end
@@ -681,9 +680,10 @@ Available special keys:
 ; Fin des modification NT 04/11/2002
         (t  
           (mupad-run-print 
-           (concat "\n [" (number-to-string (car (cddr output-type))) 
-                   "] : " output-str "\n")
-            'mupad-run-face-for-emacs (marker-position mupad-run-todo) brt)))
+            (concat "\n [" (number-to-string (car (cddr output-type))) 
+                    "] : " output-str "\n")
+            'mupad-run-face-for-emacs (marker-position mupad-run-todo) 
+            brt nil)))
     (setq output-index (1+ (cadr output-type))))
   (when 
     (and 
@@ -732,7 +732,7 @@ Available special keys:
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
-(defun mupad-run-print (str aspect pos type)
+(defun mupad-run-print (str aspect pos type ajout)
   (save-excursion 
     (unless (eq type mupad-run-last-type)
       (setq mupad-run-itemb (1+ mupad-run-itemb))
@@ -743,7 +743,8 @@ Available special keys:
     (put-text-property pos (point) 'face aspect)
     (put-text-property pos (point) 'rear-nonsticky t)
     (put-text-property pos (point) 'front-sticky t)
-    (put-text-property pos (point) 'read-only t)))
+    (put-text-property pos (point) 'read-only t)
+    (add-text-properties pos (point) ajout)))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -816,7 +817,7 @@ Available special keys:
          (setq br1 (marker-position mupad-run-last-prompt))
          (mupad-run-print br 
            'mupad-run-face-completion 
-           (marker-position mupad-run-last-prompt) 'comp)
+           (marker-position mupad-run-last-prompt) 'comp nil)
          (mupad-run-move-flag-up (marker-position mupad-run-last-prompt))
          (setq mupad-run-itemb (1+ mupad-run-itemb))
          (put-text-property br1 mupad-run-last-prompt 'item mupad-run-itemb)
@@ -1015,7 +1016,7 @@ Available special keys:
             (setq br nil)))
 ; la première commande de la zone todo
         (mupad-run-print (concat mupad-run-prompt "\n") 
-          'mupad-run-face-prompt (point) 'cmd)
+          'mupad-run-face-prompt (point) 'cmd nil)
         (set-marker mupad-run-last-prompt 
           (- (point) (length mupad-run-prompt) 1)))
 ; mettre à jour l'affichage si envoi d'une commande 
@@ -1037,10 +1038,10 @@ Available special keys:
                (goto-char br2) 
                (insert " ;")
                (setq br1 (+ br1 2)))
-            (setq br2 (buffer-substring-no-properties mupad-run-todo (1- br1)))
+            (setq br2 (buffer-substring mupad-run-todo (1- br1)))
             (setq mupad-run-rawcommand (list 1 br2)))
           ((eq mupad-run-state 'wait-debugger-input) ; Debugger input
-            (setq br2 (buffer-substring-no-properties mupad-run-todo (1- br1)))
+            (setq br2 (buffer-substring mupad-run-todo (1- br1)))
             (setq mupad-run-rawcommand 
               (mupad-run-from-todo-to-output-debug br2))))
 	(when mupad-run-rawcommand
@@ -1054,12 +1055,14 @@ Available special keys:
 		   (string (car mupad-run-rawcommand))
 		   (nth 1 mupad-run-rawcommand)
 		   "\007\n"))
+          (setq br mupad-run-state)
 	  (setq mupad-run-state 'running))
         (delete-region mupad-run-todo br1)
         (setq br3 (1- (marker-position mupad-run-todo)))
         (setq brp (- br3 (length mupad-run-prompt)))
-        (mupad-run-print (concat br2) 
-          'mupad-run-face-last-input (1- mupad-run-todo) 'cmd)
+        (mupad-run-print br2
+          'mupad-run-face-last-input (1- mupad-run-todo) 'cmd 
+          (and (eq br 'wait-debugger-input) '(not-save debug-command)))
         (goto-char br3)
         (forward-line)
         (while (< (point) mupad-run-todo)
@@ -1199,7 +1202,8 @@ Available special keys:
   (cond 
     ((>= (point) (marker-position mupad-run-edit))
       (mupad-run-from-edit-to-todo)
-      (if (memq mupad-run-state '(wait-input wait-debugger-input)) ; NT 04/11/2002
+; NT 04/11/2002
+      (if (memq mupad-run-state '(wait-input wait-debugger-input)) 
         (mupad-run-from-todo-to-output)))
     ((or 
       (memq (get-text-property (point) 'face)
@@ -1287,7 +1291,8 @@ Available special keys:
   (let (br brp brs)
     (when (eq (mod mupad-run-system-trace 2) 1)
         (mupad-run-print (concat str "\n")
-          'mupad-run-face-call-system (marker-position mupad-run-todo) 'sys))
+          'mupad-run-face-call-system (marker-position mupad-run-todo) 
+          'sys nil))
     (setq br 0)  
     (while (and (< br (length str)) (/= (aref str br) ? )) (setq br (1+ br)))
     (setq brs (member (substring str 0 br) mupad-run-system-exception))
@@ -1463,8 +1468,9 @@ Available special keys:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 (defun mupad-run-store-current-command (str)
-  (add-head str mupad-run-hist-commands)
-  (aset mupad-run-hist-commands 2 'head))
+  (when (>= (length str) 3)
+    (add-head str mupad-run-hist-commands)
+    (aset mupad-run-hist-commands 2 'head)))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
