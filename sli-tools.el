@@ -1565,7 +1565,8 @@ sli-constructor-keys."
             (while (and (<= (point) p);(princ (list "sli-move-a-bit-before" (point)))
                         (posix-search-forward sli-all-keys-regexp nil t))); we have gone too far.
             (sli-anchored-posix-search-backward sli-all-keys-regexp nil 1))
-      (widen)))          (print (list p (point)))
+	(widen)))
+    (when sli-verbose (print (list p (point))))
     (if (> (point) p) (progn (goto-char p) nil) t)))
 
 (defun sli-skip-to-beginning-of-keyword nil
