@@ -4,6 +4,9 @@
 
 (provide 'mupad-bus)
 
+(defvar mupad-bus-my-mupad-run-process nil
+"The process started from mupad script.")
+
 (defsubst name-extension (filename)
   "Returns the extension suffix of filename, if any."
   (if (> (length filename) (length (file-name-sans-extension filename)))
@@ -89,6 +92,7 @@ of \\([a-zA-Z_0-9]\\|::\\). Returns point."
   ; in case of a new process, start mode and adapt textwidth
     (unless mupad-run-process
       (mupad-run-mode)
+      (setq mupad-bus-my-mupad-run-process mupad-run-process)
       (mupad-bus-adapt-textwidth)))
 
 (defun mupad-bus-start nil

@@ -238,7 +238,7 @@ simply exchange both strings in this definition."
 (defvar mupad-separators '(";" ":" ",")
 "See `sli-separators'.")
 
-(defcustom mupad-fixed-keys-alist nil;'(("proc" . mupad-indent-level))
+(defcustom mupad-fixed-keys-alist (("proc" . mupad-indent-level))
 "See `sli-fixed-keys-alist'."
 :type '(repeat (cons string sexp))
 :initialize 'custom-initialize-default
@@ -481,11 +481,6 @@ by a carriage return in mupad-mode."
   (define-key map "\C-i"     'mupad-tab)
   (setq mupad-mode-map map)
   (mupad-toggle-electric-behavior 'mupad-auto-indent mupad-auto-indent)))
-
-(defvar mupad-motion-opposition-alist
-  '((mupad-history-recall-previous-next . (mupad-history-recall-previous  mupad-history-recall-next))
-    (previous-next-line . (previous-line next-line))
-    (mupad-previous-next-command . (mupad-previous-command mupad-next-command))))
 
 (defvar mupad-mode-syntax-table nil
   "Syntax table in use in mupad-mode buffers.")
@@ -3128,10 +3123,10 @@ and source-file directory for your debugger."
 (defun mupad-environment-menu nil
   (list
    (list "Environment"
-	["Set DIGITS..." mupad-bus-set-digits :active (buffer-live-p "*MuPAD*")]
-	["Adapt TEXTWIDTH" mupad-bus-adapt-textwidth :active (buffer-live-p "*MuPAD*")
+	["Set DIGITS..." mupad-bus-set-digits :active (processp mupad-bus-my-mupad-run-process)]
+	["Adapt TEXTWIDTH" mupad-bus-adapt-textwidth :active (processp mupad-bus-my-mupad-run-process)
 	 :help "Set the textwidth of the mupad process to the actual width of your window"]
-	["PrettyPrint switch" mupad-bus-prettyprint-switch :active t
+	["PrettyPrint switch" mupad-bus-prettyprint-switch :active (processp mupad-bus-my-mupad-run-process)
          :help "Toggle the value of PRETTYPRINT"]
 	"--------------------"
 	["Exchange Keys" mupad-toggle :active t :help "Exchange bindings of RET/M-RET" ]

@@ -497,13 +497,13 @@ Available special keys:
 (defun mupad-run-before-kill () 
   (when (eq major-mode 'mupad-run-mode)
     (switch-to-buffer (current-buffer))
-    (if (yes-or-no-p "This mupad-run buffer will be killed, save it ? ")
+    (unless (yes-or-no-p "Mupad-run buffer not saved. Kill anyway ? ")
       (mupad-run-save))
     (if 
-      (and 
-        (processp mupad-run-process) 
-        (eq (process-status mupad-run-process) 'run))
-      (kill-process mupad-run-process))
+	(and 
+	 (processp mupad-run-process) 
+	 (eq (process-status mupad-run-process) 'run))
+	(kill-process mupad-run-process))
     (setq mupad-run-process nil)
     (sleep-for 0.1))
   t)
@@ -1595,7 +1595,9 @@ Available special keys:
           (processp mupad-run-process)
           :help 
 "Set the textwidth of the mupad process to the actual width of your window"]
-        "--------------------"
+        ["PrettyPrint switch" mupad-bus-prettyprint-switch :active (processp mupad-run-process)
+         :help "Toggle the value of PRETTYPRINT"]
+	"--------------------"
         ["Customize" mupad-run-customize-group :active t 
           :key-sequence nil])))))
 
