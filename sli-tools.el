@@ -44,7 +44,7 @@
 
 ;; We use "" and  \" for strings.
 
-(defvar sli-verbose nil "A true value gives (debugging) infos")
+(defvar sli-verbose t "A true value gives (debugging) infos")
 
 (defvar sli-structures nil
   "List of lists. Each item is a vector or a list which we call a STRUCTURE
@@ -453,6 +453,7 @@ They *should be* soft or strong keys.")
    ))
 
 (defun sli-common-pointp (l1 l2)
+  "t if l1 and l2 have a common element. Test is done through member."
   (let ((ok nil))
     (mapcar (lambda (c) (setq ok (or ok (member c l1)))) l2)
     ok))
@@ -1162,6 +1163,21 @@ if PT is within a multiline-comment."
                 (or
                  (sli-find-matching-key start (sli-get-head-from-end word) (sli-get-relevant word))
                  (point-min)))))
+            ((sli-special-head-headp word) ;; special heads that can be heads
+	     (when sli-verbose
+	       (princ "\n")
+	       (princ
+		(list "(sli-get-corresponding-key) Found a special head that could be a head: "
+		      word "...")))
+	     (if (sli-is-a-special-head (point) word)
+		 ;; acts like a special head:
+		 (unless (or (sli-separator-directly-afterp
+			      pt (cdr (assoc word sli-special-head-alist)))
+			     (sli-in-one-line-comment))
+		   (setq foundp t))
+	       ;; acts like a head:
+	       (when sli-verbose (princ "\n((sli-get-corresponding-key) ... and is indeed one !)"))
+	       (setq foundp (member word whatwewant))))
             ((member word sli-special-head-keys)
              (unless (or (sli-separator-directly-afterp
                           pt (cdr (assoc word sli-special-head-alist)))
