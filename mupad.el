@@ -1590,8 +1590,8 @@ and source-file directory for your debugger."
         (list
          ["Manual" mupad-start-manual :active t :key-sequence nil]
          ["Info on this mode" mupad-show-mupad-info :active t :key-sequence nil]
-	 "-----------------------"
-	 ["Help on ..." mupad-bus-get-help :key-sequence nil])
+	 "-----------------------")
+	 ["Help on ..." mupad-help-emacs-ask :key-sequence nil]
         mupad-menu-separator
         
         (list ["Debug..." mupad-mdx :active t :key-sequence nil])

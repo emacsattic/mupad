@@ -672,7 +672,7 @@ things are fontified."
 
 (add-hook 'menu-bar-update-hook
   '(lambda nil
-     (when (memq major-mode '(mupad-shell-mode mupad-mode))
+     (when (eq major-mode 'mupad-mode)
        (easy-menu-change '("MuPAD") "Colors/Completion" (mupad-color-cpl-menu) "Debug..."))))
 
 (add-hook 'mupad-mode-hook

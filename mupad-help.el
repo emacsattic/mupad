@@ -297,6 +297,12 @@ Available special keys:
        (when (not (memq (char-before br2) '(?\: ?\;)))
          (goto-char br2) (insert " ;"))))
 
+;----------------------------------------------------------------------------------------
+(unless (fboundp 'backward-extended-mupadword)  ;  These functions come from mupad.el
+  (defun backward-extended-mupadword nil (backward-word 1)))  ;
+(unless (fboundp 'forward-extended-mupadword)   ;
+  (defun forward-extended-mupadword nil (forward-word 1) (point)))  ;
+;----------------------------------------------------------------------------------------
 (defun mupad-help-completion (question)
   (save-excursion
     (let* 
@@ -330,18 +336,24 @@ Available special keys:
 ;;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 ;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 ;;
-;; initialisation des couleurs
-;;
-(mapcar 
-  (lambda (a-face) (make-face (car a-face)) 
-    (set-face-foreground (car a-face) (cadr a-face)))
-  mupad-help-face)
-;;
-;; construction des bases de données de l'aide en ligne 
-;;    relations entre le nom du fichier dans l'aide en ligne, 
-;;    la position de ce fichier dans l'archive .tar, 
-;;    et le nom de cette même aide dans l'interface multi-fenêtre
-;;
-(mupad-help-init-item-to-file)
-(mupad-help-init-file-to-offset)
-(mupad-help-init-toc-to-item)
+
+(defun mupad-help-init nil
+  ;; initialisation des couleurs
+  ;;
+  (mapcar 
+   (lambda (a-face) (make-face (car a-face)) 
+     (set-face-foreground (car a-face) (cadr a-face)))
+   mupad-help-face)
+  ;;
+  ;; construction des bases de données de l'aide en ligne 
+  ;;    relations entre le nom du fichier dans l'aide en ligne, 
+  ;;    la position de ce fichier dans l'archive .tar, 
+  ;;    et le nom de cette même aide dans l'interface multi-fenêtre
+  ;;
+  (unless mupad-help-item-to-file
+    (mupad-help-init-item-to-file)
+    (mupad-help-init-file-to-offset)
+    (mupad-help-init-toc-to-item)))
+
+(add-hook 'mupad-run-mode-hook 'mupad-help-init)
+(add-hook 'mupad-mode-hook 'mupad-help-init)
