@@ -313,12 +313,11 @@
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
-(defalias 'mupad-run 'run-mupad)
 (defun mupad-run ()
    (interactive)
    (switch-to-buffer "*MuPAD*")
    (mupad-run-mode))
-;;
+(defalias 'mupad-run 'run-mupad)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 (defun mupad-end ()
@@ -1553,25 +1552,29 @@ Available special keys:
       ["other mupad buffer" mupad-bus :active nil]
       (list
         "Send file to MuPAD..."
-        ["Silently"  mupad-bus-file t :active (featurep 'mupad)]
-        ["Openly"    mupad-bus-execute-file t :active (featurep 'mupad)])
+        ["Silently"  mupad-bus-file t :active (featurep 'mupad)
+	   :help "Send a file to the mupad-process by `read(...):'"]
+        ["Openly"    mupad-bus-execute-file t :active (featurep 'mupad)
+	   :help "Send a file to the mupad-process by `read(...);'"])
       "---------------------"
-      ["Manual" mupad-start-manual :active t :key-sequence nil]
+      ["Manual" mupad-start-manual :active t :key-sequence nil :help "Open the hytex manual"]
       ["Info on this mode" mupad-run-show-mupad-info :active t 
         :key-sequence nil]
       "---------------------"
       ["help around cursor" mupad-help-emacs-search :active t]
-      ["help on ..."        mupad-help-emacs-ask :active t]
+      ["help on ..."        mupad-help-emacs-ask :active t :help "Text help on a mupad object"]
       "---------------------"
       ["Restore windows" mupad-restore-wind-conf
-        :active (not (null mupad-registers-list))]
+        :active (not (null mupad-registers-list)
+	       :help "Go to previous window configuration")]
       "----------------------------"
       (list 
         "Environment"
         ["Set DIGITS..." mupad-bus-set-digits :active 
           (processp mupad-run-process)]
         ["Adapt TEXTWIDTH" mupad-bus-adapt-textwidth :active 
-          (processp mupad-run-process)]
+          (processp mupad-run-process)
+	 :help "Set the textwidth of the mupad process to the actual width of your window"]
         "--------------------"
         ["Customize" mupad-run-customize-group :active t 
           :key-sequence nil])))))

@@ -1505,23 +1505,25 @@ and source-file directory for your debugger."
 (defmacro mupad-build-main-syn-menu nil
    (` (list
         (append
-          (list "Shapes"
-            ["Procedure"  mupad-proc :active t]
+          (list "Shapes" :help "Templates"
+            ["Procedure"  mupad-proc :active t :help "A procedure template"]
             ["Describe"   mupad-describe-this-proc :active t :included mupad-javadoc-stylep]
-            ["Local"  mupad-local :active t]
-            ["Else/Elif"  mupad-else :active t]
-            ["While"  mupad-while :active t]
-            ["For"  mupad-for :active t]
+            ["Local"  mupad-local :active t :help "Declare another local variable"]
+            ["Else/Elif"  mupad-else :active t :help "Insert an if/else/elif/end_if block"]
+            ["While"  mupad-while :active t :help "Insert a while/end_while block"]
+            ["For"  mupad-for :active t :help "Insert a for/end_for block"]
             "----------------------"
-            ["Title"  mupad-title :active t]
-            ["Modification"  mupad-modify :active t]
+            ["Title"  mupad-title :active t :help "Insert heading to your program"]
+            ["Modification"  mupad-modify :active t 
+	     :help "Insert the description of modification to the heading to your program"]
             "----------------------"
-            ["Exclude Area" mupad-exclude-area :active mark-active]
-            ["Display Comments" mupad-display-comment :active t]
-            ["/*...*/" mupad-star-comment :active t]
+            ["Exclude Area" mupad-exclude-area :active mark-active :help "Comment out the region"]
+            ["Display Comments" mupad-display-comment :active t :help "Insert a large comment template"]
+            ["/*...*/" mupad-star-comment :active t :help "Insert a comment template"]
             "----------------------"
-            ["Fun to Proc" mupad-fun-to-proc :active t]
-            ["Cleans" mupad-clean-script :active t :key-sequence nil]))
+            ["Fun to Proc" mupad-fun-to-proc :active t :help "Convert fun definitions to proc definitions"]
+            ["Cleans" mupad-clean-script :active t :key-sequence nil
+	     :help "Convert all fun to proc and replace hash comments by c-style comments"]))
         (list "Indentation"
           ["Push Region" mupad-push-region :active mark-active]
           ["Pull Region" mupad-pull-region :active mark-active]
@@ -1533,9 +1535,10 @@ and source-file directory for your debugger."
   (list
    (list "Environment"
 	["Set DIGITS..." mupad-bus-set-digits :active (buffer-live-p "*MuPAD*")]
-	["Adapt TEXTWIDTH" mupad-bus-adapt-textwidth :active (buffer-live-p "*MuPAD*")]
+	["Adapt TEXTWIDTH" mupad-bus-adapt-textwidth :active (buffer-live-p "*MuPAD*")
+	 :help "Set the textwidth of the mupad process to the actual width of your window"]
 	"--------------------"
-	["Exchange Keys" mupad-toggle :active t]
+	["Exchange Keys" mupad-toggle :active t :help "Exchange bindings of RET/M-RET" ]
 	["Customize" mupad-customize-mupad-group :active t :key-sequence nil])))
 
 ;;----------------------------
@@ -1546,32 +1549,37 @@ and source-file directory for your debugger."
   "Menu-bar item MuPAD"
    (` (append
         (list "MuPAD"
-              ["Start MuPAD" mupad-bus-start t :active (featurep 'mupad-run)]
+              ["Start MuPAD" mupad-bus-start :active (featurep 'mupad-run)
+	       :help "Start a mupad process in another buffer"]
          (list
           "Send file to MuPAD..."
-          ["Silently"  mupad-bus-file t :active (featurep 'mupad-run)]
-          ["Openly"    mupad-bus-execute-file t :active (featurep 'mupad-run)])
+          ["Silently"  mupad-bus-file :active (featurep 'mupad-run)
+	   :help "Send a file to the mupad-process by `read(...):'"]
+          ["Openly"    mupad-bus-execute-file :active (featurep 'mupad-run)
+	   :help "Send a file to the mupad-process by `read(...);'"])
          ["Send region to MuPAD"  mupad-bus-region :active (and (featurep 'mupad-run) mark-active)]
          "---------------------")
         (mupad-build-main-syn-menu)
         (list
          (list
           "Shortcuts"
-          ["Further Statements" sli-maid :active t]
-          ["Closes All Statements" sli-tutor :active t])
+          ["Further Statements" sli-maid :active t :help "Strive to continue the present construct"]
+          ["Closes All Statements" sli-tutor :active t]
+	  ["Word completion" mupad-complete :active t :help "Also available via by pressing twice TAB"])
          "---------------------")
         (list
-         ["Manual" mupad-start-manual :active t :key-sequence nil]
+         ["Manual" mupad-start-manual :active t :key-sequence nil :help "Open the hytex manual"]
          ["Info on this mode" mupad-show-mupad-info :active t :key-sequence nil]
 	 "-----------------------"
-	 ["Help on ..." mupad-help-emacs-ask :key-sequence nil])
+	 ["Help on ..." mupad-help-emacs-ask :key-sequence nil :help "Text help on a mupad object"])
         mupad-menu-separator
         
         (list ["Debug..." mupad-mdx :active t :key-sequence nil])
         ;(mupad-build-color-cpl-menu)
         ;"Environment" sub-menu is added here.
         mupad-menu-separator
-        (list ["Restore windows" mupad-restore-wind-conf :active (not (null mupad-registers-list))])
+        (list ["Restore windows" mupad-restore-wind-conf :active (not (null mupad-registers-list))
+	       :help "Go to previous window configuration"])
         (mupad-environment-menu))))
 
 (defun mupad-init-menu-bar ()
