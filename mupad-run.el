@@ -1151,7 +1151,7 @@ Available special keys:
             "Sorry, no completion available for `" 
             mupad-run-comp-begin "' !")))
       (mupad-run-emacs-completion ; éliminer le cas de completion vide
-        (mupad-run-part-comp-br)
+        (setq br (mupad-run-part-comp-br))
         (delete-region (point) (- (point) (length mupad-run-comp-begin)))
         (if (= (point) (marker-position mupad-run-comp-edit))
           (insert br)
@@ -1162,9 +1162,10 @@ Available special keys:
 ;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 ;; 
 (defun mupad-run-part-comp-br ()
-  (with-output-to-temp-buffer "*Completions*"
-    (display-completion-list 
-      (split-string mupad-run-emacs-completion ", ")))
+  (let (br)
+    (with-output-to-temp-buffer "*Completions*"
+      (display-completion-list 
+       (split-string mupad-run-emacs-completion ", ")))
 ; completing-read "prompt" "liste" 
 ;   nil pour un usage normal de la liste ou du tableau des completions
 ;   nil pour permettre une sortie prématurée 
@@ -1172,13 +1173,14 @@ Available special keys:
 ;   variable ou liste de l'historique possible
 ;   sortie par défaut
     (setq br 
-      (condition-case nil
-        (completing-read "? " 
-          (mapcar (lambda (x) (list x)) 
-            (split-string mupad-run-emacs-completion ", "))
-          nil nil mupad-run-comp-begin nil mupad-run-comp-begin)
-        (quit mupad-run-comp-begin)))
-  (mupad-run-delete-windows "*Completions*"))
+	  (condition-case nil
+	      (completing-read "? " 
+	        (mapcar (lambda (x) (list x)) 
+		  (split-string mupad-run-emacs-completion ", "))
+		nil nil mupad-run-comp-begin nil mupad-run-comp-begin)
+	    (quit mupad-run-comp-begin)))
+  (mupad-run-delete-windows "*Completions*")
+  br))
 ;; 
 ;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 ;; 
