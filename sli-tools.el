@@ -1804,8 +1804,8 @@ if PT is within a multiline-comment."
              (if nomrelation sli-all-keys-nomrelations-noseparators-regexp sli-all-keys-regexp)))
       (while (and (not foundp) (not (bobp)))
         (if (sli-anchored-posix-search-backward aregexp nil 1)
-          (progn(princ "\n") 
-        	(princ (list "(sli-get-first-non-end-key). word = " (match-string-no-properties 0) (point)))
+          (progn;(princ "\n") 
+        	;(princ (list "(sli-get-first-non-end-key). word = " (match-string-no-properties 0) (point)))
             (cond
              ((string= (setq word (match-string-no-properties 0)) "\"")
               (if (= (preceding-char) ?\\)
@@ -1876,9 +1876,9 @@ if PT is within a multiline-comment."
              ((sli-member word sli-separators))      ;; momentanous
              (t (setq foundp (not (sli-in-one-line-comment))))))
           ))
-          (princ "\n")
-          (princ (list "Out of sli-get-first-non-end-key with "
-          		   (if foundp (cons word (point)) nil) accessible-separator))
+          ;(princ "\n")
+          ;(princ (list "Out of sli-get-first-non-end-key with "
+          ;		   (if foundp (cons word (point)) nil) accessible-separator))
       (if foundp (cons word (point)) nil))))
 
 
