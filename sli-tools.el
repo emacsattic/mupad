@@ -44,7 +44,7 @@
 
 ;; We use "" and  \" for strings.
 
-(defvar sli-verbose t "A true value gives (debugging) infos")
+(defvar sli-verbose nil "A true value gives (debugging) infos")
 
 (defvar sli-structures nil
   "List of lists. Each item is a vector or a list which we call a STRUCTURE
@@ -65,10 +65,11 @@ The STRONG-STRING is aligned on its 'head' and INDENT-STRONG is used after
 that, with respect to the STRONG-STRING. Finally the END-STRING is aligned
 on the previous STRONG-STRING (the 'heredity principle'). If you want to
 change this alignement, use `sli-shift-alist' below.
-Note that all INDENT can be either intergers or a cons pair whose first
-element is the symbol 'absolute and the second one is an integer:
-it means that the indentation is not relative but absolute with
-respect to the left margin. It applies also to the next strong/end key.
+Note that an INDENT-* value can be either an integer or a cons pair
+whose first element is the symbol 'absolute and the second one is an
+integer: it means that the indentation is not relative but absolute
+with respect to the left margin. It applies also to the next
+strong/end key.
 In this construct, you can also use
 [SPECIAL-HEAD-STRING special-head INDENT-SPECIAL-HEAD SEPARATOR]
 This key is closed by SEPARATOR which belongs to `sli-separators'
@@ -106,10 +107,11 @@ the same throughout. Note that longest match is always taken, so that
 if 'while(' is a head (like in gp) and '(' is also a head (almost everywhere),
 indentation after 'while(' is the one it should. Same applies for the
 two constructs '%if' and 'if' in mupad.
-Concerning HEAD-STRINGs, all starting heads are to be distincts, but inside
-a construct, a usually head can be used as a special head. The typical case is
-'domain' which is normally a head but can be used like a special head inside
-a 'category' statement.
+
+Concerning HEAD-STRINGs, all starting heads are to be distincts, but
+inside a construct, an existing head can be used as a special
+head. The typical case in MuPAD is 'category' which is normally a head
+but can be used like a special head inside a 'domain' statement.
 
 Cdr's are to be evaled.
 
