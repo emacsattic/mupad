@@ -197,7 +197,7 @@ See `mupad-describe-this-proc' and `mupad-user-mail-address'."
      ["begin"    strong mupad-indent-level]
      ["end_proc" end])
     (["category" head mupad-domain-indent]
-     (["domain" special-head 10 ";"])
+     (["category" special-head 10 ";"])
      (["axiom" special-head 10 ";"])
      ["begin" strong mupad-domain-indent] ; should be the same as above !!
      ["end_category" end])
