@@ -116,12 +116,36 @@ should be present."
   "Nombre de commandes dans l'historique"
   :type 'integer :group 'mupad-run)
 
-(defvar mupad-run-system-trace 3) 
-;; 0 - n'affiche ni les commandes envoyées au système ni les résultats
-;; 1 - affiche les commandes sans les résultats 
-;; 2 - affiche les résultats sans les commandes et bloque la saisie
-;; 3 - affiche les commandes et les résultats, et bloque la saisie
-;;
+(defcustom mupad-run-mode-hook-before nil
+  "Hook for mupad-mode. Read early by mupad-mode."
+  :type 'hook :group 'mupad-run)
+
+(defcustom mupad-run-mode-hook nil
+  "Hook for mupad-mode. Read last by mupad-mode."
+  :options '(mupad-bus-adapt-textwidth)
+  :type 'hook :group 'mupad-run)
+
+(defun mupad-run-set-system-trace (sym val)
+  (set sym val)
+  (save-excursion
+    (mapcar
+     (lambda (buf)
+       (set-buffer buf)
+       (when (eq major-mode 'mupad-run-mode)
+	 (set sym val)))
+     (buffer-list))))
+
+(defcustom mupad-run-system-trace 3
+  "Mainly intended for debugging purposes.
+0 : Do not print commands send to system nor the answers
+1 : Print commands send to system but not the answers
+2 : Do not print commands send to system but the answers
+3 : Print commands send to system and the answers"
+  :type '(choice (const 0) (const 1) (const 2) (const 3))
+  :initialize 'custom-initialize-default
+  :set 'mupad-run-set-system-trace
+  :group 'mupad-run)
+
 (defvar mupad-run-system-exception '("vcam"))
 ;; les programmes appelés par mupad dont le nom est dans la liste 
 ;; mupad-run-system-exception sont exécutés en tâche de fond si la 
