@@ -412,6 +412,12 @@ should be present."
     (define-key map [(control return)] (function mupad-run-creturn))
     (define-key map [(control up)] (function mupad-run-previous-history))
     (define-key map [(control down)] (function mupad-run-next-history))
+
+    ;; Dans eshell et erc (Emacs Shell et Emacs IRC Client) les clés
+    ;; M-p et M-n sont pour l'historique
+    (define-key map [(meta p)] (function mupad-run-previous-history))
+    (define-key map [(meta n)] (function mupad-run-next-history))
+    
     (define-key map [(control prior)] 
       (function mupad-run-previous-history-search))
     (define-key map [(control next)] (function mupad-run-next-history-search))
@@ -431,10 +437,13 @@ should be present."
     (define-key map [(control ?c) ?0]  (function mupad-run-reset))
     (define-key map [(control ?c) ?1]  
       (function mupad-run-insert-last-session))
-    (define-key map [f5] (function mupad-help-emacs-search))
+    
+; Les clés F5 - F9 sont reservé à l'utilisateur
+    
+;    (define-key map [f5] (function mupad-help-emacs-search))
     (define-key map [(control ?c) (control ?h)] 
       (function mupad-help-emacs-search))
-    (define-key map [f6] (function mupad-help-emacs-ask))
+;    (define-key map [f6] (function mupad-help-emacs-ask))
     (define-key map [(control ?c) (control ?i)] 
       (function mupad-help-emacs-ask))
     (define-key map [(control ?y)] (function mupad-run-yank))
