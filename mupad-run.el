@@ -417,7 +417,7 @@ Available special keys:
               '(lambda nil
                  (when (eq major-mode 'mupad-mode)
                    (easy-menu-add-item MuPAD-menu-map nil
-                                       ["quit"   mupad-run-end]
+                                       ["quit"   mupad-end]
                                        "Send file to MuPAD..."))))
 ; configuration du mode majeur et évaluation du hook
     (setq major-mode 'mupad-run-mode) 
