@@ -231,7 +231,7 @@ See `mupad-describe-this-proc' and `mupad-user-mail-address'."
      ["begin" strong mupad-domain-indent] ; should be the same as above !!
      ["end_axiom" end]
      ["end" end])
-    (["repeat"     head 7]
+    (["repeat"     head mupad-indent-level]
      ["until"      strong 6]
      ["end_repeat" end]
      ["end" end])
@@ -259,6 +259,7 @@ See `mupad-describe-this-proc' and `mupad-user-mail-address'."
     (["or" math-relation 3])
     (["in" math-relation 3])
     (["::" constructor 3])
+    (["()" constructor 3])
     )
 "See `sli-structures'.
 If you want C-c C-e to add \"end\" instead of \"end_for\" for instance,
