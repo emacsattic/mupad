@@ -8,13 +8,26 @@ dnl *
 dnl * Same as AC_SUBST(VAR), but tricks automake into not defining it
 dnl * in the Makefiles.
 dnl * Usefull for variables containing weird characters as newlines
-dnl * With autoconf 2.52, it does not work properly when called
+dnl *
+dnl * automake >= 1.6 asks directly to autoconf which variables are AC_SUBST.
+dnl * So just hiding it below an alias does not work anymore.
+dnl * The definition below is copied from the definition of AC_SUBST in
+dnl * /usr/share/autoconf/autoconf/general.m4, autoconf 2.57
+dnl * WARNING: that's probably not robust w.r.t. future changes in autoconf.
+dnl *
+dnl * Old comment: with autoconf 2.52, it does not work properly when called
 dnl * directly in aclocal.m4.
 
-AC_DEFUN([PKG_SUBST_NO_DEF],
-[
-	AC_SUBST($1)
-])
+m4_define([PKG_SUBST_NO_DEF],
+[m4_ifvaln([$2], [$1=$2])[]dnl
+m4_append_uniq([_AC_SUBST_VARS], [$1], [ ])dnl
+])# PKG_SUBST_NO_DEF
+
+dnl Former definition:
+dnl AC_DEFUN([PKG_SUBST_NO_DEF],
+dnl [
+dnl 	AC_SUBST($1)
+dnl ])
 
 dnl
 dnl * Mandatory macros
