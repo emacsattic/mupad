@@ -298,7 +298,7 @@ should be present."
   (let ((br (intern (concat (symbol-name x) "-flag"))))
     (make-face br)
     (set-face-foreground br (face-foreground x))
-    (set-face-background br (face-foreground 'mupad-run-face-default-flag))))
+    (set-face-background br (face-background 'mupad-run-face-default-flag))))
 
 (mapcar 'mupad-run-create-face-flag 
   '(mupad-run-face-result     mupad-run-face-prompt mupad-run-face-for-emacs 
@@ -336,6 +336,7 @@ should be present."
     (define-key map [f6] (function mupad-help-emacs-ask))
     (define-key map "\C-c\C-i" (function mupad-help-emacs-ask))
     (define-key map "\C-y" (function mupad-run-yank))
+    (define-key map [mouse-2] (function mupad-run-yank-at-click))
     (setq mupad-run-mode-map map)))
 
 (when (and (not mupad-run-mode-map) xemacsp)
@@ -366,6 +367,7 @@ should be present."
     (define-key map [f6] (function mupad-help-emacs-ask))
     (define-key map "\C-c\C-i" (function mupad-help-emacs-ask))
     (define-key map "\C-y" (function mupad-run-yank))
+    (define-key map [mouse-2] (function mupad-run-yank-at-click))
     (setq mupad-run-mode-map map)))
 
 (eval-and-compile
@@ -2131,7 +2133,8 @@ Available special keys:
               ((and
                   (memq 
                     (get-text-property br1 'mupad-run-char-prop)
-                    '(mupad-run-face-prompt mupad-run-face-local-prompt))
+                    '(mupad-run-face-prompt mupad-run-face-local-prompt 
+                      mupad-run-face-prompt-flag))
                   (not (eq (char-after) ?\n)))
                 (delete-char 1)
                 (setq br2 (1- br2)))
@@ -2167,6 +2170,15 @@ Available special keys:
             (put-text-property (point) (1+ (point)) 'front-sticky nil)
             (put-text-property (point) (1+ (point)) 'read-only t)
             (forward-char)))))))
+
+(defun mupad-run-yank-at-click (click arg)
+  (interactive "e\nP")
+; Give temporary modes such as isearch a chance to turn off.
+  (run-hooks 'mouse-leave-buffer-hook)
+  (or mouse-yank-at-point (mouse-set-point click))
+  (setq this-command 'yank)
+  (setq mouse-selection-click-count 0)
+  (mupad-run-yank arg))
 ;;
 ;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 ;
