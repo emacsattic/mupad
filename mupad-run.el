@@ -1515,7 +1515,7 @@ Available special keys:
         ["Info on this mode" mupad-run-show-mupad-info :active t 
          :key-sequence nil]
         "---------------------"
-        ["Help on ..." mupad-bus-get-help :key-sequence nil]
+        ["Help on ..." mupad-help-emacs-ask :key-sequence nil]
         "--------------------"
         ["Restore windows" mupad-restore-wind-conf
           :active (not (null mupad-registers-list))]

@@ -20,7 +20,7 @@
 (defvar mupad-directory "/usr/local/src/MuPAD/share/"
 "Used for initializing some variables below.")
 
-(defcustom mupad-help-tree (concat mupad-directory "/share/doc/")
+(defcustom mupad-help-tree (concat mupad-directory "doc/")
 "Location of the help files.
 Used to set `mupad-help-file-name-tar' and `mupad-help-file-name-toc'."
 :type 'string :group 'mupad-run)
