@@ -307,21 +307,22 @@
 ;;   un tampon de nom *MuPAD*                               
 ;;   un processus pointé                                 [ mupad-run-process ]
 ;;   l'état du programme mupad (attente ou calcul)         [ mupad-run-state ]
-;;   valeurs possibles: 'beginning 'wait-input 'running 'wait-debug-input
+;;   valeurs possibles: 'beginning 'wait-input 'wait-debugger-input 'running
 ;;   la chaîne de caractères résultat                     [ mupad-run-output ]
 ;;   l'instant de lancement de la dernière commande   [ mupad-run-time-start ]
 ;;   les commandes associées au clavier                 [ mupad-run-mode-map ]
 ;;   un marqueur sur le début des calculs à faire           [ mupad-run-todo ]
 ;;   un marqueur sur le début de la zone éditable           [ mupad-run-edit ]
 ;;   un marqueur au début du prompt précédent        [ mupad-run-last-prompt ]
-;;   un marqueur où insérer la complétion              [ mupad-run-comp-edit ] 
+;;   un marqueur où insérer la complétion              [ mupad-run-comp-edit ]
 ;;   début du nom dont la complétion est recherchée   [ mupad-run-comp-begin ]
-;;   chaîne du prompt                                     [ mupad-run-prompt ] 
+;;   chaîne du prompt                                     [ mupad-run-prompt ]
 ;;   un compteur pour séparer les commandes en attente     [ mupad-run-itema ]
 ;;   un compteur pour séparer les sorties de mupad         [ mupad-run-itemb ]
-;;   les attributs des polices de caractères                [ mupad-run-face ] 
+;;   les attributs des polices de caractères                [ mupad-run-face ]
 ;;   l'historique des commandes                        [ mupad-hist-commands ]
 ;;   la dernière commande d'entrée envoyée à mupad    [ mupad-run-rawcommand ]
+;;   affichage de messages de debug                          [mupad-run-debug]
 ;;
 ;; fonctions principales : 
 ;;   lancement du mode mupad-run dans un nouveau tampon          [ mupad-run ]
@@ -407,8 +408,11 @@ Available special keys:
         mupad-run-itema mupad-run-itemb mupad-run-last-type 
         mupad-run-time-start mupad-run-comp-begin mupad-run-prompt
         mupad-run-question-before-kill
-; NT 04/11/2002 added for the debugger 
-        mupad-run-rawcommand gud-comint-buffer gud-find-file))
+; NT 04/11/2002 added for the debugger
+	mupad-run-debug
+        mupad-run-rawcommand
+	mupad-run-debugger-file	mupad-run-debugger-line
+	gud-comint-buffer gud-find-file))
     (setq mupad-run-edit (make-marker))
     (set-marker mupad-run-edit (point))
     (setq mupad-run-todo (make-marker))
@@ -444,8 +448,15 @@ Available special keys:
     (setq major-mode 'mupad-run-mode) 
     (setq mode-name "MuPAD-run")
     (setq mupad-run-question-before-kill t)
-; last raw command sent to MuPAD
+; affichage de messages de debug
+    (setq mupad-run-debug nil)
+; the last raw command sent to MuPAD:
+;   nil or a list (message-type message) like (1 "x+1")
     (setq mupad-run-rawcommand nil)
+; the file position in the debugger: nil or a string
+    (setq mupad-run-debugger-file nil)
+; the file position in the debugger: nil or an int
+    (setq mupad-run-debugger-line nil)
 ; two variables to trick gud into thinking that this buffer is a
 ; normal gud-buffer so that we can use gud-display-line
     (setq gud-comint-buffer (current-buffer))
@@ -603,9 +614,13 @@ Available special keys:
         (substring 
           mupad-run-output (+ 2 (car output-type)) (cadr output-type)))
       (setq brt (car (cddr output-type)))
+      (if mupad-run-debug
+	  (message (concat "MuPAD output: [" (number-to-string brt) "] "
+			   output-str)))
 ; traiter les différents types de données renvoyées par mupad
       (cond
-        ((eq brt 2) ; output
+        ((or (eq brt 2)   ; output
+	     (eq brt 61)) ; NT: debugger output MPRCmdb_output
           (mupad-run-print output-str 
             'mupad-run-face-result (marker-position mupad-run-todo) brt))
         ((eq brt 13) ; prompt 
@@ -615,7 +630,8 @@ Available special keys:
              'mupad-run-face-prompt (marker-position mupad-run-todo) brt)
            (set-marker mupad-run-last-prompt (1+ mupad-run-last-prompt))
            (setq mupad-run-state 'wait-input))
-        ((eq brt 9) ; error message
+        ((or (eq brt 9)   ; error message
+	     (eq brt 63)) ; NT: debugger error message
           (put-text-property mupad-run-last-prompt (1+ mupad-run-last-prompt) 
               'to-insert "///--- Erreur dans ce bloc\n")
           (mupad-run-print output-str 
@@ -633,33 +649,39 @@ Available special keys:
         ((eq brt 32) (mupad-run-output-completion output-str))
         ((eq brt 33) (mupad-run-output-end-comp output-str))
 ; Début des modifications NT 04/11/2002 
-; modifications for the debugger
-        ((eq brt 64)) ; Initialize debugger
-        ((eq brt 57)) ; Quit debugger
-        ((eq brt 61) ; output for the debugger log window
-          (mupad-run-print output-str 
-            'mupad-run-face-result (marker-position mupad-run-todo) brt))
-        ((or (eq brt 34) 
-; information for the debugger frontend to display file at position line no.
+        ((or (eq brt 34)            ; MPRCmdb_file_pos
 ;	     (eq brt 41)
-	     (eq brt 66))
-	 (progn
-	   (string-match "^\\(\\S-+\\)\n\\([0-9]+\\)" output-str)
-	   (let
-	       ((file (match-string 1 output-str))
-		(line (string-to-number (match-string 2 output-str))))
-	     (setq gud-comint-buffer (current-buffer))
-	     (gud-display-line file line))))
-        ((eq brt 62) 
-; kernel has stopped and waits for the next debugger command (see below)
-           (setq mupad-run-prompt output-str)
-           (set-marker mupad-run-last-prompt (1- mupad-run-todo))
-           (mupad-run-print (concat output-str "\n")
-             'mupad-run-face-prompt (marker-position mupad-run-todo) brt)
-           (set-marker mupad-run-last-prompt (1+ mupad-run-last-prompt))
-           (setq mupad-run-state 'wait-debug-input))
-; We ignore all begin and end tags
-	((memq brt '(36 37 42 43 48 49)))
+	     (eq brt 66))           ; MPRCmdb_where
+; debugger -> frontend: display file at position line no.
+	 (string-match "^\\(\\S-+\\)\n\\([0-9]+\\)" output-str)
+	 (let
+	     ((file (match-string 1 output-str))
+	      (line (string-to-number (match-string 2 output-str))))
+	   (setq gud-comint-buffer (current-buffer))
+	   (gud-display-line file line)
+	   (setq mupad-run-debugger-file file)
+	   (setq mupad-run-debugger-line line)
+	   ))
+        ((eq brt 62)
+	 ; kernel has stopped and waits for the next debugger command
+	 (setq mupad-run-prompt output-str)
+	 (set-marker mupad-run-last-prompt (1- mupad-run-todo))
+	 (mupad-run-print (concat output-str "\n")
+	  'mupad-run-face-prompt (marker-position mupad-run-todo) brt)
+	 (set-marker mupad-run-last-prompt (1+ mupad-run-last-prompt))
+	 (setq mupad-run-state 'wait-debugger-input)
+	 )
+; We ignore all begin and end tags, and a few others
+	((memq brt '(36	             ; MPRCmdb_disp_list_begin
+		     37		     ; MPRCmdb_disp_list_end
+		     42		     ; MPRCmdb_proc_list_begin
+		     43		     ; MPRCmdb_proc_list_end
+	             47 	     ; MPRCmdb_bkpt_list
+	             48 	     ; MPRCmdb_bkpt_list_begin
+	             49  	     ; MPRCmdb_bkpt_list_end
+	             57 	     ; MPRCmdb_quit: Quit debugger
+	             64 	     ; MPRCmdb_start: Initialize debugger
+	     )))
 ; Fin des modification NT 04/11/2002
         (t  
           (mupad-run-print 
@@ -670,7 +692,7 @@ Available special keys:
   (when 
     (and 
       (/= (marker-position mupad-run-edit) (marker-position mupad-run-todo))
-      (memq mupad-run-state '(wait-input wait-debug-input)))
+      (memq mupad-run-state '(wait-input wait-debugger-input)))
     (mupad-run-from-todo-to-output))
 ; raccourcissement de la chaîne à traiter à la fin de la boucle 
   (setq mupad-run-output (substring mupad-run-output output-index))
@@ -1014,87 +1036,116 @@ Available special keys:
         (setq br1 
           (or (next-single-property-change mupad-run-todo 'item) (point-max)))
         (setq br2 (buffer-substring-no-properties mupad-run-todo (1- br1)))
- (message br2)
-;        (process-send-string mupad-run-process 
-;          (concat "\006\001" br2 "\007\n"))
-;        (setq mupad-run-state 'running)
 	;; NT 04/11/2002: modifications for the debugger
 	(setq
 	 mupad-run-rawcommand
 	 (cond
-	  ((eq mupad-run-state 'wait-input)	   ; Normal input
-	   (concat "\001" br2))
-	  ((eq mupad-run-state 'wait-debug-input)  ; Debugger input
+	  ((eq mupad-run-state 'wait-input)	     ; Normal input
+	   (list 1 br2))
+	  ((eq mupad-run-state 'wait-debugger-input) ; Debugger input
 	   (cond
-	   ((string= br2 "") mupad-run-rawcommand); Reuse previous command
-	   ((string-match "^\\s-*\\([a-zA-Z]\\)\\s-*\\(.*\\)$" br2)
-	     (setq arguments (match-string 2 br2))
-             (setq command (match-string 1 br2))
-             (cond
-; #define MPRCmdb_disp_list         35 // f -> k : request display list
-; #define MPRCmdb_disp_list_begin   36 // begin tag
-; #define MPRCmdb_disp_list_end     37 // end tag
-	       ((string= command "D")	       	   ; MPRCmdb_disp_set 38
-		(concat (string 38) arguments))    ; set display variable
-	       ((string= command "U")		   ; MPRCmdb_disp_clear 39
-		(concat (string 39) arguments))    ; unset display variable
-					; non standard shortcut in the mupad text debugger:
-	       ((string= command "A") (string 40)) ; MPRCmdb_disp_clearall 40
-		 
-;	       ((string= command "l") (string 41)) ; MPRCmdb_proc_list 41
-; #define MPRCmdb_proc_list_begin   42 // begin tag
-; #define MPRCmdb_proc_list_end     43 // end tag
-	       ((string= command "u") (string 44)) ; MPRCmdb_proc_up 44
-	       ((string= command "d") (string 45)) ; MPRCmdb_proc_down 45
-
-	       ((string= command "b") (string 47)) ; MPRCmdb_bkpt_list 47
-; #define MPRCmdb_bkpt_list_begin   48 // begin tag
-; #define MPRCmdb_bkpt_list_end     49 // end tag
-	       ((string= command "")               ; MPRCmdb_bkpt_set 50
-		(concat (string 50) arguments))
-	       ((string= command "C")	           ; MPRCmdb_clear 51
-		(concat (string 51) arguments))
-	       ((string= command "a") (string 52)) ; MPRCmdb_clearall 52
-	       ((string= command "n") (string 53)) ; MPRCmdb_next 53
-	       ((string= command "s") (string 54)) ; MPRCmdb_step 54
-	       ((string= command "c") (string 55)) ; MPRCmdb_cont 55
-	       ((string= command "e")	           ; MPRCmdb_execute 56
-		(concat (string 56) arguments))
-	       ((string= command "q") (string 57)) ; MPRCmdb_quit 57
-	       ((string= command "p")	           ; MPRCmdb_print 58
-		(concat (string 58) arguments))
-	       ((or (string= command "h")          ; MPRCmdb_help 59
-		    (string= command "?"))
-		(string 59))
-; #define MPRCmdb_status            60 // ???
-	       ((string= command "f") (string 65)) ; MPRCmdb_finish 65
-	       ((string= command "w") (string 66)) ; MPRCmdb_where 66
-	       ((string= command "P")	           ; MPRCmdb_pprint 67
-		(concat (string 67) arguments))
-	       ((string= command "S")	           ; MPRCmdb_stop_at 68
-		(concat (string 68) arguments))
-	       ((string= command "g")	           ; MPRCmdb_goto_proc 69
-		(concat (string 69) arguments))
-		; non standard shortcut in the mupad text debugger:
-	       ((string= command "L")	           ; MPRCmdb_proc_level 70
-		(concat (string 70) arguments))
+	   ((string= br2 "") mupad-run-rawcommand)   ; Reuse previous command
+	   ((string-match "^\\s-*\\([a-zA-Z?]\\)\\(\\s-+\\(.*[^;: 	]\\)\\)?\\s-*[;:]?$" br2)
+	    (let
+		((command (match-string 1 br2))
+		 (args (or (match-string 3 br2) "")))
+	      ; assertion: there is no space or semicolon at the end of args
+	      (cond
+	       ; MPRCmdb_disp_list         35 // f -> k : request display list
+	       ; MPRCmdb_disp_list_begin   36 // begin tag
+	       ; MPRCmdb_disp_list_end     37 // end tag
+	       ; set/unset display variables:
+	       ((string= command "D") (list 38 args)) ; MPRCmdb_disp_set
+	       ((string= command "U") (list 39 args)) ; MPRCmdb_disp_clear
+	       ; A: non standard shortcut in the mupad text debugger
+	       ((string= command "A") (list 40))      ; MPRCmdb_disp_clearall
+;	       ((string= command "l") (list 41))      ; MPRCmdb_proc_list
+	       ; MPRCmdb_proc_list_begin 42
+	       ; MPRCmdb_proc_list_end   43
+	       ((string= command "u") (list 44))      ; MPRCmdb_proc_up
+	       ((string= command "d") (list 45))      ; MPRCmdb_proc_down
+	       ; MPRCmdb_proc_goto 46 // obsolete?  use MPRCmdb_proc_level
+	       ((string= command "b") (list 47))      ; MPRCmdb_bkpt_list
+	       ; MPRCmdb_bkpt_list_begin 48
+	       ; MPRCmdb_bkpt_list_end   49
+	       ; S file line [cond] : Set a breakpoint
+	       ; S [cond]	    : Set a breakpoint at the current position
+	       ; This second form is non standard in the mupad text debugger
+	       ; Question: should we send TRUE when there is no condition?
+	       ((string= command "S")                 ; MPRCmdb_bkpt_set 50
+		(if (string-match
+		     "^\\(\\(\\S-+\\)\\s-+\\([0-9]+\\)\\)\\(\\s-+\\(.+\\)\\)?\\|\\(.+\\)?$"
+		     args)
+		    (let ((file  (or (match-string 2 args)
+				     mupad-run-debugger-file))
+			  (line  (or (match-string 3 args)
+				     (number-to-string mupad-run-debugger-line)))
+			  (condi (or (match-string 5 args)
+				     (match-string 6 args)
+				     "TRUE")))
+		      (list 50 (concat "\n" file "\n" line "\n" condi)))
+		  (message "Usage: S filename line [condition] or S [condition]")
+		  nil))
+	       ; C file line : Clears a breakpoint
+	       ; S           : Clears a breakpoint at the current position
+	       ; This second form is non standard in the mupad text debugger
+	       ((string= command "C")		      ; MPRCmdb_clear
+		(message args)
+		(if (string-match
+		     "^\\(\\(\\S-+\\)\\s-+\\([0-9]+\\)\\)?$"
+		     args)
+		    (let ((file  (or (match-string 2 args)
+				     mupad-run-debugger-file))
+			  (line  (or (match-string 3 args)
+				     (number-to-string mupad-run-debugger-line))))
+		      (list 51 (concat file " " line)))
+		  (message "Usage: C filename line or C")
+		  nil))
+	       ((string= command "a") (list 52))      ; MPRCmdb_clearall
+	       ((string= command "n") (list 53))      ; MPRCmdb_next
+	       ((string= command "s") (list 54))      ; MPRCmdb_step
+	       ((string= command "c") (list 55))      ; MPRCmdb_cont
+	       ((string= command "e") (list 56 args)) ; MPRCmdb_execute
+	       ((string= command "q") (list 57))      ; MPRCmdb_quit
+	       ((string= command "p") (list 58 args)) ; MPRCmdb_print
+	       ((or (string= command "h")
+		    (string= command "?"))             ; MPRCmdb_help
+		(list 59))
+	       ; MPRCmdb_status 60 ???
+	       ((string= command "f") (list 65))      ; MPRCmdb_finish
+	       ((string= command "w") (list 66))      ; MPRCmdb_where
+	       ((string= command "P") (list 67 args)) ; MPRCmdb_pprint
+	       ; MPRCmdb_stop_at 68 (deprecated?)
+	       ((string= command "g") (list 69 args)) ; MPRCmdb_goto_proc
+	       ; non standard shortcut in the mupad text debugger:
+	       ((string= command "L") (list 70 args)) ; MPRCmdb_proc_level
 	       (t
-		(message (concat "unknown debugger command:" br2))
+		(message (concat "Undefined debugger command: \"" command
+				 "\". Try \"h\"."))
 		nil)
 	       ))
-;	     )
+	     )
 	   (t
-	    (message (concat "incorrect debugger command:" command))
+	    (message (concat "Incorrect debugger command: \"" br2
+			     "\". Try \"h\"."))
 	    nil)))
 	  (t
 	   (error (concat "this point should never be reached"))
 	   nil)))
 	(when mupad-run-rawcommand
-	    (process-send-string
-	     mupad-run-process
-	     (concat "\006" mupad-run-rawcommand "\007\n"))
-           (setq mupad-run-state 'running)
-           (setq mupad-run-rawcommand nil))
+	  (if mupad-run-debug
+	      (message (concat "MuPAD input: ["
+			       (number-to-string (car mupad-run-rawcommand))
+			       "] "
+			       (nth 1 mupad-run-rawcommand))))
+	  (process-send-string
+	   mupad-run-process
+	   (concat "\006"
+		   (string (car mupad-run-rawcommand))
+		   (nth 1 mupad-run-rawcommand)
+		   "\007\n"))
+	  (setq mupad-run-state 'running)
+	  )
 	;; NT: end debugger code
         (delete-region mupad-run-todo br1)
         (setq br3 (1- (marker-position mupad-run-todo)))
@@ -1163,7 +1214,7 @@ Available special keys:
   (cond 
     ((>= (point) (marker-position mupad-run-edit))
       (mupad-run-from-edit-to-todo)
-      (if (memq mupad-run-state '(wait-input wait-debug-input)) ; NT 04/11/2002
+      (if (memq mupad-run-state '(wait-input wait-debugger-input)) ; NT 04/11/2002
         (mupad-run-from-todo-to-output)))
     ((or 
       (memq (get-text-property (point) 'face)
@@ -1742,7 +1793,7 @@ Available special keys:
               mupad-run-face-system       mupad-run-face-system-flag  
               mupad-run-face-error        mupad-run-face-error-flag))
        (mupad-run-right))
-       (mupad-run-insert-comment))))) 
+       (mupad-run-insert-comment)))))
 
 (defun mupad-run-insert-comment-br (pt str)  
   (goto-char pt)
