@@ -183,6 +183,33 @@ CLOSING-STATEMENT can be \";\". See `mupad-region' for more information."
   (mupad-bus-visible-command "PRETTYPRINT:=not PRETTYPRINT;" nil))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Functions for the window manager:
+
+(defun mupad-bus-buffer-visiblep (buff)
+  (let ((ans nil))
+    (walk-windows
+     (lambda (win)
+       (setq ans (or ans (eq (window-buffer win) buff))))
+     nil 'visible) ;; on all visible frames
+    ans))
+
+(defun mupad-bus-select-other-window (buff)
+  (if (= (count-windows) 1)
+      ;; If there is only one window containing anything but scratch,
+      ;; split the window in 2, else use this window:
+      (progn (if (not (string= (buffer-name) "*scratch*"));(mupad-pgrmp (window-buffer))
+		 (select-window (split-window-vertically)))
+	     (switch-to-buffer buff))
+    ;; At least two windows exist. Do not create another one
+    ;; and first try to use the help window, else the
+    ;; starting window.
+    (mupad-store-wind-conf)
+    (cond ((get-buffer-window "*MuPAD Help*")
+	   (select-window (get-buffer-window "*MuPAD Help*"))
+	   (switch-to-buffer buff))
+	  (t (switch-to-buffer-other-window buff)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun mupad-bus-window-manager (my-buffer-name option)
 "Takes care of the windows in mupad-mode and mupad-run-mode.
@@ -198,9 +225,11 @@ The variable OPTION is
   -- mupad-remove-help-now-old-config to remove help-window without
                                touching to the other windows.
   -- mupad-show-help.
+  -- gud-start-or-cont.
+  -- gud-end.
   -- nil when it is the end of a call.
 The variable MY-BUFFER-NAME is one of
-\"*MuPAD*\"  \"*MuPAD Help*\". "
+\"*MuPAD*\"  \"*MuPAD Help*\" or a file for the debugger. "
 
   (cond ((and (string= my-buffer-name "*MuPAD*")
               (eq option 'mupad-beginning)
@@ -212,20 +241,7 @@ The variable MY-BUFFER-NAME is one of
               (eq option 'mupad-beginning)
               (not (get-buffer-window "*MuPAD*")))
          ;; We go to *MuPAD* and a window doesn't exist with this buffer.
-         (if (= (count-windows) 1)
-             ;; If there is only one window containing anything but scratch,
-             ;; split the window in 2, else use this window:
-             (progn (if (not (string= (buffer-name) "*scratch*"));(mupad-pgrmp (window-buffer))
-                        (select-window (split-window-vertically)))
-                    (switch-to-buffer "*MuPAD*"))
-             ;; At least two windows exist. Do not create another one
-             ;; and first try to use the help window, else the
-             ;; starting window.
-             (mupad-store-wind-conf)
-             (cond ((get-buffer-window "*MuPAD Help*")
-                    (select-window (get-buffer-window "*MuPAD Help*"))
-                    (switch-to-buffer "*MuPAD*"))
-                   (t (switch-to-buffer-other-window "*MuPAD*")))))
+         (mupad-bus-select-other-window "*MuPAD*"))
 
         ((and (string= my-buffer-name "*MuPAD*")
               (not option)
@@ -246,7 +262,45 @@ The variable MY-BUFFER-NAME is one of
              (remove-text-properties (point-min) (point-max) '(read-only nil))))
          (kill-buffer "*MuPAD*"))
 
-        ((and (get-buffer my-buffer-name)
+        ((eq option 'gud-start-or-cont)
+	 ;; We are in gud stuff
+	 (cond
+	  ;; Either the file my-buffer-name exists and is displayed:
+	  ((and (get-buffer my-buffer-name)
+		(mupad-bus-buffer-visiblep my-buffer-name))
+	   nil)
+	  (t
+	   (save-excursion (mupad-bus-select-other-window my-buffer-name)))))
+	 
+        ((eq option 'gud-end)
+	 ;; We are in gud stuff
+	 (cond
+	  ;; Either the file my-buffer-name exists and is displayed:
+	  ((and (get-buffer my-buffer-name)
+		(mupad-bus-buffer-visiblep my-buffer-name))
+	   nil)
+	  (t
+	   (save-excursion (mupad-bus-select-window my-buffer-name)))))
+	 
+        ((and (eq option 'gud-start)
+              (get-buffer my-buffer-name))
+         ;; We want to exit from debugger.
+         (if (> (count-windows) 1)
+             (delete-windows-on my-buffer-name)
+             ;; Else only one window.
+             (if (string= (buffer-name (window-buffer)) my-buffer-name)
+                 ;; This only window displays my-buffer-name
+                 (let ((next-buffer (mupad-possible-file-name)))
+                      (if next-buffer (switch-to-buffer next-buffer)
+                          ;; Else, don't know what to do !
+                          (mupad-restore-wind-conf)
+                          ))))
+         (with-current-buffer (get-buffer my-buffer-name)
+           (let ((inhibit-read-only t))
+             (remove-text-properties (point-min) (point-max) '(read-only nil))))
+         (kill-buffer my-buffer-name))
+
+	((and (get-buffer my-buffer-name)
               (string= my-buffer-name "*MuPAD Help*")
               (eq option 'mupad-remove-help-now))
          ;; A buffer displaying "*MuPAD Help*" exists.
@@ -336,15 +390,19 @@ else replaces ALIST by the same list minus its last element."
   (or (< (length (eval alist)) abound)
       (set alist (nreverse (cdr (nreverse (eval alist)))))))
 
+(defun mupad-bus-get-next-register nil
+  (if (equal mupad-registers-list nil)
+      0
+    (if (= (car mupad-registers-list)
+	   (1- mupad-max-nb-wind-conf))
+	0 (1+ (car mupad-registers-list)))))
+
 (defun mupad-store-wind-conf nil
   "Add the current window configuration to the pile. If the pile
 has more than  mupad-max-nb-wind-conf items [numbered
 (0,1,...,(1- mupad-max-nb-wind-conf))] then the first item is lost."
   (mupad-skim-list 'mupad-registers-list mupad-max-nb-wind-conf)
-  (let ((next (if (equal mupad-registers-list nil) 0
-                 (if (= (car mupad-registers-list)
-                        (1- mupad-max-nb-wind-conf))
-                  0 (1+ (car mupad-registers-list))))))
+  (let ((next (mupad-bus-get-next-register)))
        (window-configuration-to-register next)
        (setq mupad-registers-list (cons next mupad-registers-list))))
 

@@ -645,8 +645,8 @@ Available special keys:
   (let 
     ((output-index 0) output-type output-str brt (inhibit-read-only t)
      (brc (current-buffer)) (brb (process-buffer proc)) brp)
-     (set-buffer brb)
-     (setq mupad-run-output (concat mupad-run-output str))
+    (set-buffer brb)
+    (setq mupad-run-output (concat mupad-run-output str))
 ; tant-qu'il y a des données complètes à traiter, le faire
     (while (setq output-type (mupad-run-output-complete-data output-index))
       (setq output-str     
@@ -696,6 +696,7 @@ Available special keys:
 	     ((file (match-string 1 output-str))
 	      (line (string-to-number (match-string 2 output-str))))
 	   (setq gud-comint-buffer (current-buffer))
+	   (window-configuration-to-register next)
 	   (gud-display-line file line)
 	   (setq mupad-run-debugger-file file)
 	   (setq mupad-run-debugger-line line)
@@ -2015,8 +2016,8 @@ Available special keys:
         :help "Text help on a mupad object"]
       "---------------------"
       ["Restore windows" mupad-restore-wind-conf
-        :active (not (null mupad-registers-list)
-        :help "Go to previous window configuration")]
+        :active (not (null mupad-registers-list))
+        :help "Go to previous window configuration"]
       "----------------------------"
       (list 
         "Environment"

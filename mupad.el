@@ -336,7 +336,7 @@ after 'end_proc' and so on. See `sli-more-maidp'."
         (fset 'easy-menu-define nil))))
 
 (mupad-setup)
-(eval-when-compile  ;; Carefull !! the shell script toinstall uses strict syntax here.
+(eval-when-compile  ;; Carefull !! the shell script configure uses strict syntax here.
   ; for developpement:
   ;(setq byte-compile-warnings '(free-vars unresolved callargs redefine obsolete))
   ; for users:
