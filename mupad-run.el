@@ -317,7 +317,7 @@
    (interactive)
    (switch-to-buffer "*MuPAD*")
    (mupad-run-mode))
-(defalias 'mupad-run 'run-mupad)
+(defalias 'run-mupad 'mupad-run)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 (defun mupad-end ()
@@ -1496,7 +1496,7 @@ Available special keys:
             "/usr/local/lib/MuPAD/emacs/" "/usr/local/share/lib/MuPAD/emacs/" 
             "/usr/share/lib/MuPAD/emacs/" "/usr/local/lib/MuPAD/"       
             "/usr/local/share/lib/MuPAD/" "/usr/share/lib/MuPAD/"       
-            "/usr/local/share/emacs/site-lisp")))
+            "/usr/local/share/emacs/site-lisp" "/usr/share/emacs/site-lisp")))
         ;; Locate mupad.el-info:
       (mapcar 
         (lambda (afile) (if (file-exists-p afile) (setq where-it-is afile)))
@@ -1506,18 +1506,18 @@ Available special keys:
           (append to-be-tested load-path)))
       (if (and mupad-run-info (file-exists-p mupad-run-info))
         (setq where-it-is mupad-run-info))
-      (when (not (string-equal where-it-is ""))
-;; We switch to the buffer *MuPAD Help* and erase its content:
-        (set-buffer (get-buffer-create "*MuPAD Help*"))
-        (erase-buffer)
-        (message where-it-is)  ;; tell *Messages* which version is used.
-        (insert-file where-it-is)
-;; Show the help buffer and tell user how to remove help window:
-        (mupad-bus-window-manager "*MuPAD Help*" 'mupad-show-help)
-        (setq buffer-read-only t)
-        (mupad-info-wind-conf)
-        (select-window wind))
-;; Tell the user the file was not found:
+      (if (not (string-equal where-it-is ""))
+	  (progn
+	    ;; We switch to the buffer *MuPAD Help* and erase its content:
+	    (set-buffer (get-buffer-create "*MuPAD Help*"))
+	    (erase-buffer)
+	    (message where-it-is)  ;; tell *Messages* which version is used.
+	    (insert-file where-it-is)
+	    ;; Show the help buffer and tell user how to remove help window:
+	    (mupad-bus-window-manager "*MuPAD Help*" 'mupad-show-help)
+	    (mupad-info-wind-conf)
+	    (select-window wind))
+	;; Tell the user the file was not found:
         (mupad-bus-window-manager "*MuPAD Help*" 'mupad-beginning-temp)
         (insert 
            (concat 
@@ -1526,14 +1526,15 @@ Available special keys:
              "/usr/local/share/emacs/site-lisp and add the line\n"
              "(setq load-path "
              "(concat load-path \"/usr/local/share/emacs/istelisp\"))\n"
-             "to your .emacs file (create it if it doesn't already exist).")
-          (setq fill-column 
-            (1- (window-width (get-buffer-window "*MuPAD Help*"))))
-          (fill-individual-paragraphs (point-min) (point-max) 'left)
-;; Remove help window :
-          (mupad-bus-window-manager 
-            "*MuPAD Help*" 'mupad-remove-help-old-config)
-          (mupad-restore-wind-conf)))
+             "to your .emacs file (create it if it doesn't already exist)."))
+	(setq fill-column 
+	      (1- (window-width (get-buffer-window "*MuPAD Help*"))))
+	(fill-individual-paragraphs (point-min) (point-max) 'left)
+	;; Remove help window :
+        (setq buffer-read-only t)
+	(mupad-bus-window-manager 
+	 "*MuPAD Help*" 'mupad-remove-help-old-config)
+	(mupad-restore-wind-conf)))
     (error (princ "An error occured in mupad-info: ") (princ err) nil)))
 
 (defun mupad-run-customize-group nil
