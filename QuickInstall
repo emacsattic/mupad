@@ -69,7 +69,7 @@ root access. See --prefix and lispdir options below.
     /usr/share/emacs/site-lisp/site-start.el, or
     /etc/emacs/site-start.el on Linux Mandrake):
 
-	(load "<path-to-mupacs>/site-start.d/mupacs.el>")
+	(load "<path-to-mupacs>/site-start.d/mupacs.el")
 
 
 7. Usage:
