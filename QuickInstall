@@ -1,0 +1,66 @@
+Quick installation procedure
+============================
+
+In short, this package uses the standard installation procedure:
+unpacking, ./configure, make, make check, make install. This file
+describes this with some more details. See the file INSTALL for
+generic information on the use of configure.
+
+1.  Unpacking:
+
+	gunzip mupacs-*.tar.gz
+	tar xvf mupacs-*.tar
+	cd mupacs-*/
+
+2.  Configuration:
+
+	./configure
+
+    If configure does not find MuPAD, or if you want to override the
+    default location, you can use something like:
+
+	./configure MUPAD=mupad2
+
+    Here is the complete list of variables you can override:
+
+	MUPAD:		MuPAD itself
+			Default: mupad
+	MUPADdir:	The root directory of MuPAD (i.e. MUPAD_ROOT_PATH)
+	MUPADbindir:	The directory containing MuPAD's programs
+			Default: $MUPADdir/share/bin
+
+3.  Compilation
+
+	make
+
+4.  Tests:
+
+	make check
+
+    Actually, there is no testsuite yet ...
+
+5. Installation:
+
+	make install
+
+    By default mupacs gets installed in /usr/local/share/emacs/site-lisp
+
+    If emacs is installed in /usr/bin/emacs, you may need to install
+    mupacs in /usr/share/emacs/site-lisp instead:
+
+	configure --prefix=/usr
+
+    Type 'configure --help' for details.
+
+6. Usage:
+
+    Start emacs. If the installation went properly, mupacs should be
+    directly available by autoload.
+
+    To start mupad inside emacs: M-x mupad-run
+    To change the major mode of a buffer to MuPAD: M-x mupad-mode
+    To customize mupacs: M-x customize-group mupad
+
+7. Getting help:
+
+8.  That's all folks!

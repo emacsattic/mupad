@@ -1,0 +1,88 @@
+#  $Id$
+#  @configure_input@
+#  Specification file for building rpms
+#  Copyright (C) 1999,2000 Hans Ulrich Niedermann
+#  Modifications by Nicolas M. Thiéry
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+#*#######################################################################
+#* Header
+Summary: @PKG_SHORTDESCRIPTION@
+Name: @PACKAGE@
+Version: @VERSION@
+Release: @PKG_RPM_RELEASE@
+BuildRoot: /tmp/%{name}-%{version}-%{release}-buildroot
+Copyright: @PKG_LICENSE@
+Group: @PKG_RPM_GROUP@
+Source: @PKG_SOURCE@/@PACKAGE@-@VERSION@.tar.gz
+URL: @PKG_URL@
+Vendor: @PKG_VENDOR@
+Packager: @PKG_PACKAGER@
+@PKG_RPM_OPT_REQUIRES@ @PKG_REQUIRES@
+@PKG_RPM_OPT_BUILD_ARCHS@ @PKG_BUILD_ARCHS@
+
+#*#######################################################################
+#* Description
+%description
+@PKG_LONGDESCRIPTION@
+
+#*#######################################################################
+#* Prepare for build
+%prep
+# unpack source .tar.gz package
+%setup
+
+#*#######################################################################
+#* Build
+%build
+# configure build system according to rpm settings
+./configure --prefix=%{_prefix} --exec-prefix=%{_exec_prefix} --bindir=%{_bindir} --sbindir=%{_sbindir} --libexecdir=%{_libexecdir} --datadir=%{_datadir} --sysconfdir=%{_sysconfdir} --sharedstatedir=%{_sharedstatedir} --localstatedir=%{_localstatedir} --libdir=%{_libdir} --includedir=%{_includedir} --oldincludedir=%{_oldincludedir} --infodir=%{_infodir} --mandir=%{_mandir}
+# compile and link
+make CFLAGS="${RPM_OPT_FLAGS}"
+
+#*#######################################################################
+#* Install and make file list
+%install
+# install all files
+make "DESTDIR=${RPM_BUILD_ROOT}" install
+# make list of installed files
+find "${RPM_BUILD_ROOT}" -type f -print | sed "s/$(echo ${RPM_BUILD_ROOT} | sed 's/\//\\\//g')//" | grep . > @PKG_RPM_NAME@.files
+
+#*#######################################################################
+#* File list
+%files -f @PKG_RPM_NAME@.files
+%defattr(-,root,root)
+%doc @PKG_DOC@
+
+#*#######################################################################
+#* Clean build area
+%clean
+test "$RPM_BUILD_ROOT" = "/" || rm -rf "$RPM_BUILD_ROOT"
+
+#*#######################################################################
+#* Scripts for pre/post installation/uninstallation
+
+%pre
+@PKG_PREINSTALL@
+
+%post
+@PKG_POSTINSTALL@
+
+%preun
+@PKG_PREUNINSTALL@
+
+%postun
+@PKG_POSTUNINSTALL@

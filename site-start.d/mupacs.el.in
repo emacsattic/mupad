@@ -1,0 +1,18 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; $Id$
+;; @configure_input@
+;; Site emacs initialization file for mupacs
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(setq mupad-directory "@MUPADdir@")
+(setq mupad-el-info "@lispdir@/mupad.el-info")
+
+(autoload 'mupad-mode "mupad.el" "MuPAD editing mode" t)
+(autoload 'mupad-help-mode "mupad-run.el" "MuPAD help mode" t)
+(autoload 'mupad-run "mupad-run.el" "To start a MuPAD session" t)
+(autoload 'run-mupad "mupad-run.el" "To start a MuPAD session" t)
+(autoload 'mupad-run-mode "mupad-run.el" "To start a MuPAD session" t)
+(setq auto-mode-alist (cons '("\\.mu$" . mupad-mode) auto-mode-alist))
+
+;mupad-el-info ?
+;detect xemacs, and load ... ?

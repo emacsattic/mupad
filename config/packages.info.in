@@ -1,0 +1,20 @@
+@configure_input@
+This file is only for debugging the package build system
+
+Package:	@PACKAGE@
+Version:	@VERSION@
+RPM release:	@PKG_RPM_RELEASE@
+Deb release:	@PKG_DEB_RELEASE@
+RPM group:	@PKG_RPM_GROUP@
+Deb group:	@PKG_DEB_GROUP@
+Copyright:	@PKG_LICENSE@
+Source:		@PKG_SOURCE@
+URL:		@PKG_URL@
+Vendor:		@PKG_VENDOR@
+Packager:	@PKG_PACKAGER@
+Requires:	@PKG_REQUIRES@
+Short Description:
+@PKG_SHORTDESCRIPTION@
+Long Description:
+@PKG_LONGDESCRIPTION@
+Documentation:	@PKG_DOC@

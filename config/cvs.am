@@ -1,0 +1,24 @@
+# Hyphenated version numbers (replace dots with hyphens)
+
+H_VERSION=$(shell echo $(VERSION) | sed 's/\./-/g')
+
+# name of CVS module
+
+CVS_MODULE = $(shell cat CVS/Repository)
+
+.PHONY: release release-internal cvs-tag cvs-tag-force
+
+cvs-tag:
+	cvs tag -c @PACKAGE@-$(H_VERSION)
+
+cvs-tag-force:
+	cvs tag -c -F @PACKAGE@-$(H_VERSION)
+
+release-internal: cvs-tag dist rpm
+
+release: release-internal
+	mkdir -p binaries
+	for f in @PACKAGE@-*.tar.* \
+		$$(find packages/rpm -type f -name '*.rpm'); do \
+		mv $$f binaries/; \
+	done

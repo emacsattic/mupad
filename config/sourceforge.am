@@ -1,0 +1,21 @@
+########################################################################
+# SourceForge goodies
+########################################################################
+
+SFPACKAGE=$(shell echo $(PACKAGE) | awk '{print tolower($$0)}' )
+# directory of the package on sourceforge: /home/groups/p/pr/project/htdocs
+SFDIR= /home/groups/$(shell echo $(PACKAGE) | awk -F '' '{print $$1"/"$$1$$2}')/$(SFPACKAGE)/htdocs 
+
+SFweb: lib $(PKG_DOC) doc Papers
+	rsync -raz $^ --rsh "ssh -v1" $(SFPACKAGE).sourceforge.net:$(SFDIR)
+
+SFrelease:
+	ncftpput upload.sourceforge.net /incoming binaries/*
+
+SFcvsroot: $(SFPACKAGE)-cvsroot.tar.gz
+
+.PHONY: FORCE
+
+%-cvsroot.tar.gz: FORCE
+	-mv $@ $@.old
+	wget http://cvs.sourceforge.net/cvstarballs/$@

@@ -1,0 +1,72 @@
+##############################################################################
+# $Id$
+# Name:	mupad.am
+# Purpose:	Automake / Autoconf macros for MuPAD (www.mupad.de)
+# Author:	Nicolas M. Thiéry <nthiery@mines.edu>
+# Created:	2000/09
+# License:	LGPL
+##############################################################################
+
+##############################################################################
+# Compilation of MuPAD modules in the framework of the GNU autotools
+#
+# The source file of the module is named module.mcc. mmg transforms it
+# into a real C++ file module.cc. This file is then compiled in the
+# standard way by libtool and the c++ compiler into a dynamic module.
+##############################################################################
+
+SUFFIXES	= .mcc .mdm
+%.cc: %.mcc
+	$(MUPAD_MMG) $(MUPAD_MMGFLAGS) $(AM_MUPAD_MMGFLAGS) -gnu -nol -noc -nor -v -V $* $<
+	mv -f MMG$*.cpp $@
+
+# Rule to rename the module with the standard MuPAD suffix .mdm, and
+# make a copy of it in the modules directory of the toplevel to enable
+# using them before the installation (typically in tests).
+
+# This needs to be seriously improved! In particular, we should
+# probably call libtool for the copy, since the .so may have another
+# name on another architecture. Also using ln might cause trouble if
+# the .so is a soft link and not a file.
+
+%.mdm: %.la $(MUPADlocalmdmdir)
+	rm -f $@ && ln .libs/$*.so $@
+	rm -f $(MUPADlocalmdmdir)/$@ && ln .libs/$*.so $(MUPADlocalmdmdir)/$@
+
+$(MUPADlocalmdmdir):
+	$(INSTALL) -d $@
+
+# does not work if the cleanfile dependency is not generated
+#CLEANFILES	+= $(wildcard *.mmg)
+
+# The following preprocessor definitions are used by mmg under
+# GNU/linux. This is certainly not portable, and should be provided by
+# mmg instead, with something like `mmg --cflags`
+
+# This overrides any AM_CPPFLAGS defined in the makefile!
+AM_CPPFLAGS	= -DMDX -DLONG_IS_32BIT -DSYSV -DPARI_LITTLE_ENDIAN -DMMMDLEAN -DNO_BYTECODE -DNO_ENHANCED_MATCH
+
+##############################################################################
+# Minimal test suite for MuPAD
+#
+# This defines a check-mupad dependency that runs all the MuPAD test
+# (.tst suffix) in the source directory
+##############################################################################
+
+MUPAD_TEST_FILES   = $(wildcard $(srcdir)/*.tst)
+MUPAD_TEST_RESULTS = $(MUPAD_TEST_FILES:$(srcdir)/%.tst=%.res)
+
+# this is ignored by automake
+#EXTRA_DIST	   += $(MUPAD_TEST_FILES)
+# does not work if the cleanfile dependency is not generated
+#CLEANFILES	   += $(MUPAD_TEST_RESULTS)
+
+.phony: FORCE
+FORCE:
+
+%.res: $(srcdir)/%.tst FORCE
+	@echo Running tests in $< ...
+	@echo -e "read(\"$<\"):\nquit:" | $(MUPAD) -S -n -P pe
+	@if [ -f $@ -a ! -s $@ ]; then echo PASS; else echo FAIL; test ""; fi
+
+check-mupad: $(MUPAD_TEST_RESULTS)

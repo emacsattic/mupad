@@ -1,0 +1,17 @@
+The code of the MuPAD mode itself was initialy stolen by ?? from
+"maple.el" which is the work of Bruno Salvy
+(Bruno.Salvy@inria.fr). Since then a huge part of "pari.el" of Annette
+Hoffman / David Carlisle / Karim Belabas and Olivier Ramaré has been
+incorporated as well as most of "mupad-mode.el" of Juergen Billing.
+
+15/09/1995: First release of mupad.el
+
+Till December 2002: combined efforts/comments of
+       Henning von Bargen (h.vonbargen@cityweb.de)
+       Juergen Billing (bij@plato.uni-paderborn.de)
+       Francois Maltey (Francois.Maltey@enst-bretagne.fr)
+       Michel Quercia (quercia@cal.enst.fr)
+       Nicolas M. Thiéry (nthiery@users.sf.net)
+       Winfried Truemper (winni@xpilot.org)
+       Olivier Ramaré (ramare@agat.univ-lille1.fr)
+       Paul Zimmermann (Paul.Zimmermann@loria.fr)

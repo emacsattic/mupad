@@ -1,0 +1,6 @@
+#! /bin/sh
+
+set -x
+   aclocal -I config				\
+&& automake --gnu --add-missing --copy		\
+&& autoconf
