@@ -125,7 +125,8 @@ In which case the options for starting mupad won't be asked for.")
 In fact other options can be given but one of these two blocks
 should be present."
   :type '(choice (const "mupad -R -U EMACS=TRUE")
-		 (const "mupad -E -U EMACS=TRUE"))
+		 (const "mupad -E -U EMACS=TRUE")
+		 (string :tag "Manual input"))
   :initialize 'custom-initialize-default
   :set 'mupad-run-set-options
   :group 'mupad-run)
@@ -143,7 +144,7 @@ should be present."
   "Hook for mupad-mode. Executed early by mupad-run."
   :type 'hook :group 'mupad-run)
 
-(defcustom mupad-run-mode-hook nil
+(defcustom mupad-run-mode-hook '(mupad-help-init mupad-bus-adapt-textwidth)
   "Hook for mupad-mode. Executed last by mupad-run."
   :options '(mupad-help-init mupad-bus-adapt-textwidth)
   :type 'hook :group 'mupad-run)
@@ -466,29 +467,55 @@ should be present."
 (defun mupad-run-set-arrow-behaviour (symbol val)
   "See `mupad-run-arrow-behaviour'"
   (setq mupad-run-arrow-behaviour val)
-  (cond 
+  (cond
     ((string= val "Usual")
-      (define-key mupad-run-mode-map [(control up)] 
+      (define-key mupad-run-mode-map [(control up)]
         (function mupad-run-previous-history))
-      (define-key mupad-run-mode-map [(control down)] 
+      (define-key mupad-run-mode-map [(control down)]
         (function mupad-run-next-history))
       (define-key mupad-run-mode-map [(up)] (function previous-line))
       (define-key mupad-run-mode-map [(down)] (function next-line)))
-    (t ; for bash-style
+    ((string= val "Usual-Search")
+      (define-key mupad-run-mode-map [(control up)]
+        (function mupad-run-previous-history-search))
+      (define-key mupad-run-mode-map [(control down)]
+        (function mupad-run-next-history-search))
+      (define-key mupad-run-mode-map [(up)] (function previous-line))
+      (define-key mupad-run-mode-map [(down)] (function next-line)))
+    ((string= val "Bash-Style")
       (define-key mupad-run-mode-map [(up)] 
         (function mupad-run-previous-history))
       (define-key mupad-run-mode-map [(down)] 
         (function mupad-run-next-history))
       (define-key mupad-run-mode-map [(control up)] (function previous-line))
+      (define-key mupad-run-mode-map [(control down)] (function next-line)))
+    (t ; for MuPAD-Style
+      (define-key mupad-run-mode-map [(up)]
+        (function mupad-run-previous-history-search))
+      (define-key mupad-run-mode-map [(down)]
+        (function mupad-run-next-history-search))
+      (define-key mupad-run-mode-map [(control up)] (function previous-line))
       (define-key mupad-run-mode-map [(control down)] (function next-line)))))
 
 (defcustom mupad-run-arrow-behaviour
-  "Usual"
-  "Selects the behaviour of the arrow up and down :
-  the usual behaviour corresponds to up and down
-  while C-up and C-down correspond to history.
-  When in Bash-Style, this behaviour in exchanbed."
-  :type '(choice (const "Usual") (const "Bash-Style"))
+  "Usual-Search"
+  "Selects the behaviour of the up, down, C-up, C-down arrows:
+  Usual:
+   - up and down: move in the buffer
+   - C-up and C-down: move through the history
+  Usual-Search:
+   - up and down: move in the buffer
+   - C-up and C-down: search through the history
+  Bash-Style:
+   - up and down: move through the history
+   - C-up and C-down: move in the buffer
+  MuPAD-Style:
+   - up and down: search through the history;
+   - C-up and C-down: move in the buffer"
+  :type '(choice (const "Usual-Search")
+		 (const "Usual")
+		 (const "Bash-Style")
+		 (const "MuPAD-Style"))
   :initialize 'custom-initialize-default
 ;do not use mupad-run-set-arrow-behaviour
 ;initially since the map is not yet defined !
@@ -513,6 +540,13 @@ recentering."
 * temporary-buffer means in a temporary buffer
 * inline means inside the MuPAD buffer"
   :type '(radio (const inline) (const temporary-buffer))
+  :group 'mupad-run)
+
+(defcustom mupad-run-completion-strip-prefix t
+  "Selects where completion lists are displayed:
+* temporary-buffer means in a temporary buffer
+* inline means inside the MuPAD buffer"
+  :type '(boolean)
   :group 'mupad-run)
 
 (defcustom mupad-run-input-terminator " ;"
@@ -1371,7 +1405,6 @@ Available special keys:
 ;;    de la durée de fermeture de la fenètre de complétion
 ;;            
 (defun mupad-run-emacs-end-comp (str)
-  (let (br) 
     (setq mupad-run-state 'wait-input)
     (if (= (point) (marker-position mupad-run-comp-edit))
        (insert str)
@@ -1390,21 +1423,26 @@ Available special keys:
       (mupad-run-emacs-completion ; éliminer le cas de completion vide
 ; (message "ici1")
    ;
+   (let ((completions (split-string mupad-run-emacs-completion ", ")))
+   (if mupad-run-completion-strip-prefix
+       ; strips away the bla::ble:: prefixes for a more compact output
+       (setq completions
+	     (mapcar
+	      (lambda (s)
+		(if (string-match ".*::" s)
+		    (replace-match "" nil nil s)
+		  s))
+	      completions)))
    (cond
     ((eq mupad-run-completion-style 'temporary-buffer)
      (with-output-to-temp-buffer "*MuPAD Completions*"
-       (display-completion-list (split-string mupad-run-emacs-completion ", "))))
+       (display-completion-list completions)))
     ((eq mupad-run-completion-style 'inline)
      (mupad-run-momentary-string-display
-      (concat "\n" mupad-run-emacs-completion)
-      (line-end-position) "" "Several completions available; type any key to erase the completion list"))))
-; (message "ici2"))
-;        (delete-region (point) (- (point) (length mupad-run-comp-begin)))
-;        (if (= (point) (marker-position mupad-run-comp-edit))
-;          (insert br)
-;          (save-excursion (goto-char mupad-run-comp-edit) (insert br))))
+      (concat "\n" (mapconcat 'identity completions " "))
+      (line-end-position) "" "Several completions available; type any key to erase the completion list")))))
       (t (message "Ne doit pas se produire")))
-    (setq mupad-run-emacs-completion nil))) ; Could use mupad-run-state instead?
+    (setq mupad-run-emacs-completion nil)) ; Could use mupad-run-state instead?
 ;; 
 ;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 ;;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -2666,13 +2704,14 @@ If MESSAGE is nil, instructions to type EXIT-CHAR are displayed there."
 	     ;; If the message does not fit in the window height,
 	     ;; scroll so that the top of the message is on the second
 	     ;; line of the window
-	     ((> (count-lines pos insert-end) (window-height))
-	      (goto-char pos)
-	      (recenter 1))
+	     ;((> (count-lines pos insert-end) (window-height))
+	     ; (goto-char pos)
+	     ; (recenter 1))
 	     ;; Otherwise, if the message ends below the last line of
 	     ;; the window, scroll up so that the bottom of the
 	     ;; message is on that last line
-	     ((>= (count-lines (window-start) insert-end) (window-height))
+	     ((>= (count-screen-lines (window-start) insert-end)
+		  (window-height))
 	      (recenter -1))))
 	  (message (or message "Type %s to continue editing.")
 		   (single-key-description exit-char))
