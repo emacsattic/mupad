@@ -93,11 +93,11 @@
 (defgroup mupad-run nil
   "MuPAD customization subgroup the MuPAD shell"
   :group 'mupad :prefix "mupad-")
-
-(defcustom mupad-run-pgm "mupad"
-  "Command to run mupad"
-  :type 'string :group 'mupad-run)
-
+;
+;(defcustom mupad-run-pgm "mupad"
+;  "Command to run mupad"
+;  :type 'string :group 'mupad-run)
+;
 ; modifié par la configuration automatique
 (defcustom mupad-run-info 
   "/home/ramare/lisp/first-look/MuPAD/mupad-run.el-info"
@@ -112,26 +112,28 @@
   "Set it to t if you want a more automated behaviour.
 In which case the options for starting mupad won't be asked for.")
 
-(defun mupad-run-set-options (sym val)
-  (set sym val)
-  (cond ((member "-E" val)
-          (setq mupad-help-method 'mupad-help-from-file-to-buffer))
-        ((member "-R" val)
-          (setq mupad-help-method 'mupad-help-from-toc-to-buffer))))
+(defun mupad-run-help-method (val)
+  (let ((l (split-string val " ")))
+    (cond 
+      ((member "-E" l) 'mupad-help-from-file-to-buffer)
+      (t 'mupad-help-from-toc-to-buffer))))
 
-(defcustom mupad-run-pgm-opt
-  '("-R" "-U" "EMACS=TRUE")
-  "Options given to the mupad process.
+(defun mupad-run-set-options (sym val) (set sym val))
+
+(defcustom mupad-run-pgm-exec
+  "mupad -R -U EMACS=TRUE"
+  "Command-line for mupad process.
 In fact other options can be given but one of these two blocks
 should be present."
-  :type '(choice (const ("-R" "-U" "EMACS=TRUE"))
-		 (const ("-E" "-U" "EMACS=TRUE")))
+  :type '(choice (const "mupad -R -U EMACS=TRUE")
+		 (const "mupad -E -U EMACS=TRUE"))
   :initialize 'custom-initialize-default
   :set 'mupad-run-set-options
   :group 'mupad-run)
 
 (defvar mupad-run-pgm-history
-  nil
+  (list mupad-run-pgm-exec)
+  ;initialize 'custom-initialize-default
   "The history of the command used to start mupad")
 
 (defcustom mupad-run-history-max 100
@@ -147,7 +149,6 @@ should be present."
   :options '(mupad-help-init mupad-bus-adapt-textwidth)
   :type 'hook :group 'mupad-run)
 
-
 ; affichage de messages de debug
 (defcustom mupad-run-debug-level '()
   "Controls the level of debug messages output by mupad-run."
@@ -161,6 +162,25 @@ should be present."
   (if (memq item mupad-run-debug-level) (message str)))
 
 (defun mupad-run-error (str) (ding) (message str))
+
+(defun mupad-run-recenter () 
+; If buffer isn't in a window do nothing
+; if buffer is too up in a window do nothing (mupad-run-recenter-br)
+  (when (get-buffer-window (current-buffer))    ; the buffer is in a window
+    (let (pop-up-windows (brx (window-buffer)) (bry (current-buffer)))
+      (cond 
+        ((string= (buffer-name bry) (buffer-name brx)) 
+          (mupad-run-recenter-br))
+        (t  
+          (pop-to-buffer bry t) 
+          (mupad-run-recenter-br) 
+          (pop-to-buffer brx t))))))
+
+(defun mupad-run-recenter-br ()
+  (if (or mupad-run-recenter-agressively
+      (> (count-lines (window-start) (point)) ; "the cursor-line on the screen"
+         (- (1- (window-height)) mupad-run-recenter-bottom-margin)))
+    (recenter (- mupad-run-recenter-bottom-margin))))
 
 (defun mupad-run-set-system-trace (sym val)
   (set sym val)
@@ -453,7 +473,7 @@ should be present."
   :set 'mupad-run-set-arrow-behaviour
   :group 'mupad-run)
 
-(defcustom mupad-run-recenter-on-history nil
+(defcustom mupad-run-recenter-agressively nil
   "Non-nil means recenter agressively the window after a history
 lookup to show as many lines of the command as possible, without
 showing empty lines after it."
@@ -567,25 +587,17 @@ recentering."
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
-;; Let the user edit the mupad command (mupad-run-pgm) and options
-;; (mupad-run-pgm-opt) in the minibuffer,
 (defun mupad-run-ask-pgm-opt nil
-  (let ((command
-	 (concat mupad-run-pgm " "
-		 (mapconcat (lambda (wd) wd) mupad-run-pgm-opt " "))))
+; Let the user edit the mupad command (mupad-run-pgm-exec) in the minibuffer.
+  (let ((command ""))
     ;; The first time, insert the default command in the history
     (unless mupad-run-pgm-history
-      (setq mupad-run-pgm-history (list command)))
+      (setq mupad-run-pgm-history (list mupad-run-pgm-exec)))
     ;; Edition in the minibuffer
-    (setq command
-	  (split-string
-	   (read-from-minibuffer "Command to start mupad: " command nil nil
-				 'mupad-run-pgm-history)
-	   " "))
-    ;; Save the command
-    (mupad-run-set-options
-     'mupad-run-pgm-opt (cdr command))
-    (setq mupad-run-pgm (car command))))
+    (while (<= (length (split-string command " ")) 1)
+      (setq command 
+        (read-from-minibuffer "Command to start mupad: " 
+          mupad-run-pgm-exec nil nil 'mupad-run-pgm-history)))))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -648,6 +660,11 @@ Available special keys:
       (error "Buffer name isn't allowed for mupad-run mode"))
     (t t)))
 
+(defun mupad-run-process-fct (str)
+  (let ((l (split-string str)))
+    (apply (function start-process) 
+      "mupad" (current-buffer) (car l) (cdr l))))
+
 (defun mupad-run-mode-intern ()
   (kill-all-local-variables)
 ; initialisation du tampon et du clavier
@@ -693,12 +710,14 @@ Available special keys:
 ; gestion de l'historique 
   (setq mupad-run-hist-commands (head-tail-void))
   (ptr-to-head mupad-run-hist-commands)
+; gestion du curseur
+  (when mupad-run-recenter-agressively (setq scroll-conservatively 1))
 ; lancement du programme 
   (setq mupad-run-output "")
   (setq mupad-run-state 'beginning)
-  (setq mupad-run-process 
-    (apply (function start-process) 
-       "mupad" (current-buffer) mupad-run-pgm mupad-run-pgm-opt))
+  (setq mupad-run-process (mupad-run-process-fct mupad-run-pgm-exec))
+; methode d'accès à l'aide en ligne
+  (setq mupad-help-method (mupad-run-help-method mupad-run-pgm-exec))
   (set-process-filter mupad-run-process (function mupad-run-filter))
   (setq mupad-run-time-start (current-time))
 ; la barre de menu
@@ -1034,37 +1053,8 @@ Available special keys:
     (mupad-run-from-todo-to-output))
 ; raccourcissement de la chaîne à traiter à la fin de la boucle 
   (setq mupad-run-output (substring mupad-run-output output-index))
-; maj de l'affichage en début de session
-
-  ;; NT: Hack to scroll the current *MuPAD* buffer so that we do not
-  ;; see past the end of the buffer. Simply calling (recenter -1) does
-  ;; not work, because it recenters the active buffer
-  ;;
-  ;; J'hésite quant à l'option -t dans get-buffer-window. J'aurais
-  ;; tendance à penser que si le buffer de MuPAD est dans plusieurs
-  ;; fenêtres à la fois, il vaut mieux ne recentrer que celui qui
-  ;; apparaît dans la fenêtre courante, mais je ne suis pas sûr.
-  (when (and
-	 (eq (point) (point-max))
-	 (get-buffer-window (current-buffer)))
-    (let ((buffer (current-buffer))
-	  (old-buffer (window-buffer)))
-      (unless (eq buffer old-buffer)  (get-buffer-window "*MuPAD*" t)
-	      (pop-to-buffer buffer t))
-      ;; Do we really need this?
-      (bury-buffer buffer)
-      (recenter (- (+ mupad-run-recenter-bottom-margin 1)))
-      (unless (eq buffer old-buffer)
-	(pop-to-buffer old-buffer))))
-;  (when    
-;    (and 
-;      (eq (point) (point-max))
-;      (get-buffer-window (current-buffer) t))
-;    (switch-to-buffer brb)
-;    (recenter -2)) 
-; FMy 
-; (when (and (equal brb brc) (<= (count-lines 1 (point)) 20)) (recenter -4))
-; the proper buffer!
+; maj de l'affichage dans une session quand le curseur est à la fin
+  (when (eq (point) (point-max)) (mupad-run-recenter))
   (set-buffer brc)))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1586,9 +1576,7 @@ Available special keys:
             (beginning-of-line))
           (put-text-property brp (point) 'item mupad-run-itemb)
           (setq mupad-run-last-type 'end-cmd))))
-          (mupad-run-debug-message 'todo-to-output "MIL : todo-to-output"))
-;  (recenter -1)
-  )
+          (mupad-run-debug-message 'todo-to-output "MIL : todo-to-output")))
 
 (defun mupad-run-from-todo-to-output-debug (br2)
   (cond 
@@ -1947,6 +1935,8 @@ Available special keys:
 ;;
 (defun mupad-run-get-previous-command (str)
   (let ((brt t) brs)
+    (when (symbolp (aref mupad-run-hist-commands 2))
+      (aset mupad-run-hist-commands 2 'head))
     (ptr-to-tail mupad-run-hist-commands)
     (while 
       (and 
@@ -1965,6 +1955,8 @@ Available special keys:
 ;;
 (defun mupad-run-get-next-command (str)
   (let ((brt t) brs)
+    (when (symbolp (aref mupad-run-hist-commands 2))
+      (aset mupad-run-hist-commands 2 'tail))
     (ptr-to-head mupad-run-hist-commands)
     (while 
       (and 
@@ -2009,16 +2001,7 @@ Available special keys:
   (delete-region mupad-run-edit (point-max))
   (goto-char mupad-run-edit)
   (insert str)
-  (when mupad-run-recenter-on-history
-    (save-excursion
-      (cond
-       ((<= (+ (count-screen-lines mupad-run-edit (point-max)) 1)
-	    (window-height))
-	(goto-char (point-max))
-	(recenter (- (+ mupad-run-recenter-bottom-margin 1))))
-       (t
-	(goto-char (min pos (point-max)))
-	(recenter 1)))))
+  (save-excursion (goto-char (point-max)) (mupad-run-recenter))
   (goto-char (min pos (point-max))))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -2229,6 +2212,7 @@ Available special keys:
     (when (= brb br) 
       (setq bra brb) (mupad-run-right) (setq brb (point)))
     (goto-char (point-max))
+    (mupad-run-recenter)
     (setq br (point-max))
     (while (memq (char-before br) '(?\n ?\t ?\ )) (setq br (1- br)))
     (when 
@@ -2577,4 +2561,3 @@ Available special keys:
 ;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 ;;=-= FIN du fichier mupad-run.el =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 ;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-
