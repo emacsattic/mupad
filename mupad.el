@@ -259,6 +259,8 @@ See `mupad-describe-this-proc' and `mupad-user-mail-address'."
     (["or" math-relation 3])
     (["in" math-relation 3])
     (["::" constructor 3])
+    (["(" constructor 1])
+    ([")" constructor 1])
     (["()" constructor 3])
     )
 "See `sli-structures'.
