@@ -14,7 +14,7 @@
 ;;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 ;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 ;;
-;;  1/ Variables et constantes
+;;  1/ Configuration, variables et constantes
 ;;  2/ Appel, lecture et sauvegarde des fichiers, impression 
 ;;  3/ Les sorties de mupad (y compris interruption et complétion)
 ;;  4/ Construction de la commande suivante de mupad et des séparateurs
@@ -39,35 +39,50 @@
 ;;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 ;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 ;;
+;; autres fichiers nécessaires 
+;;
 (require 'mupad-bus)
 (require 'mupad-help)
+;;
+;;
+;; défini l'extension mupad-run, et sa version
+;;
 (provide 'mupad-run)
 (defconst mupad-run-mode-version "2.00" "Version of `mupad-run.el'.")
 ;;
+;; Variables de configuration
+;; 
 ;; mupad-run-pgm est le programme appelé, "mupad" en général
+;;
 ;; mupad-run-pgm-opt est la liste des paramètres de la ligne de commande
 ;;   -R ou -E (-E est uniquement valable pour les versions >= 3.0) ;
 ;;   avec l'option -E les appels à l'aide en ligne de la forme ? sin 
-;;   sont mieux gérés
-;;   les options "-U" et "EMACS" permettent de déterminer dans mupad que
+;;   sont mieux gérés.
+;;   Les options "-U" et "EMACS" permettent de déterminer dans mupad que
 ;;   le système a été lancé par emacs, pour configurer correctement
-;;   vcam lors de l'initialisation de mupad, dans ~/.mupad/userinit.mu
+;;   vcam lors de l'initialisation de mupad, dans ~/.mupad/userinit.mu.
 ;;
-;; la valeur de mupad-help-method concerne l'aide en ligne ; 
-;; elle est 'mupad-help-from-toc-to-buffer avec l'option -E
-;; elle est 'mupad-help-from-file-to-buffer avec l'option -R
-
+;; La valeur de mupad-help-method concerne l'aide en ligne ; 
+;; elle est 'mupad-help-from-toc-to-buffer avec l'option -E, 
+;; et est 'mupad-help-from-file-to-buffer avec l'option -R.
+;;
+;; La variable mupad-run correspond indique le chemin d'accès au
+;; fichier de présentation de mupad-run.
+;;
+;; La valeur de mupad-run-hisptory-max indique le nombre maximal de commandes
+;; mémorisées dans l'historique de mupad.
+;; 
 (defgroup mupad-run nil
-"MuPAD customization subgroup the MuPAD shell"
-:group 'mupad :prefix "mupad-")
+  "MuPAD customization subgroup the MuPAD shell"
+  :group 'mupad :prefix "mupad-")
 
 (defcustom mupad-run-pgm "mupad"
-"Command to run mupad"
-:type 'string :group 'mupad-run)
+  "Command to run mupad"
+  :type 'string :group 'mupad-run)
 
-(defcustom mupad-run-info  "/usr/local/share/site-lisp/mupad-run.el-info"
-"Ou on trouve mupad-run.el-info"
-:type 'string :group 'mupad-run)
+(defcustom mupad-run-info  "/usr/local/share/emacs/mupad-run.el-info"
+  "Indique où est le fichier de présentation de mupad-run"
+  :type 'string :group 'mupad-run)
 
 (defvar mupad-help-method 'mupad-help-from-toc-to-buffer) ; pour l'option -R 
 ; (defvar mupad-help-method 'mupad-help-from-file-to-buffer) ; pour l'option -E
@@ -80,43 +95,16 @@
           (setq mupad-help-method 'mupad-help-from-file-to-buffer))))
 
 (defcustom mupad-run-pgm-opt
-'("-R" "-U" "EMACS")
-"Options given to the mupad process"
-:type '(choice (const ("-R" "-U" "EMACS")) (const ("-E" "-U" "EMACS")))
-:initialize 'custom-initialize-default
-:set 'mupad-run-set-options
-:group 'mupad-run)
+  '("-R" "-U" "EMACS")
+  "Options given to the mupad process"
+  :type '(choice (const ("-R" "-U" "EMACS")) (const ("-E" "-U" "EMACS")))
+  :initialize 'custom-initialize-default
+  :set 'mupad-run-set-options
+  :group 'mupad-run)
 
-(defcustom mupad-run-history-max 30
-"Nombre de commandes dans l'historique"
-:type 'integer :group 'mupad-run)
-
-(defun mupad-run-set-arrow-behaviour (symbol val)
-  "See `mupad-run-arrow-behaviour'"
-  (setq mupad-run-arrow-behaviour val)
-  (if (string= val "Usual")
-      (progn
-	(define-key mupad-run-mode-map [C-up]   (function mupad-run-previous-history))
-	(define-key mupad-run-mode-map [C-down] (function mupad-run-next-history))
-	(define-key mupad-run-mode-map [up]     (function forward-char))
-	(define-key mupad-run-mode-map [down]   (function backward-char)))
-    (define-key mupad-run-mode-map [up]   (function mupad-run-previous-history))
-    (define-key mupad-run-mode-map [down] (function mupad-run-next-history))
-    (define-key mupad-run-mode-map [C-up]     (function forward-char))
-    (define-key mupad-run-mode-map [C-down]   (function backward-char))))
-
-(defcustom mupad-run-arrow-behaviour
-"Usual"
-"Selects the behaviour of the arrow up and down:
-the usual behaviour corresponds to up and down
-while C-up and C-down correspond to history.
-When in Bash-Style, this behaviour in exchanbed."
-:type '(choice (const "Usual") (const "Bash-Style"))
-:initialize 'custom-initialize-default
-					;do not use mupad-run-set-arrow-behaviour
-					;initially since the map is not yet defined !
-:set 'mupad-run-set-arrow-behaviour
-:group 'mupad-run)
+(defcustom mupad-run-history-max 100
+  "Nombre de commandes dans l'historique"
+  :type 'integer :group 'mupad-run)
 
 (defvar mupad-run-system-trace 3) 
 ;; 0 - n'affiche ni les commandes envoyées au système ni les résultats
@@ -197,6 +185,37 @@ When in Bash-Style, this behaviour in exchanbed."
     (define-key map "\C-c\C-i" (function mupad-help-emacs-ask))
     (define-key map "\C-y" (function mupad-run-yank))
     (setq mupad-run-mode-map map)))
+
+(defun mupad-run-set-arrow-behaviour (symbol val)
+  "See `mupad-run-arrow-behaviour'"
+  (setq mupad-run-arrow-behaviour val)
+  (cond 
+    ((string= val "Usual")
+      (define-key mupad-run-mode-map 
+        [C-up] (function mupad-run-previous-history))
+      (define-key mupad-run-mode-map 
+        [C-down] (function mupad-run-next-history))
+      (define-key mupad-run-mode-map [up] (function previous-line))
+      (define-key mupad-run-mode-map [down] (function next-line)))
+    (t 
+      (define-key mupad-run-mode-map 
+        [up] (function mupad-run-previous-history))
+      (define-key mupad-run-mode-map [down] (function mupad-run-next-history))
+      (define-key mupad-run-mode-map [C-up] (function previous-line))
+      (define-key mupad-run-mode-map [C-down] (function next-line)))))
+
+(defcustom mupad-run-arrow-behaviour
+  "Usual"
+  "Selects the behaviour of the arrow up and down :
+  the usual behaviour corresponds to up and down
+  while C-up and C-down correspond to history.
+  When in Bash-Style, this behaviour in exchanbed."
+  :type '(choice (const "Usual") (const "Bash-Style"))
+  :initialize 'custom-initialize-default
+;do not use mupad-run-set-arrow-behaviour
+;initially since the map is not yet defined !
+  :set 'mupad-run-set-arrow-behaviour
+  :group 'mupad-run)
 
 (defconst mupad-run-automate-exception
   '((( 0 . ?\n) .  1) (( 0 . ?\\) .  2) (( 0 . ?\") . 10) (( 0 . ?\/) .  3) 
@@ -294,12 +313,11 @@ When in Bash-Style, this behaviour in exchanbed."
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
+(defalias 'mupad-run 'run-mupad)
 (defun mupad-run ()
    (interactive)
    (switch-to-buffer "*MuPAD*")
    (mupad-run-mode))
-
-(defalias 'mupad-run 'run-mupad)
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -341,6 +359,7 @@ Available special keys:
     (kill-all-local-variables)
 ; initialisation du tampon et du clavier
     (use-local-map mupad-run-mode-map)
+    (mupad-run-set-arrow-behaviour nil mupad-run-arrow-behaviour)
     (add-hook 'kill-buffer-query-functions 'mupad-run-before-kill)
     (goto-char 1)
     (set-text-properties (point-min) (point-max) nil)
@@ -357,8 +376,6 @@ Available special keys:
     (set-marker mupad-run-edit (point))
     (setq mupad-run-todo (make-marker))
     (set-marker mupad-run-todo (point))
-; le fonctionnement des fleches
-    (mupad-run-set-arrow-behaviour nil mupad-run-arrow-behaviour)
 ; autres markeurs pour la complétion et les messages d'erreur
     (setq mupad-run-comp-edit (make-marker))
     (set-marker mupad-run-comp-edit nil)
@@ -375,7 +392,7 @@ Available special keys:
         (set-face-background (car a-face) (car (cddr a-face))))
       mupad-run-face)
 ; gestion de l'historique 
-    (setq mupad-run-hist-commands '())
+    (setq mupad-run-hist-commands ())
     (setq mupad-run-hist-index -1)
 ; lancement du programme 
     (setq mupad-run-output "")
@@ -1485,7 +1502,8 @@ Available special keys:
       (mapcar 
         (lambda (afile) (if (file-exists-p afile) (setq where-it-is afile)))
         (mapcar 
-          (lambda (apath) (expand-file-name (concat apath "/mupad-run.el-info")))
+          (lambda (apath) 
+            (expand-file-name (concat apath "/mupad-run.el-info")))
           (append to-be-tested load-path)))
       (if (and mupad-run-info (file-exists-p mupad-run-info))
         (setq where-it-is mupad-run-info))
@@ -1529,8 +1547,6 @@ Available special keys:
     (list
       "MuPAD"
       ["break" mupad-run-break :active (processp mupad-run-process)]
-      ["help around cursor" mupad-help-emacs-search :active t]
-      ["help" mupad-help-emacs-ask :active t]
       ["save"   mupad-run-save :active t]
       ["quit"   mupad-run-end :active (processp mupad-run-process)]
       ["reset"  mupad-run-reset :active t]
@@ -1539,25 +1555,26 @@ Available special keys:
         "Send file to MuPAD..."
         ["Silently"  mupad-bus-file t :active (featurep 'mupad)]
         ["Openly"    mupad-bus-execute-file t :active (featurep 'mupad)])
-        "---------------------"
-        ["Manual" mupad-start-manual :active t :key-sequence nil]
-        ["Info on this mode" mupad-run-show-mupad-info :active t 
-         :key-sequence nil]
-        "---------------------"
-        ["Help on ..." mupad-help-emacs-ask :key-sequence nil]
+      "---------------------"
+      ["Manual" mupad-start-manual :active t :key-sequence nil]
+      ["Info on this mode" mupad-run-show-mupad-info :active t 
+        :key-sequence nil]
+      "---------------------"
+      ["help around cursor" mupad-help-emacs-search :active t]
+      ["help on ..."        mupad-help-emacs-ask :active t]
+      "---------------------"
+      ["Restore windows" mupad-restore-wind-conf
+        :active (not (null mupad-registers-list))]
+      "----------------------------"
+      (list 
+        "Environment"
+        ["Set DIGITS..." mupad-bus-set-digits :active 
+          (processp mupad-run-process)]
+        ["Adapt TEXTWIDTH" mupad-bus-adapt-textwidth :active 
+          (processp mupad-run-process)]
         "--------------------"
-        ["Restore windows" mupad-restore-wind-conf
-          :active (not (null mupad-registers-list))]
-        "----------------------------"
-        (list 
-           "Environment"
-           ["Set DIGITS..." mupad-bus-set-digits :active 
-             (processp mupad-run-process)]
-           ["Adapt TEXTWIDTH" mupad-bus-adapt-textwidth :active 
-             (processp mupad-run-process)]
-           "--------------------"
-           ["Customize" mupad-run-customize-group :active t 
-             :key-sequence nil])))))
+        ["Customize" mupad-run-customize-group :active t 
+          :key-sequence nil])))))
 
 (defvar MuPAD-run-menu-map nil)
 
