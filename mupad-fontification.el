@@ -563,7 +563,7 @@ things are fontified."
 (add-hook 'menu-bar-update-hook
   '(lambda nil
      (when (eq major-mode 'mupad-mode)
-       (easy-menu-change '("MuPAD") "Colors" (mupad-color-cpl-menu) "Debug..."))))
+       (easy-menu-change '("MuPAD") "Colors" (mupad-color-cpl-menu) nil))))
 
 (add-hook 'mupad-mode-hook
   '(lambda nil

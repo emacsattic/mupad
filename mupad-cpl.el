@@ -77,7 +77,8 @@
 (defconst mupad-keywords-list ;; Do *not* add spaces for font-lock to work.
 ;; use also  indexval(stdlib, "SYSTEM_CONSTANTS") ;
 ;; use also  indexval(stdlib, "LIBRARY_CONSTANTS") ;
-'("and" "axiom" "category" "begin" "break" "case" "div" "do"
+;; end_category est ajoute.
+'("and" "axiom" "category" "end_category" "begin" "break" "case" "div" "do"
 "downto" "E" "elif" "else" "end_case" "end_for" "end_if" "end_proc"
 "end_repeat" "end_while" "FAIL" "FALSE" "for" "from" "fun" "func" "I"
 "if" "%if" "in" "intersect" "local" "minus" "mod" "name" "next" "NIL"

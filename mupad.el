@@ -181,6 +181,7 @@ See `mupad-describe-this-proc' and `mupad-user-mail-address'."
      ["begin"    strong mupad-indent-level]
      ["end_proc" end])
     (["category" head '(absolute . 2)]
+     (["domain" special-head 8 ";"])
      ["begin" strong mupad-indent-level] ; should be the same as above !!
      ["end_category" end])
     (["domain" head '(absolute . 2)]
@@ -224,7 +225,8 @@ simply exchange both strings in this definition."
 
 (defcustom mupad-shift-alist
   '((["case" "of"] . mupad-case-indent)
-    (["domain" "begin"] . -2))
+    (["domain" "begin"] . -2)
+    (["category" "begin"] . -2))
 "See `sli-shift-alist'."
 :type '(repeat (cons (vector string string) sexp))
 :initialize 'custom-initialize-default
@@ -252,7 +254,7 @@ simply exchange both strings in this definition."
 
 (defcustom mupad-keys-with-newline
 '("begin" "proc" "repeat" "seqbegin"
-  "parbegin" "then" "do" ";")
+  "parbegin" "then" "do" ";" "category" "domain")
 "See `sli-keys-with-newline'."
 :type '(repeat string)
 :initialize 'custom-initialize-default
@@ -277,7 +279,8 @@ simply exchange both strings in this definition."
     ("proc" . "")             ("repeat" . "")
     ("seqbegin" . "")         ("parbegin" . "")
     (";" . "")                ("then" . "")
-    ("do" . "")               ("end_domain" . ":"))
+    ("do" . "")               ("end_domain" . ":")
+    ("end_category" . ":"))
 "See `sli-add-to-key-alist'."
 :type '(repeat (cons string string))
 :initialize 'custom-initialize-default
@@ -1474,13 +1477,11 @@ unique completion can be done."
      "-----------------------"
      ["Help on ..." mupad-help-emacs-ask :key-sequence nil :help "Text help on a mupad object"])
     mupad-menu-separator
-    
-					;(mupad-build-color-cpl-menu)
-					;"Environment" sub-menu is added here.
-    mupad-menu-separator
     (list ["Restore windows" mupad-restore-wind-conf :active (not (null mupad-registers-list))
 	   :help "Go to previous window configuration"])
-    (mupad-environment-menu)))
+    (mupad-environment-menu)
+    ;;"Colors" sub-menu is added here.
+    ))
 
 (defun mupad-init-menu-bar ()
   "Add menu-bar item MuPAD in mupad-mode"
