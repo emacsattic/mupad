@@ -38,7 +38,7 @@ PKG_INIT_SOURCE(	[http://download.sourceforge.net/mupacs/])dnl
 PKG_INIT_URL(		[http://mupacs.sourceforge.net/])dnl
 PKG_INIT_VENDOR(	[Nicolas M. Thiéry <nthiery@users.sourceforge.net>])dnl
 PKG_INIT_PACKAGER(	[Nicolas M. Thiéry <nthiery@users.sourceforge.net>])dnl
-PKG_INIT_DOC(		README index.html INSTALL QuickInstall NEWS AUTHORS THANKS TODO BUGS ChangeLog screenshot-debugger.png screenshot-mupad.png screenshot-mupad-run.png)dnl
+PKG_INIT_DOC(		README index.html INSTALL QuickInstall NEWS AUTHORS THANKS TODO BUGS ChangeLog screenshot-debugger.png screenshot-mupad.png screenshot-mupad-run.png mupad.el-info mupad-run.el-info)dnl
 PKG_INIT_BUILD_ARCHS(	noarch)dnl
 
 ##############################################################################
