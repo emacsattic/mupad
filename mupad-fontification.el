@@ -719,7 +719,22 @@ things are fontified."
           (widen)))
     ad-do-it))
 
+(defadvice lazy-lock-fontify-region (around mupad-font-lock)
+  (if (eq major-mode 'mupad-mode)
+      (save-restriction
+        (unwind-protect
+            (progn
+              (narrow-to-region 
+               (max (point-min) (- (point) mupad-maximal-distance-to-ancestor))
+               (min (point-max) (+ (point) mupad-maximal-distance-to-ancestor)))
+              ad-do-it)
+          (widen)))
+    ad-do-it))
+
 (add-hook 'mupad-mode-hook 'mupad-fontification-on)
+
+(add-hook 'mupad-mode-hook
+         '(lambda nil (ad-activate 'lazy-lock-fontify-region)))
 
 ;(add-hook 'mupad-run-mode-hook
 ;         '(lambda nil (ad-activate 'lazy-lock-fontify-region)))

@@ -91,13 +91,20 @@ put for instance \"netscape file:/usr/local/MuPAD/mupad_html_help/index.html\""
 :type 'file :group 'mupad)
 
 (defcustom mupad-el-info "/usr/local/share/emacs/site-lisp/mupad.el-info"
-"Locateion of the mupad.el-info file describing mupad.el"
+"Location of the mupad.el-info file describing mupad.el"
 :type 'file :group 'mupad)
 
 (defcustom mupad-temp-directory "/tmp/"
   "Directory in which to create temporary files."
-
 :type 'directory :group 'mupad)
+
+(defcustom mupad-maximal-distance-to-ancestor 500
+"fontification and indentation takes care of text between 
+  (max (point-min) (- (point) mupad-maximal-distance-to-ancestor))
+and
+  (min (point-max) (+ (point) mupad-maximal-distance-to-ancestor))
+Set it to 100000 for noincidence."
+:type 'integer :group 'mupad)
 
 (defcustom mupad-electric-p t
 "Non-nil means emacs will automatically insert closing braces, and so on.
@@ -603,9 +610,15 @@ by a carriage return in mupad-mode."
 ;; Comments : between # #, or /* */ or starting with //
 
 (defun mupad-get-safe-place nil
-  (save-excursion
-    (if (re-search-backward mupad-safe-place-regexp nil t mupad-noft-safe)
-        (match-end 1) (point-min))))
+   (let ((relative-point-min
+            (if mupad-maximal-distance-to-ancestor
+            (max (point-min)
+                 (- (point) mupad-maximal-distance-to-ancestor))
+            (point-min))))
+   (save-excursion
+     (if (re-search-backward mupad-safe-place-regexp
+                     relative-point-min t mupad-noft-safe)
+         (match-end 1) relative-point-min))))
 
 (defsubst mupad-within-emacs-comment (&optional starting-point)
   (let ((aux (mupad-get-safe-place)))
