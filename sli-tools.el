@@ -2437,7 +2437,7 @@ and the syntax table should be ok."
           (setq sli-select-end-of-overlay-fn eoov))
         (set (make-local-variable 'indent-line-function) 'sli-electric-tab)
         (set (make-local-variable 'indent-region-function) 'sli-indent-region)
-        (setq sli-handles-sexp t sli-verbose t sli-prop-verbose nil)
+        (setq sli-handles-sexp t sli-verbose nil sli-prop-verbose nil)
         (setq sli-overlay-beg (make-overlay (point-min) (point-min)))
         (setq sli-overlay-end (make-overlay (point-min) (point-min)))
         (overlay-put sli-overlay-beg 'face 'show-paren-match-face)
