@@ -1999,7 +1999,7 @@ if PT is within a multiline-comment."
                         sli-block-comment-middle-offset
                         ))))))
 
-(defun sli-tell-indent (&optional afterp nomrelation) ;; used only here
+(defun sli-tell-indent (&optional afterp nomrelation point-is-the-end) ;; used only here
   "Gives the indentation of line on which point lies.
 Or on line after if AFTERP is t."
   ;; This indentation depends on what is on the previous
@@ -2020,7 +2020,7 @@ Or on line after if AFTERP is t."
         (princ (list "(sli-indent-line) Within long comment starting at " pos-beg-comment)))
       (sli-tell-indent-within-long-comment afterp pos-beg-comment)))
   
-  (unless afterp (end-of-line))
+  (unless (or afterp point-is-the-end) (end-of-line))
   
   (let*((pt (point)) wd-lst beg-str full-key appui head opp the-indent
         (first-stuff (and (not afterp) (sli-get-first-fixed-or-strong-or-end-or-soft pt)))
@@ -2183,7 +2183,7 @@ Or on line after if AFTERP is t."
 		 (widen))))
            (save-excursion
              (goto-char (cdr first-stuff))
-             (sli-tell-indent t t))
+             (sli-tell-indent t t point-is-the-end))
 	 (when sli-verbose
 	   (princ "\n") (princ (list "(sli-tell-indent) last non-end-key is in sli-relation-keys")))
 	 (sli-compute-indent-after first-stuff)))
@@ -2232,7 +2232,6 @@ Or on line after if AFTERP is t."
   (save-restriction
     (condition-case err
         (save-excursion
-          ;; There was an (end-of-line) here. Required ????
           (sli-insert-indent (sli-tell-indent)))
       (error (princ "\n(sli-indent-line): ") (princ err) nil))))
 
@@ -2303,10 +2302,10 @@ In a program, use `sli-indent-line'."
                 (sli-remove-trailing-spaces)
                 (setq only-spacep (sli-only-spacep))
 				; (princ "\n") (princ (list "only-spacep = " only-spacep))
-                (sli-insert-indent (setq this-indent (sli-tell-indent)))
+                (sli-insert-indent (setq this-indent (sli-tell-indent nil nil t)))
                 (unless only-spacep (sli-safe-insert " "))
                                         ;--> in case of thendo with point between then and do.
-                (setq next-indent (sli-tell-indent t))
+                (setq next-indent (sli-tell-indent t nil t))
                 (when sli-verbose
 		  (princ "\n") (princ (list "(sli-electric-terminate-line) indent before:" this-indent))
 		  (princ "\n") (princ (list "(sli-electric-terminate-line) indent after:" next-indent)))
@@ -2333,7 +2332,7 @@ Next line is properly indented."
               (narrow-to-region (sli-get-safe-backward-place) (sli-get-safe-forward-place))
               (sli-remove-trailing-spaces)
               (sli-put-newline)
-              (sli-insert-indent (sli-tell-indent))
+              (sli-insert-indent (sli-tell-indent nil nil t))
           (widen))
       (error (princ "\n(sli-newline): ") (princ err) nil))))
 
@@ -2477,8 +2476,8 @@ by specifying special furtherings in `sli-maid-correction-alist'"
                   (if on-listp
                       (setq where-to-write (append where-to-write (list 'indent 'forward-line 'indent)))
 		    ;(princ "\n(sli-maid) indentation plus going to next line")
-                    (sli-indent-line) (forward-line 1) (indent-to (sli-tell-indent)))) ; beware if it is
-                                        ; only an empty line.
+                    (sli-indent-line) (forward-line 1) (indent-to (sli-tell-indent nil nil t))))
+                                        ; beware if it is only an empty line.
                  (t (if on-listp
                         (setq where-to-write (append where-to-write (list 'indent)))
 		      ;(princ "\n(sli-maid) indentation but not going to next line")
@@ -2593,4 +2592,4 @@ are NOT regexp but simple strings."
         (sli-precomputations))
     (error (princ "\nSomething went wrong in sli-tools: ")(princ err) nil)))
 
-;;------------------ sli-tools ends here. 2596 lines ??
+;;------------------ sli-tools ends here. 2595 lines ??
