@@ -215,15 +215,15 @@ See `mupad-describe-this-proc' and `mupad-user-mail-address'."
      ["end_proc" end]
      ["end" end])
     (["category" head mupad-domain-indent]
-     (["category" special-head 10 (";" ":")])
-     (["axiom" special-head 10 (";" ":")])
+     (["category" special-head 9 (";" ":")])
+     (["axiom" special-head 6 (";" ":")])
      ["begin" strong mupad-domain-indent] ; should be the same as above !!
      ["end_category" end]
      ["end" end])
     (["domain" head mupad-domain-indent]
-     (["inherits" special-head 10 (";" ":")])
-     (["category" special-head 10 (";" ":")])
-     (["axiom" special-head 10 (";" ":")])
+     (["inherits" special-head 9 (";" ":")])
+     (["category" special-head 9 (";" ":")])
+     (["axiom" special-head 6 (";" ":")])
      ["begin" strong mupad-domain-indent] ; should be the same as above !!
      ["end_domain" end]
      ["end" end])
@@ -371,6 +371,11 @@ like with show-paren-mode."
   (save-excursion
     (when pt (goto-char pt))
     (save-match-data
+      ;(princ "\n")
+      ;(princ (list "(mupad-is-a-separatorp)" (point)
+      ;             (member (char-after) (list ?; ?,))
+      ;             (= (char-after) ?:) (not (looking-at ":[=<>:]"))
+      ;             (not (= (preceding-char) ?:))))
       (or (member (char-after) (list ?; ?,))
           (and (= (char-after) ?:)
                (not (looking-at ":[=<>:]"))
