@@ -341,7 +341,6 @@ after 'end_proc' and so on. See `sli-more-maidp'."
   (require 'disp-table)   ;; Almost always required.
   (require 'backquote)    ;; For macros.
   (require 'gud)          ;; For the debugger.
-  (require 'pcomplete)
   (require 'regexp-opt)
   (require 'imenu)
   (require 'mupad-fontification)
