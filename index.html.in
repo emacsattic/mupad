@@ -89,14 +89,14 @@ interaction. Here is a feature summary:
     <li><a href="README">README</a>.
     <li><a href="NEWS">NEWS</a> and complete <a href="ChangeLog">change log</a>.
     <li><a href="AUTHORS">Authors</a> and <a href="THANKS">thanks</a>.
-    <li><a href="QuickInstall">Quick installation procedure</a> and
+    <li><a href="QuickInstall">Quick installation instructions</a> and
         <a href="INSTALL">generic installation instructions</a>.
     <li><a href="TODO">TODO: future plans for mupacs</a>
     <li><a href="FAQ">Frequently Asked Questions</a>
     <li><a href="BUGS">Known bugs</a>
     <li><a href="mupad.el-info">Information on using the editing mode</a>
     <li><a href="mupad-run.el-info">Information on running mupad in a
-        buffer (in French!)</a>
+        buffer (in French and slightly outdated)</a>
 </ul>
 
 <h2><a name="links">Links</a></h2>

@@ -12,6 +12,8 @@ Last Modified: 14-Oct-2002 by Olivier Ramare.
 REQUIRES: sli-tools > 0.92
 $Id$
 
+Beware: this documentation may be slightly outdated.
+
 Usage
 -----
 
@@ -100,9 +102,6 @@ mupad-auto-indent and mupad-electric-p:
 
 There are two hooks that the user can set, and which are
   mupad-mode-hook
-  mupad-mdx-mode-hook         : to specify behaviour of the mdx-debugger.
-
-We shall describe the second hook in the section devoted to mdx for the other.
 
 First note that many of these variables takes boolean values, which in
 eLisp are denoted by t (for true) and nil (for false). Secondly, as far

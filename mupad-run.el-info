@@ -5,13 +5,15 @@ Version 2.00
 Dernière modification : le 17 Octobre 2002
 $Id$
 
+Attention: cette documentation n'est plus complètement à jour.
+
 I. Présentation
 ---------------
 
-L'ambition de ce projet est de réunir les principaux outils d'aide à
-la programmation de mupad dans emacs.
+L'ambition du projet MuPACS est de réunir les principaux outils d'aide
+à la programmation de mupad dans emacs.
 
-Ce projet comporte plusieurs parties :
+MuPACS comporte plusieurs parties :
  - l'une est prévue pour éditer confortablement du code mupad,
  - une autre pour lancer le programme mupad dans une fenêtre d'emacs,
  - et la dernière intègre des facilités d'utilisation du débogueur.
@@ -29,13 +31,13 @@ utiliser la liste de diffusion francophone de mupad mupad@aful.org
 pour échanger des avis et des conseils relatifs à cet environnement
 d'emacs.
 
-Précisons que ces programmes sont de version 2... Un premier mode
-mupad.el a été écrit par OR il y a quelques années, il s'inspirait
-d'ailleurs d'un mode pour maple et NT avait déjà intégré à ce mode un
-débogueur.  Guidé par les conseils d'OR, FM a tiré profit de la
-nouvelle façon dont mupad, depuis la version 2.5, peut gérer les
-entrées/sorties pour obtenir une interface qui guide l'utilisateur
-lorsqu'il utilise mupad jusqu'à lui faire oublier qu'il emploie emacs.
+Mini historique: un premier mode mupad.el a été écrit par OR il y a
+quelques années, il s'inspirait d'ailleurs d'un mode pour maple et NT
+avait déjà intégré à ce mode un débogueur.  Guidé par les conseils
+d'OR, FM a tiré profit de la nouvelle façon dont mupad, depuis la
+version 2.5, peut gérer les entrées/sorties pour obtenir une interface
+qui guide l'utilisateur lorsqu'il utilise mupad jusqu'à lui faire
+oublier qu'il emploie emacs.
 
 Le fichier mupad.el-info contient d'autres renseignements.
 
@@ -150,7 +152,7 @@ Cette variable, comme les suivantes, peut être mise à jour par le menu
 MuPAD/Environnement/Customize ou par une affectation à cette variable
 de la liste des options dans le fichier ~/.emacs.
 
-  (setq mupad-run-pgm-opt '("-R" "-U" "EMACS"))
+  (setq mupad-run-pgm-opt '("-R" "-U" "EMACS=TRUE"))
 
 L'autre variable d'emacs à configurer de la même manière est
 mupad-help-method.  Sa valeur doit être 'mupad-help-from-toc-to-buffer

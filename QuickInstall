@@ -3,8 +3,11 @@ Quick installation procedure
 
 In short, this package uses the standard installation procedure:
 unpacking, ./configure, make, make check, make install. This file
-describes this with some more details. See the file INSTALL for
-generic information on the use of configure.
+describes this with some more details. Depending on your architecture
+you may also just install prebuild packages; in this case you may skip
+directly to section 6 below.
+
+See the file INSTALL for generic information on the use of configure.
 
 Note: you can install mupacs in your own account if you don't have
 root access. See --prefix and lispdir options below.
@@ -51,7 +54,7 @@ root access. See --prefix and lispdir options below.
 
     By default mupacs gets installed in /usr/local/share/emacs/site-lisp/
 
-    If emacs is installed in /usr/bin/emacs, it's recommended to
+    If emacs is installed in /usr/bin/emacs, it is recommended to
     install mupacs in /usr/share/emacs/site-lisp instead:
 
 	configure --prefix=/usr
@@ -79,12 +82,18 @@ root access. See --prefix and lispdir options below.
     To customize mupacs: 			   M-x customize-group mupad
 
     After this stage, usage should be essentially
-    self-explanatory. So, explore, and see the files mupad.el-info and
-    mupad-run.el-info when you want to know more precise things.
+    self-explanatory: explore! You may obtain further information
+    by browsing the mode descriptions with M-x describe-mode inside
+    the MuPAD buffers. This contains in particular some tips on how to
+    configure MuPAD for advanced features (plots, ...).
+
+    You may also wish to consult the files mupad.el-info and
+    mupad-run.el-info. However, beware that some parts of their
+    content are in French and/or slightly outdated.
 
 8. Getting help:
 
     For support in French, send an e-mail to mupad@aful.org.
-    Otherwise, contact directly the authors (see file AUTHORS)
+    Otherwise, send an e-mail to mupacs-users@lists.sourceforge.net.
 
 9.  That's all folks!
