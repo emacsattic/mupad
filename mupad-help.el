@@ -44,10 +44,13 @@ Used to set `mupad-help-file-name-tar' and `mupad-help-file-name-toc'."
   '(mupad-help-item-to-file mupad-help-toc-to-item 
     mupad-help-file-to-offset)))
 
+(defvar xemacsp (string= (substring (version) 0 6) "XEmacs"))
+
 (defvar mupad-help-mode-map 
   nil 
   "Touches définies dans l'aide en ligne de mupad.")
-(unless mupad-help-mode-map
+
+(when (and (not mupad-help-mode-map) (not xemacsp))
   (let ((map (make-sparse-keymap)))
     (define-key map "q" (function mupad-help-quit))
     (define-key map "Q" (function mupad-help-quit))
@@ -62,6 +65,23 @@ Used to set `mupad-help-file-name-tar' and `mupad-help-file-name-toc'."
     (define-key map "\M-o" (function mupad-restore-wind-conf))
     (define-key map [C-left] (function mupad-help-previous-exemple))
     (define-key map [C-right] (function mupad-help-next-exemple))
+    (setq mupad-help-mode-map map)))
+
+(when (and (not mupad-help-mode-map) xemacsp)
+  (let ((map (make-sparse-keymap)))
+    (define-key map "q" (function mupad-help-quit))
+    (define-key map "Q" (function mupad-help-quit))
+    (define-key map "\r" (function mupad-help-return))
+    (define-key map ">" (function end-of-buffer))
+    (define-key map "<" (function beginning-of-buffer))
+    (define-key map [f5] (function mupad-help-emacs-search))
+    (define-key map "\C-c\C-h" (function mupad-help-emacs-search))
+    (define-key map [f6] (function mupad-help-emacs-ask))
+    (define-key map "\C-c\C-i" (function mupad-help-emacs-ask))
+    (define-key map [mouse-2] (function mupad-help-mouse-2))
+    (define-key map "\M-o" (function mupad-restore-wind-conf))
+    (define-key map [(control left)] (function mupad-help-previous-exemple))
+    (define-key map [(control right)] (function mupad-help-next-exemple))
     (setq mupad-help-mode-map map)))
 
 (defconst mupad-help-face
@@ -354,18 +374,15 @@ Available special keys:
 ;;
 
 (defun mupad-help-init nil
-  ;; initialisation des couleurs
-  ;;
+; initialisation des couleurs
   (mapcar 
    (lambda (a-face) (make-face (car a-face)) 
      (set-face-foreground (car a-face) (cadr a-face)))
    mupad-help-face)
-  ;;
-  ;; construction des bases de données de l'aide en ligne 
-  ;;    relations entre le nom du fichier dans l'aide en ligne, 
-  ;;    la position de ce fichier dans l'archive .tar, 
-  ;;    et le nom de cette même aide dans l'interface multi-fenêtre
-  ;;
+; construction des bases de données de l'aide en ligne 
+;    relations entre le nom du fichier dans l'aide en ligne, 
+;    la position de ce fichier dans l'archive .tar, 
+;    et le nom de cette même aide dans l'interface multi-fenêtre
   (unless mupad-help-item-to-file
     (mupad-help-init-item-to-file)
     (mupad-help-init-file-to-offset)

@@ -47,10 +47,11 @@
 (require 'advice)
 ;;
 ;;
-;; défini l'extension mupad-run, et sa version
+;; définit l'extension mupad-run, et sa version.
 ;;
 (provide 'mupad-run)
 (defconst mupad-run-mode-version "3.00" "Version of `mupad-run.el'.")
+;;
 ;;
 ;; Variables de configuration
 ;; 
@@ -152,14 +153,221 @@ should be present."
 ;; mupad-run-system-exception sont exécutés en tâche de fond si la 
 ;; saisie de mupad est bloquée, et le contraire sinon.
 ;;
-(defvar mupad-run-buffer-name 0)
-;; 0 - mupad-run-mode possible uniquement pour un tampon *MuPAD*
-;; 1 - mupad-run-mode possible uniquement pour un tampon *MuPAD* et *MuPAD*<2>
-;; 2 - mupad-run-mode possible uniquement pour un tampon *MuPAD* et *MuPAD*<n>
-;; 3 - mupad-run-mode possible pour tout tampon 
+(defcustom mupad-run-buffer-name 0
+  "0 - mupad-run-mode possible only on buffer with name *MuPAD*
+1 - mupad-run-mode possible only on a buffer with name *MuPAD* or *MuPAD*<2>
+2 - mupad-run-mode possible only on a buffer with name *MuPAD* or *MuPAD*<n>
+3 - mupad-run-mode possible only on a buffer with name *MuPAD*xxxxx
+4 - mupad-run-mode possible over every buffer"
+  :type 'integer
+  :group 'mupad-run)
+;; 
 ;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
+(defgroup mupad-run-faces nil
+  "MuPAD customization subgroup for faces of the MuPAD shell"
+  :group 'mupad-run :prefix "mupad-run")
+
+(defface mupad-run-face-default
+  `((((background dark)) (:foreground "white" :background "grey25"))
+    (t                   (:foreground "black" :background "grey95")))
+  "Default face in mupad-run."
+  :group 'mupad-run-faces)
+
+(defface mupad-run-face-default
+  `((((background dark)) (:foreground "white" :background "grey40"))
+    (t                   (:foreground "black" :background "grey85")))
+  "Default face in mupad-run."
+  :group 'mupad-run-faces)
+
+(defface mupad-run-face-result
+  `((((background dark)) 
+       (:foreground "lightblue" 
+        :background ,(face-background 'mupad-run-face-default)))
+    (t (:foreground "darkblue" 
+        :background ,(face-background 'mupad-run-face-default))))
+  "Face in mupad-run for results of MuPAD."
+  :group 'mupad-run-faces)
+
+(defface mupad-run-face-prompt
+  `((((background dark)) 
+       (:foreground "red" 
+        :background ,(face-background 'mupad-run-face-default)))
+    (t (:foreground "red" 
+        :background ,(face-background 'mupad-run-face-default))))
+  "Face in mupad-run for prompts."
+  :group 'mupad-run-faces)
+(defface mupad-run-face-local-prompt
+  `((((background dark)) 
+       (:foreground "pink" 
+        :background ,(face-background 'mupad-run-face-default)))
+    (t (:foreground "pink" 
+        :background ,(face-background 'mupad-run-face-default))))
+  "Face in mupad-run for all prompt but the first."
+  :group 'mupad-run-faces)
+
+(defface mupad-run-face-last-input
+  `((((background dark)) 
+       (:foreground "white" 
+        :background ,(face-background 'mupad-run-face-default)))
+    (t (:foreground "black" 
+        :background ,(face-background 'mupad-run-face-default))))
+  "Face in mupad-run for the last input."
+  :group 'mupad-run-faces)
+
+(defface mupad-run-face-for-emacs
+  `((((background dark)) 
+       (:foreground "grey50" 
+        :background ,(face-background 'mupad-run-face-default)))
+    (t (:foreground "grey50" 
+        :background ,(face-background 'mupad-run-face-default))))
+  "Face in mupad-run for emacs output."
+  :group 'mupad-run-faces)
+
+(defface mupad-run-face-separator
+  `((((background dark)) (:foreground "white" :background "black"))
+    (t                   (:foreground "black" :background "white")))
+  "Face in mupad-run for comments inside emacs output."
+  :group 'mupad-run-faces)
+
+(defface mupad-run-face-call-system
+  `((((background dark)) 
+       (:foreground "firebrick" 
+        :background ,(face-background 'mupad-run-face-default)))
+    (t (:foreground "firebrick" 
+        :background ,(face-background 'mupad-run-face-default))))
+  "Face in mupad-run for call system commands."
+  :group 'mupad-run-faces)
+
+(defface mupad-run-face-system
+  `((((background dark)) 
+       (:foreground "saddlebrown" 
+        :background ,(face-background 'mupad-run-face-default)))
+    (t (:foreground "saddlebrown" 
+        :background ,(face-background 'mupad-run-face-default))))
+  "Face in mupad-run for results of system calls."
+  :group 'mupad-run-faces)
+
+(defface mupad-run-face-completion
+  `((((background dark)) 
+       (:foreground "lightgreen" 
+        :background ,(face-background 'mupad-run-face-default)))
+    (t (:foreground "darkgreen"  
+        :background ,(face-background 'mupad-run-face-default))))
+  "Face in mupad-run for lists of completions."
+  :group 'mupad-run-faces)
+
+(defface mupad-run-face-error
+  `((((background dark)) (:foreground "white" :background "maroon"))
+    (t                   (:foreground "black" :background "lightpink")))
+  "Face in mupad-run for errors of MuPAD."
+  :group 'mupad-run-faces)
+
+(defface mupad-run-face-waiting-commands
+  `((((background dark)) (:foreground "white" :background "darkcyan"))
+    (t                   (:foreground "black" :background "cyan")))
+  "Face in mupad-run for waiting commands."
+  :group 'mupad-run-faces)
+
+(defface mupad-run-face-beginning-waiting
+  `((((background dark)) (:foreground "red" :background "darkcyan"))
+    (t                   (:foreground "red" :background "cyan")))
+  "Face in mupad-run in the waiting area for first character of a command."
+  :group 'mupad-run-faces)
+
+(defface mupad-run-face-beginning-rem
+  `((((background dark)) (:foreground "white" :background "darkcyan"))
+    (t                   (:foreground "black" :background "cyan")))
+  "Face in mupad-run in the waiting area for first character of a comment."
+  :group 'mupad-run-faces)
+
+(defface mupad-run-face-beginning-waiting
+  `((((background dark)) (:foreground "white" :background "darkcyan"))
+    (t                   (:foreground "black" :background "cyan")))
+  "Face in mupad-run in the waiting area for first character of a command."
+  :group 'mupad-run-faces)
+
+(defface mupad-run-face-default-flag
+  `((((background dark)) (:background "blue"))
+    (t                   (:background "lightblue")))
+  "Default face in mupad-run for hiden data."
+  :group 'mupad-run-faces)
+
+(defun mupad-run-create-face-flag (x)
+  (let ((br (intern (concat (symbol-name x) "-flag"))))
+    (make-face br)
+    (set-face-foreground br (face-foreground x))
+    (set-face-background br (face-foreground 'mupad-run-face-default-flag))))
+
+(mapcar 'mupad-run-create-face-flag 
+  '(mupad-run-face-result     mupad-run-face-prompt mupad-run-face-for-emacs 
+    mupad-run-face-separator  mupad-run-face-error  mupad-run-face-completion
+    mupad-run-face-system     mupad-run-face-call-system))
+
+(defvar xemacsp (string= (substring (version) 0 6) "XEmacs"))
+
+(defvar mupad-run-mode-map nil "Touches définies par mupad-run-mode.")
+
+(when (and (not mupad-run-mode-map) (not xemacsp))
+  (let ((map (make-sparse-keymap)))
+    (define-key map [C-return] (function mupad-run-creturn))
+    (define-key map [C-up] (function mupad-run-previous-history))
+    (define-key map [C-down] (function mupad-run-next-history))
+    (define-key map [C-prior] (function mupad-run-previous-history-search))
+    (define-key map [C-next] (function mupad-run-next-history-search))
+    (define-key map [C-left] (function mupad-run-left))
+    (define-key map [C-right] (function mupad-run-right))
+    (define-key map [C-delete] (function mupad-run-hide))
+    (define-key map [C-insert] (function mupad-run-show))
+    (define-key map "\r" (function mupad-run-return))
+    (define-key map "\C-d" (function mupad-run-suppression))
+    (define-key map [delete] (function mupad-run-suppression))
+    (define-key map [backspace] (function mupad-run-backspace))
+    (define-key map "\C-i" (function mupad-run-tab))
+    (define-key map "\C-c\C-c" (function mupad-run-break))
+    (define-key map "\C-c\C-s" (function mupad-run-save))
+    (define-key map "\C-c\C-w" (function mupad-run-save))
+    (define-key map "\C-ck" (function mupad-run-end))
+    (define-key map "\C-c0" (function mupad-run-reset))
+    (define-key map "\C-c1" (function mupad-run-insert-last-session))
+    (define-key map [f5] (function mupad-help-emacs-search))
+    (define-key map "\C-c\C-h" (function mupad-help-emacs-search))
+    (define-key map [f6] (function mupad-help-emacs-ask))
+    (define-key map "\C-c\C-i" (function mupad-help-emacs-ask))
+    (define-key map "\C-y" (function mupad-run-yank))
+    (setq mupad-run-mode-map map)))
+
+(when (and (not mupad-run-mode-map) xemacsp)
+  (let ((map (make-sparse-keymap)))
+    (define-key map [(control return)] (function mupad-run-creturn))
+    (define-key map [(control up)] (function mupad-run-previous-history))
+    (define-key map [(control down)] (function mupad-run-next-history))
+    (define-key map [(control prior)] 
+      (function mupad-run-previous-history-search))
+    (define-key map [(control next)] (function mupad-run-next-history-search))
+    (define-key map [(control left)] (function mupad-run-left))
+    (define-key map [(control right)] (function mupad-run-right))
+    (define-key map [(control delete)] (function mupad-run-hide))
+    (define-key map [(control insert)] (function mupad-run-show))
+    (define-key map "\r" (function mupad-run-return))
+    (define-key map "\C-d" (function mupad-run-suppression))
+    (define-key map [delete] (function mupad-run-suppression))
+    (define-key map [backspace] (function mupad-run-backspace))
+    (define-key map "\C-i" (function mupad-run-tab))
+    (define-key map "\C-c\C-c" (function mupad-run-break))
+    (define-key map "\C-c\C-s" (function mupad-run-save))
+    (define-key map "\C-c\C-w" (function mupad-run-save))
+    (define-key map "\C-ck" (function mupad-run-end))
+    (define-key map "\C-c0" (function mupad-run-reset))
+    (define-key map "\C-c1" (function mupad-run-insert-last-session))
+    (define-key map [f5] (function mupad-help-emacs-search))
+    (define-key map "\C-c\C-h" (function mupad-help-emacs-search))
+    (define-key map [f6] (function mupad-help-emacs-ask))
+    (define-key map "\C-c\C-i" (function mupad-help-emacs-ask))
+    (define-key map "\C-y" (function mupad-run-yank))
+    (setq mupad-run-mode-map map)))
+
 (eval-and-compile
   (mapcar (lambda (sym) (eval (list 'defvar sym nil)))
   '(mupad-run-edit mupad-run-todo mupad-run-comp-edit mupad-run-last-prompt
@@ -172,109 +380,34 @@ should be present."
 ;;
 (defvar mupad-run-process nil)
 
-;; test with (list-colors-display)
-;; mupad-run-face : type -> nom-de-face-general -> nom-de-face-buffer 
-;;      'mupad-run-face-result 
-;;   -> 'mupad-run-face-result ou 'mupad-run-face-result-bg
-;;   et 'mupad-run-face-result-fg -> grey95 ou grey50 ou ... selon le tampon
-(defvar mupad-run-face 
-  (if (or (eq frame-background-mode 'light) (not frame-background-mode))
-   '((mupad-run-face-result            "darkblue"    "grey95"   ) 
-     (mupad-run-face-prompt            "red"         "grey95"   ) 
-     (mupad-run-face-local-prompt      "pink"        "grey95"   ) 
-     (mupad-run-face-last-input        "black"       "grey95"   ) 
-     (mupad-run-face-for-emacs         "grey50"      "grey95"   ) 
-     (mupad-run-face-separator         "black"       "white"    ) 
-     (mupad-run-face-call-system       "firebrick"   "grey95"   ) 
-     (mupad-run-face-system            "saddlebrown" "grey95"   )
-     (mupad-run-face-completion        "darkgreen"   "grey95"   )
-     (mupad-run-face-error             "black"       "lightpink")  
-     (mupad-run-face-waiting-commands  "black"       "cyan"     ) 
-     (mupad-run-face-beginning-rem     "red"         "white"    ) 
-     (mupad-run-face-beginning-waiting "red"         "cyan"     )
-     (mupad-run-face-result-flag       "darkblue"    "lightblue") 
-     (mupad-run-face-prompt-flag       "red"         "lightblue") 
-     (mupad-run-face-local-prompt-flag "pink"        "darkblue") 
-     (mupad-run-face-last-input-flag   "black"       "lightblue") 
-     (mupad-run-face-for-emacs-flag    "grey50"      "lightblue") 
-     (mupad-run-face-separator-flag    "black"       "lightblue") 
-     (mupad-run-face-call-system-flag  "firebrick"   "lightblue") 
-     (mupad-run-face-system-flag       "saddlebrown" "lightblue")
-     (mupad-run-face-completion-flag   "darkgreen"   "lightblue")
-     (mupad-run-face-error-flag        "black"       "lightblue"))
-   '((mupad-run-face-result            "lightblue"   "grey25"  ) 
-     (mupad-run-face-prompt            "red"         "grey25"  ) 
-     (mupad-run-face-local-prompt      "pink"        "grey25"  ) 
-     (mupad-run-face-last-input        "white"       "grey25"  ) 
-     (mupad-run-face-for-emacs         "grey50"      "grey25"  ) 
-     (mupad-run-face-separator         "white"       "black"   ) 
-     (mupad-run-face-call-system       "firebrick"   "grey25"  ) 
-     (mupad-run-face-system            "saddlebrown" "grey25"  )
-     (mupad-run-face-completion        "lightgreen"  "grey25"  )
-     (mupad-run-face-error             "white"       "maroon"  )  
-     (mupad-run-face-waiting-commands  "white"       "darkcyan") 
-     (mupad-run-face-beginning-rem     "red"         "black"   ) 
-     (mupad-run-face-beginning-waiting "red"         "darkcyan")
-     (mupad-run-face-result-flag       "lightblue"   "blue") 
-     (mupad-run-face-prompt-flag       "red"         "blue") 
-     (mupad-run-face-local-prompt-flag "pink"        "blue") 
-     (mupad-run-face-last-input-flag   "white"       "blue") 
-     (mupad-run-face-for-emacs-flag    "grey50"      "blue") 
-     (mupad-run-face-separator-flag    "white"       "blue") 
-     (mupad-run-face-call-system-flag  "firebrick"   "blue") 
-     (mupad-run-face-system-flag       "brown"       "blue")
-     (mupad-run-face-completion-flag   "lightgreen"  "blue")
-     (mupad-run-face-error-flag        "white"       "blue"))))
-
-(setq mupad-run-color-change 
-  '((("grey95" . "A") "grey85") 
-    (("grey25" . "A") "grey40")))
-
-(defvar mupad-run-mode-map nil "Touches définies par mupad-run-mode.")
-(unless mupad-run-mode-map
-  (let ((map (make-sparse-keymap)))
-    (define-key map "\r" (function mupad-run-return))
-    (define-key map "\C-d" (function mupad-run-suppression))
-    (define-key map "\C-i" (function mupad-run-tab))
-    (define-key map "\C-c\C-c" (function mupad-run-break))
-    (define-key map "\C-c\C-s" (function mupad-run-save))
-    (define-key map "\C-c\C-w" (function mupad-run-save))
-    (define-key map "\C-ck" (function mupad-run-end))
-    (define-key map "\C-c0" (function mupad-run-reset))
-    (define-key map "\C-c1" (function mupad-run-insert-last-session))
-    (define-key map "\C-c\C-h" (function mupad-help-emacs-search))
-    (define-key map [delete] (function mupad-run-suppression)) 
-    (define-key map [backspace] (function mupad-run-backspace))
-    (define-key map [f5] (function mupad-help-emacs-search))
-    (define-key map [f6] (function mupad-help-emacs-ask))
-    (define-key map "\C-c\C-i" (function mupad-help-emacs-ask))
-    (define-key map "\C-y" (function mupad-run-yank))
-    (define-key map [mouse-2] (function mupad-run-yank-at-click))
-    (define-key map [C-return] (function mupad-run-creturn))
-    (define-key map [C-up] (function mupad-run-previous-history))
-    (define-key map [C-down] (function mupad-run-next-history))
-    (define-key map [C-prior] (function mupad-run-previous-history-search))
-    (define-key map [C-next] (function mupad-run-next-history-search))
-    (define-key map [C-left] (function mupad-run-left))
-    (define-key map [C-right] (function mupad-run-right))
-    (define-key map [C-delete] (function mupad-run-hide))
-    (define-key map [C-insert] (function mupad-run-show))
-    (setq mupad-run-mode-map map)))
-
 (defun mupad-run-set-arrow-behaviour (symbol val)
   "See `mupad-run-arrow-behaviour'"
   (setq mupad-run-arrow-behaviour val)
   (cond 
-    ((string= val "Usual")
-      (define-key mupad-run-mode-map 
-        [C-up] (function mupad-run-previous-history))
-      (define-key mupad-run-mode-map 
-        [C-down] (function mupad-run-next-history))
+    ((and (string= val "Usual") xemacsp)
+      (define-key mupad-run-mode-map [(control up)] 
+        (function mupad-run-previous-history))
+      (define-key mupad-run-mode-map [(control down)] 
+        (function mupad-run-next-history))
+      (define-key mupad-run-mode-map [(up)] (function previous-line))
+      (define-key mupad-run-mode-map [(down)] (function next-line)))
+    ((string= val "Usual") ; for GNU-emacs
+      (define-key mupad-run-mode-map [C-up] 
+        (function mupad-run-previous-history))
+      (define-key mupad-run-mode-map [C-down] 
+        (function mupad-run-next-history))
       (define-key mupad-run-mode-map [up] (function previous-line))
       (define-key mupad-run-mode-map [down] (function next-line)))
-    (t 
-      (define-key mupad-run-mode-map 
-        [up] (function mupad-run-previous-history))
+    (xemacsp ; for bash-style
+      (define-key mupad-run-mode-map [(up)] 
+        (function mupad-run-previous-history))
+      (define-key mupad-run-mode-map [(down)] 
+        (function mupad-run-next-history))
+      (define-key mupad-run-mode-map [(control up)] (function previous-line))
+      (define-key mupad-run-mode-map [(control down)] (function next-line)))
+    (t ; bash-style and GNU-emacs
+      (define-key mupad-run-mode-map [up] 
+        (function mupad-run-previous-history))
       (define-key mupad-run-mode-map [down] (function mupad-run-next-history))
       (define-key mupad-run-mode-map [C-up] (function previous-line))
       (define-key mupad-run-mode-map [C-down] (function next-line)))))
@@ -327,6 +460,7 @@ should be present."
 
 (ad-activate 'save-buffers-kill-emacs)
 
+(when (not xemacsp) (defun char-int (x) x))
 ;;
 ;;
 ;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -387,7 +521,8 @@ should be present."
       (or (string= str "*MuPAD*")
           (and (string= (substring str 0 (min 8 (length str))) "*MuPAD*<")
                (string= (substring str -1) ">"))))
-    ((= mupad-run-buffer-name 3) t)))
+    ((= mupad-run-buffer-name 3) (string= (substring str 0 7) "*MuPAD*"))
+    ((= mupad-run-buffer-name 4) t)))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -708,7 +843,7 @@ Available special keys:
       (setq output-str     
         (substring 
           mupad-run-output (+ 2 (car output-type)) (cadr output-type)))
-      (setq brt (car (cddr output-type)))
+      (setq brt (char-int (car (cddr output-type))))
       (mupad-run-message-debug 'mupad-run-filter 
         (concat "MuPAD output: [" (number-to-string brt) "] " output-str))
 ; traiter les différents types de données renvoyées par mupad
@@ -793,7 +928,8 @@ Available special keys:
     (mupad-run-from-todo-to-output))
 ; raccourcissement de la chaîne à traiter à la fin de la boucle 
   (setq mupad-run-output (substring mupad-run-output output-index))
-  (when (equal brb brc) (recenter -4))
+; trop contraignant 
+;  (when (equal brb brc) (recenter -4))
   (set-buffer brc)))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -2031,16 +2167,6 @@ Available special keys:
             (put-text-property (point) (1+ (point)) 'front-sticky nil)
             (put-text-property (point) (1+ (point)) 'read-only t)
             (forward-char)))))))
-
-(defun mupad-run-yank-at-click (click arg)
-  (interactive "e\nP")
-   ;; Give temporary modes such as isearch a chance to turn off.
-  (run-hooks 'mouse-leave-buffer-hook)
-  (or mouse-yank-at-point (mouse-set-point click))
-  (setq this-command 'yank)
-  (setq mouse-selection-click-count 0)
-  (mupad-run-yank arg))
-
 ;;
 ;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 ;
@@ -2165,27 +2291,29 @@ Available special keys:
 ;;
 ;; initialisation des couleurs
 ;;
-(mapcar
-  (lambda (a-face)
-    (make-face (car a-face))
-    (set-face-foreground (car a-face) (cadr a-face))
-    (set-face-background (car a-face) (car (cddr a-face))))
-  mupad-run-face)
+;(mapcar
+;  (lambda (a-face)
+;    (make-face (car a-face))
+;    (set-face-foreground (car a-face) (cadr a-face))
+;    (set-face-background (car a-face) (car (cddr a-face))))
+;  mupad-run-face)
 
 (defun mupad-run-to-local-symb (symb arg)
   (intern (concat "local-" arg "-" (symbol-name symb))))
 
-(mapcar
-  (lambda (a-face)
-    (let ((br (mupad-run-to-local-symb (car a-face) "A")) br1)
-      (make-face br)
-      (setq br1 (cadr a-face))
-      (setq br1 (or (cadr (assoc (cons br1 "A") mupad-run-color-change)) br1))
-      (set-face-foreground br br1)
-      (setq br1 (car (cddr a-face)))
-      (setq br1 (or (cadr (assoc (cons br1 "A") mupad-run-color-change)) br1))
-      (set-face-background br br1)))
-  mupad-run-face)
+; (defun mupad-run-to-flag-symb (symb)
+
+;(mapcar
+;  (lambda (a-face)
+;    (let ((br (mupad-run-to-local-symb (car a-face) "A")) br1)
+;      (make-face br)
+;      (setq br1 (cadr a-face))
+;      (setq br1 (or (cadr (assoc (cons br1 "A") mupad-run-color-change)) br1))
+;      (set-face-foreground br br1)
+;      (setq br1 (car (cddr a-face)))
+;      (setq br1 (or (cadr (assoc (cons br1 "A") mupad-run-color-change)) br1))
+;      (set-face-background br br1)))
+;  mupad-run-face)
 ;;
 ;;
 ;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
