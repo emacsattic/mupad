@@ -1,7 +1,5 @@
 (provide 'mupad-xemacs)
 
-(defun char-int (x) x)
-
 (defun line-end-position (&optional n)
   (save-excursion
     (end-of-line)

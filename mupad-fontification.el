@@ -58,6 +58,10 @@ Faces used are mupad-global-var in definitions and mupad-user-def otherwise."
   "\\<\\([a-zA-Z_]\\(::\\|\\w\\)*\\)[ \t\n]*:=[ \t\n]*\\(proc\\)[ \t\n]*("
   "regexp that matches the beginning of a procedure.")
 
+(defvar mupad-run-beginning-of-painted-zone
+  "marker indicating the beginning of the area where keywords, options and all should be painted."
+  (list 'eval 'mupad-run-edit))
+
 (defvar mupad-function-defp nil
 "Used for fontification. While parsing definitions,
 a t value means we are looking at a function definition, while
@@ -221,6 +225,14 @@ commands export/unexport. This variable is used only by font-lock.")
    ))
   "Subdued level of fontification for mupad-mode.")
 
+(defconst mupad-run-fontification-keywords-1
+  (purecopy
+   (list
+    '("\\(\\<userinfo\\>(\\)\\([^;]+\\));"  (2 mupad-info keep t))
+    '(mupad-find-keywords (0 mupad-keyword))
+   ))
+  "Subdued level of fontification for mupad-run-mode.")
+
 (defconst mupad-fontification-keywords-2
   (purecopy
    (list
@@ -231,10 +243,23 @@ commands export/unexport. This variable is used only by font-lock.")
     '(mupad-find-types (0 mupad-type))
     )))
 
+(defconst mupad-inner-run-fontification-keywords-2
+  (purecopy
+   (list
+    '(mupad-find-options (0 mupad-options))
+    '(mupad-find-types (0 mupad-type))
+    )))
+
 (defconst mupad-script-fontification-keywords-2
   (append
    mupad-script-fontification-keywords-1
    mupad-fontification-keywords-2)
+  "Medium level of fontification for mupad-run-mode.")
+
+(defconst mupad-run-fontification-keywords-2
+  (append
+   mupad-run-fontification-keywords-1
+   mupad-inner-run-fontification-keywords-2)
   "Medium level of fontification for mupad-mode.")
 
 (defconst mupad-fontification-keywords-3
@@ -247,6 +272,22 @@ commands export/unexport. This variable is used only by font-lock.")
     '("\\<stdlib\\>" (0 'mupad-domain))
     '(mupad-find-ops (0 mupad-keyword append t))
     )))
+
+(defconst mupad-inner-run-fontification-keywords-3
+  (purecopy
+   (list
+    '(mupad-find-simple-primitive-name (0 mupad-primitive-name))
+    '(mupad-find-composed-primitive-name (0 mupad-primitive-name))
+    '(eval . (cons mupad-prefix-regexp '(0 mupad-domain)))
+    '("\\<stdlib\\>" (0 'mupad-domain))
+    '(mupad-find-ops (0 mupad-keyword append t))
+    )))
+
+(defconst mupad-run-fontification-keywords-3
+  (append
+   mupad-run-fontification-keywords-2  
+   mupad-inner-run-fontification-keywords-3)
+  "Gaudy level of fontification for mupad-run-mode.")
 
 (defconst mupad-script-fontification-keywords-3
   (append
@@ -341,6 +382,9 @@ Default is `font-lock-builtin-face'.")))
   ;; We skip comments, and that saves some time since comments typically
   ;; contain lots of words.
   (unless level (setq level 0))
+  ;; when in mupad-run-mode, skip
+  (when (eq major-mode 'mupad-run-mode)
+    (goto-char (min limit (max (point) (marker-position mupad-run-edit)))));beginning-of-painted-zone))))
   (let ((has-been-foundp nil) (st (point)) (case-fold-search nil))
     (while (if (setq has-been-foundp
                      (re-search-forward my-regexp limit 0)) ;;<<-- modified !!!!
@@ -374,7 +418,11 @@ Default is `font-lock-builtin-face'.")))
 (defun mupad-find-composed-primitive-name (limit)
   ;; The time saving idea is that few contruct of the shape lib::fn
   ;; will be used.
-  (let ((fn-has-been-foundp nil) (st (point)) (case-fold-search nil))
+  (let ((fn-has-been-foundp nil)
+        (st (if (eq major-mode 'mupad-run-mode)
+                (min limit (max (point) (marker-position mupad-run-edit)))
+              (point)))
+        (case-fold-search nil))
     (save-restriction
       (unwind-protect
 	  (progn
@@ -605,6 +653,19 @@ things are fontified."
   (mupad-force-update-fontification)    ;(print "After font-lock")
   )
 
+(defun mupad-run-fontification-on nil
+  (define-key mupad-mode-map  [(control ?l)] (function mupad-force-update-fontification))
+  (set (make-local-variable 'font-lock-defaults)
+       '((mupad-run-fontification-keywords-1
+          mupad-run-fontification-keywords-2
+          mupad-run-fontification-keywords-3)
+         nil nil nil nil))
+  (mupad-fontification-common-init)
+  (mupad-turn-on-lazy-font-lock) ;(print "Before font-lock")
+  (mupad-force-update-fontification)    ;(print "After font-lock")
+  )
+
 (add-hook 'mupad-mode-hook 'mupad-fontification-on)
+;(add-hook 'mupad-run-mode-hook 'mupad-run-fontification-on)
 
 ;-------------------------end !!

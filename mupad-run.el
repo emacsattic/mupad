@@ -57,6 +57,8 @@
 (require 'gud)
 (require 'advice)
 ;(require 'mupad-xemacs)
+;; Another stuff for xemacs:
+(unless (fboundp 'char-int) (defun char-int (x) x))
 ;;
 ;;
 ;; définit l'extension mupad-run, et sa version.
