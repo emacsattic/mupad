@@ -171,6 +171,10 @@ CLOSING-STATEMENT can be \";\". See `mupad-region' for more information."
   (mupad-bus-visible-command
     (concat "TEXTWIDTH:=" (number-to-string (1- (window-width))) ":")))
 
+(defun mupad-bus-prettyprint-switch nil
+  (interactive)
+  (mupad-bus-visible-command "PRETTYPRINT:=not PRETTYPRINT;"))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun mupad-bus-window-manager (my-buffer-name option)

@@ -1537,6 +1537,1602 @@ and source-file directory for your debugger."
 	["Set DIGITS..." mupad-bus-set-digits :active (buffer-live-p "*MuPAD*")]
 	["Adapt TEXTWIDTH" mupad-bus-adapt-textwidth :active (buffer-live-p "*MuPAD*")
 	 :help "Set the textwidth of the mupad process to the actual width of your window"]
+        ["PrettyPrint switch" mupad-bus-prettyprint-switch :active t
+         :help "Toggle the value of PRETTYPRINT"]
+	"--------------------"
+	["Exchange Keys" mupad-toggle :active t :help "Exchange bindings of RET/M-RET" ]
+	["Customize" mupad-customize-mupad-group :active t :key-sequence nil])))
+
+;;----------------------------
+;; Add a menu to the menu-bar.
+;;---------------------------
+
+(defmacro mupad-menu-bar ()
+  "Menu-bar item MuPAD"
+   (` (append
+        (list "MuPAD"
+              ["Start MuPAD" mupad-bus-start :active (featurep 'mupad-run)
+	       :help "Start a mupad process in another buffer"]
+         (list
+          "Send file to MuPAD..."
+          ["Silently"  mupad-bus-file :active (featurep 'mupad-run)
+	   :help "Send a file to the mupad-process by `read(...):'"]
+          ["Openly"    mupad-bus-execute-file :active (featurep 'mupad-run)
+	   :help "Send a file to the mupad-process by `read(...);'"])
+         ["Send region to MuPAD"  mupad-bus-region :active (and (featurep 'mupad-run) mark-active)]
+         "---------------------")
+        (mupad-build-main-syn-menu)
+        (list
+         (list
+          "Shortcuts"
+          ["Further Statements" sli-maid :active t :help "Strive to continue the present construct"]
+          ["Closes All Statements" sli-tutor :active t]
+	  ["Word completion" mupad-complete :active t :help "Also available via by pressing twice TAB"])
+         "---------------------")
+        (list
+         ["Manual" mupad-start-manual :active t :key-sequence nil :help "Open the hytex manual"]
+         ["Info on this mode" mupad-show-mupad-info :active t :key-sequence nil]
+	 "-----------------------"
+	 ["Help on ..." mupad-help-emacs-ask :key-sequence nil :help "Text help on a mupad object"])
+        mupad-menu-separator
+        
+        (list ["Debug..." mupad-mdx :active t :key-sequence nil])
+        ;(mupad-build-color-cpl-menu)
+        ;"Environment" sub-menu is added here.
+        mupad-menu-separator
+        (list ["Restore windows" mupad-restore-wind-conf :active (not (null mupad-registers-list))
+	       :help "Go to previous window configuration"])
+        (mupad-environment-menu))))
+
+(defun mupad-init-menu-bar ()
+  "Add menu-bar item MuPAD in mupad-mode"
+  (when (and (featurep 'easymenu)
+             (eq MuPAD-menu-map nil))
+     (easy-menu-define MuPAD-menu-map mupad-mode-map
+       "Menu-bar item used under mupad-mode"
+       (mupad-menu-bar))))
+
+;; mupad.el ends here.    1825 lines;;; mupad.el --- mupad editing support package
+
+;; Major mode for MuPAD editing. It provides functions for editing
+;; MuPAD code and interacting with MuPAD. See the documentation
+;; of mupad-mode.
+
+;; LCD Archive Entry:
+;; mupad-mode|Olivier Ramare|ramare@agat.univ-lille1.fr|
+;; MuPAD editing support|
+;; 15-Dec-01|2.00|~/modes/mupad.el.Z|
+
+;; Maintainer: Olivier Ramare <ramare@agat.univ-lille1.fr>
+
+;; This code was initialy stolen by ?? from "maple.el" which is the work
+;; of Bruno Salvy (Bruno.Salvy@inria.fr). Since then a huge part of
+;; "pari.el" of Annette Hoffman/David Carlisle/Karim Belabas/Olivier Ramare
+;; has been incorporated as well as most of "mupad-mode.el" of Juergen Billing.
+;; 15/09/1995: First release of mupad.el
+;; Till March 2001, combined efforts/comments of
+;;        Henning von Bargen (h.vonbargen@cityweb.de)
+;;        Juergen Billing (bij@plato.uni-paderborn.de)
+;;        Michel Quercia (quercia@cal.enst.fr)
+;;        Nicolas Thiery (nthiery@jonas.univ-lyon1.fr)
+;;        Winfried Truemper (winni@xpilot.org)
+;;        Olivier Ramare (ramare@agat.univ-lille1.fr)
+;;        Paul Zimmermann (Paul.Zimmermann@loria.fr)
+;; have brought this version to life.
+
+;; TODO
+;;    (1)  debug the debugguer !
+;;    
+
+;; DONE
+;;   
+(provide 'mupad)
+(require 'mupad-fontification)
+(require 'mupad-cpl)
+(require 'mupad-help)
+
+(require 'mupad-run)
+(require 'mupad-bus)
+
+;;----------------------------------------------------
+;; Part I   : Variables and Constants, except Keymaps.
+;;----------------------------------------------------
+(defconst mupad-mode-version "2.00" "Version of `mupad.el'.")
+;;----------------------------------------------------
+;; USER DEPENDENT VARIABLES AND CONSTANTS:
+
+(defgroup mupad nil
+"Major mode for editing mupad scripts"
+:group 'languages :prefix "mupad-")
+
+(defgroup mupad-indentation nil
+"MuPAD customization subgroup concerning indentation
+and furthering of constructs"
+:group 'mupad :prefix "mupad-")
+
+(defgroup mupad-miscellana nil
+"MuPAD customization subgroup dedicated to less important switches"
+:group 'mupad :prefix "mupad-")
+
+;; This variable should be set by a CONFIGURE if it ever exists...
+(defvar mupad-directory "/usr/local/src/MuPAD/share/"
+"Used for initializing some variables below.")
+
+(defcustom mupad-manual-command
+;"netscape file:/usr/local/MuPAD/mupad_html_help/Automated/index.html"
+(concat mupad-directory "bin/manual")
+"The manual command. If you prefer the html documentation,
+put for instance \"netscape file:/usr/local/MuPAD/mupad_html_help/index.html\""
+:type 'string :group 'mupad)
+
+(defcustom mupad-el-info "/usr/share/emacs/site-lisp/mupad.el-info"
+"Place of the mupad.el-info file."
+:type 'string :group 'mupad)
+
+(defcustom mupad-temp-directory "/tmp/"
+  "Directory in which to create temporary files."
+:type 'string :group 'mupad)
+
+(defcustom mupad-electric-p t
+"Non-nil means emacs will automatically insert closing braces, and so on.
+It *does* concern indentation for choosing between
+sli-electric-terminate-line (indent-then-newline-and-reindent)
+and sli-newline (newline-and-indent). See also `mupad-auto-indent' and
+`mupad-closed-brace'." ; `mupad-auto-indent' is defined at the end of this file.
+:type 'boolean :group 'mupad)
+
+(defcustom mupad-tab-always-indent t
+"Non-nil means TAB in MuPAD-mode should always reindent the current line,
+regardless of where in the line point is when the TAB command is used."
+:type 'boolean :group 'mupad-indentation)
+
+(defcustom mupad-closed-brace t
+  "A refinement `mupad-electric-p': Turn on/off self-closed braces when
+mupad-electric-p is on, does nothing otherwise."
+:type 'boolean :group 'mupad)
+
+(defcustom mupad-hash-comment nil
+  "Set it to nil if you do not use #--# comments, which is highly
+recommended. It will speed up fontification. Note that already
+automatic indentation does not deal with such comments.
+To convert all hash-comments of a program into usual C-one, use
+M-x mupad-replace-hash-comment."
+:type 'boolean :group 'mupad)
+
+(defcustom mupad-javadoc-stylep nil
+"t means an additionnal item will be added to the menu-bar:
+[MuPAD/Shapes/Describe]. When used at the beginning of a procedure, it triggers
+insertion of javadoc-style description of it.
+See `mupad-describe-this-proc' and `mupad-user-mail-address'."
+:type 'boolean :group 'mupad-miscellana)
+
+(defcustom mupad-user-mail-address
+(concat user-login-name "@" system-name)
+"What it says it is. See `mupad-javadoc-stylep'."
+:type 'string :group 'mupad-miscellana)
+
+(defcustom mupad-tutorial-requiredp t
+"If non-nil, more information will be given."
+:type 'boolean :group 'mupad-miscellana)
+
+(defcustom mupad-indent-level 2
+"Indentation of Mupad statements with respect to containing block."
+:type 'integer :group 'mupad-indentation)
+
+(defcustom mupad-case-indent 2
+"Indentation for case statements."
+:type 'integer :group 'mupad-indentation)
+
+(defun mupad-set-and-recompute-indentation (sym val)
+"Used to set things dynamically in some customizable variable."
+  (set sym val)
+  (save-current-buffer
+   (mapcar
+    (lambda (bf)
+      (set-buffer bf)
+      (cond
+       ((eq major-mode 'mupad-mode) (mupad-learns-indentation)))
+    (buffer-list)))))
+
+(defcustom mupad-structures
+  '((["if" head 3]
+     ["then" soft mupad-indent-level]
+      (["elif"   strong 5]
+       ["then" soft mupad-indent-level])
+       (["else"   strong mupad-indent-level])
+       ["end_if" end]
+       ["end" end])
+    (["%if" head 4]
+     ["then" soft mupad-indent-level]
+      (["elif"   strong 5]
+       ["then" soft mupad-indent-level])
+       (["else"   strong mupad-indent-level])
+       ["end_if" end]
+       ["end" end])
+    (["for" head 4]
+      (["from" beacon 5]
+       (["to" beacon 3]
+        (["step" beacon 5]))
+       (["downto" beacon 7]
+        (["step" beacon 5])))
+     ["do"  soft mupad-indent-level]
+     (["private" special-head 8 ";"])
+     (["parallel" strong mupad-indent-level])
+     ["end_for"  end]
+     ["end" end])
+    (["while"     head 6]
+     ["do"        soft mupad-indent-level]
+     ["end_while" end]
+     ["end" end])
+    (["proc"     head mupad-indent-level]
+     (["local" special-head 6 ";"])
+     (["name" special-head 5 ";"])
+     (["option" special-head 7 ";"])
+     ["begin"    strong mupad-indent-level]
+     ["end_proc" end])
+    (["domain" head '(absolute . 4)]
+     ["begin" strong mupad-indent-level] ; should be the same as above !!
+     ["end_domain" end])
+    (["category" head '(absolute . 4)]
+     ["begin" strong mupad-indent-level] ; should be the same as above !!
+     ["end_category" end])
+    (["axiom" head '(absolute . 4)]
+     ["begin" strong mupad-indent-level] ; should be the same as above !!
+     ["end_axiom" end])
+    (["repeat"     head 7]
+     ["until"      strong 6]
+     ["end_repeat" end]
+     ["end" end])
+    (["case"      head mupad-indent-level]
+     ["of"        strong 3]
+     ["do"        soft mupad-indent-level]
+     (["otherwise" strong mupad-indent-level])
+     ["end_case"  end]
+     ["end" end])
+    (["parbegin" head mupad-indent-level]
+     ["end_par"  end])
+    (["seqbegin" head mupad-indent-level]
+     ["end_seq"  end])
+    (["(" head 1] [")" end])
+    (["[" head 1] ["]" end])
+    (["{" head 1] ["}" end])
+    (["=" math-relation 1]) ; that's the last item of any relation, like in ':='
+    (["<" math-relation 1])
+    ([">" math-relation 1])
+    (["and" math-relation 4])
+    (["$" math-relation 1])
+    (["or" math-relation 3])
+    (["in" math-relation 3])
+    )
+"See `sli-structures'.
+If you want C-c C-e to add \"end\" instead of \"end_for\" for instance,
+simply exchange both strings in this definition."
+:type '(repeat (repeat (restricted-sexp :match-alternatives (vectorp listp))))
+:initialize 'custom-initialize-default
+:set 'mupad-set-and-recompute-indentation
+:group 'mupad-indentation)
+
+(defcustom mupad-shift-alist
+  '((["case" "of"] . mupad-case-indent)
+    (["domain" "begin"] . -2))
+"See `sli-shift-alist'."
+:type '(repeat (cons (vector string string) sexp))
+:initialize 'custom-initialize-default
+:set 'mupad-set-and-recompute-indentation
+:group 'mupad-indentation)
+
+(defcustom mupad-no-heredity-list
+  '(["case" "end_case"])
+"See `sli-no-heredity-list'."
+:type '(repeat (vector string string))
+:initialize 'custom-initialize-default
+:set 'mupad-set-and-recompute-indentation
+:group 'mupad-indentation)
+ 
+(defvar mupad-separators '(";" ":" ",")
+"See `sli-separators'.")
+
+(defcustom mupad-fixed-keys-alist nil;'(("proc" . mupad-indent-level))
+"See `sli-fixed-keys-alist'."
+:type '(repeat (cons string sexp))
+:initialize 'custom-initialize-default
+:set 'mupad-set-and-recompute-indentation
+:group 'mupad-indentation)
+
+(defcustom mupad-keys-with-newline
+'("begin" "proc" "repeat" "seqbegin"
+  "parbegin" "then" "do" ";")
+"See `sli-keys-with-newline'."
+:type '(repeat string)
+:initialize 'custom-initialize-default
+:set 'mupad-set-and-recompute-indentation
+:group 'mupad-indentation)
+
+(defcustom mupad-keys-without-newline
+'(")" "]" "from" "to" "in")
+"See `sli-keys-with-newline'."
+:type '(repeat string)
+:initialize 'custom-initialize-default
+:set 'mupad-set-and-recompute-indentation
+:group 'mupad-indentation)
+
+(defcustom mupad-add-to-key-alist
+  '(("end_case" . ";")        ("end_if" . ";")
+    ("end_for" . ";")         ("end_while" . ";")
+    ("end_repeat" . ";")      ("end_par" . ";")
+    ("end_seq" . ";")         ("end_proc" . ":")
+    ("if" . "")               ("%if" . "")
+    ("*/" . "")               ("begin" . "")
+    ("proc" . "")             ("repeat" . "")
+    ("seqbegin" . "")         ("parbegin" . "")
+    (";" . "")                ("then" . "")
+    ("do" . "")               ("end_domain" . ":"))
+"See `sli-add-to-key-alist'."
+:type '(repeat (cons string string))
+:initialize 'custom-initialize-default
+:set 'mupad-set-and-recompute-indentation
+:group 'mupad-indentation)
+
+(defcustom mupad-correction-alist
+  '(("for" . "from")
+    ("from" . "to"))
+"This variable corresponds to `sli-maid-correction-alist'. See `sli-tools'."
+:type '(repeat (cons string string))
+:initialize 'custom-initialize-default
+:set 'mupad-set-and-recompute-indentation
+:group 'mupad-indentation)
+
+(defcustom mupad-more-maidp t
+"If non-nil, `sli-maid' will use `mupad-add-to-key-alist' to add a ':'
+after 'end_proc' and so on. See `sli-more-maidp'."
+:type 'boolean
+:initialize 'custom-initialize-default
+:set 'mupad-set-and-recompute-indentation
+:group 'mupad-indentation)
+
+(defun mupad-is-a-separatorp (&optional pt)
+"See `sli-is-a-separatorp-fn'."
+  (save-excursion
+    (when pt (goto-char pt))
+    (save-match-data
+      (or (member (char-after) (list ?; ?,))
+          (and (= (char-after) ?:)
+               (not (looking-at ":[=<>:]"))
+               (not (= (preceding-char) ?:)))))))
+
+;;----------------------------------------------------------------------
+;;  Other variables and Constants.
+
+(defalias 'MuPAD-mode 'mupad-mode)
+;; So that if the first line of a mupad program contains
+;; "-*- MuPAD -*-", it triggers automatically mupad-mode.
+
+(defsubst mupad-print-if-compiling (messg)
+  (when (get-buffer "*Compile-Log*")
+    (with-current-buffer "*Compile-Log*"
+      (insert messg "\n"))))
+
+(defsubst mupad-setup nil
+  "Common packages required while compiling and running."
+  (require 'facemenu)     ;; For a fancy logo.
+  (require 'disp-table)   ;; Almost always required.
+  (require 'backquote)    ;; For macros.
+  (require 'gud)          ;; For the debugger.
+  (require 'regexp-opt)
+  (require 'imenu)
+  (require 'mupad-fontification)
+  (require 'mupad-cpl)
+  (require 'mupad-run)
+  (require 'mupad-bus)
+  (require 'mupad-help)
+  
+  (or (featurep 'easymenu) (load "easymenu" t))
+  (or (featurep 'easymenu)
+      (progn
+        ;; This part is no crap ! 'easymenu has to be present
+        ;; at compilation time.
+        (mupad-print-if-compiling "No menu-bar: easymenu.el not found.")
+        (fset 'easy-menu-define nil))))
+
+(mupad-setup)
+(eval-when-compile
+  ; for developpement:
+  (setq byte-compile-warnings '(free-vars unresolved callargs redefine obsolete))
+  ; for users:
+  ;(setq byte-compile-warnings '(unresolved redefine obsolete))
+  (setq byte-optimize t)
+  (mupad-setup))
+
+(defvar mupad-mode-hook nil)
+(defvar mupad-mdx-mode-hook nil)
+
+(defvar MuPAD-menu-map nil
+"Keymap used for the menu-bar item MuPAD in mupad-mode")
+
+(defvar zap-file (concat mupad-temp-directory (make-temp-name "mupad-"))
+"Temporary file name used for text being sent as input to MuPAD.")
+(defvar mupad-el-temp-file
+  (concat mupad-temp-directory (make-temp-name "mupad-"))
+  "Temporary file name used for text being sent as input to emacs.")
+
+
+(defvar mupad-textwidth (1- (window-width)))
+
+(defvar mupad-complete-expression nil
+"t if expression to be send to MuPAD is complete. Else see
+`mupad-qualify-incomplete-expression'. See also `mupad-copy-input'.")
+
+(defvar mupad-create-completions-donep nil "t if `mupad-completion-array' is already created.")
+(defvar mupad-completion-array (make-vector 5003 0) ;3776 symbols in MuPAD 2.0
+"Obarray used for completion.")  ;; A prime number as a length is a good thing !
+
+(defvar mupad-primitive-regexp-simple-from-libraries nil
+"Regexp matching all the primitive names that do come from a library.
+Compare with `mupad-primitive-regexp-simple' and look at `mupad-loaded-libraries'.")
+(defvar mupad-primitive-regexp-simple nil
+"Regexp matching all the primitive names that do not come from a library.")
+(defvar mupad-primitive-regexp-prefix-alist nil
+"List of elements of the form (prefix aregexp), where prefix is a
+library name and aregexp the regexp matching all the primitive names
+coming from this library.")
+(defvar mupad-fn-names-regexp ""
+"Regexp matching user-defined functions.
+Functions enter this regexp once they have been added to completion.")
+(defvar mupad-global-var-regexp ""
+"Regexp matching user-defined functions.
+Functions enter this regexp once they have been added to completion.")
+
+ ;;;
+ ;;; Some regular expressions
+ ;;;
+;;; Strings used to mark beginning and end of excluded text. The start
+;;  should start with /* and the end end with */.
+(defconst mupad-exclude-str-start "/*----\\/----- EXCLUDED -----\\/-----")
+(defconst mupad-exclude-str-end   " -----/\\----- EXCLUDED -----/\\----*/")
+
+;; On lengthy file, mupad.el has trouble finding that ... no recursive
+;; editing is in process and that the user is simply in an open area, simply
+;; because it looks for the first unclosed construct till the very beginning of
+;; the buffer, were it finds none... The following regexp found at a beginning of
+;; a line indicates that we are neither in a definition, neither in a commented area,
+;; and that mupad.el should not worry about what is on top.
+(defvar mupad-safe-place-regexp ;;"\\(^\\)[a-zA-Z]\\([a-zA-Z0-9_]\\|::\\)*[ \t\n]*:="
+                                "\\(^\\)\\(//--+\\|/\\*-+-\\*/\\)$"
+"Marker used to tell emacs this point is outside a commented area or a sexp.")
+(defvar mupad-noft-safe 1 "Number of times `mupad-safe-place-regexp' should appear.")
+(defvar mupad-string-opened 0)
+
+;;----------------------------------------------------------------------
+
+(defconst mupad-menu-separator (list "--------------"))
+;; 100% internal. It is used for the menu-bar.
+
+(defvar gud-mdx-history nil "History of argument lists passed to mdx.")
+
+;; There's no guarantee that Emacs will hand the filter the entire
+;; marker at once; it could be broken up across several strings.  We
+;; might even receive a big chunk with several markers in it.  If we
+;; receive a chunk of text which looks like it might contain the
+;; beginning of a marker, we save it here between calls to the
+;; filter.
+(defvar gud-mdx-marker-acc "")
+
+;;--------------------------------------
+;; Part II  : Keymaps and syntax tables.
+;;--------------------------------------
+
+(defvar mupad-mode-map nil "Keymap used in Mupad mode.")
+
+(defun mupad-toggle-electric-behavior (symbol val)
+  "Change RET/M-RET from `sli-electric-terminate-line'
+to `sli-newline' and reciprocally. Note that C-j is always
+newline-and-indent in mupad-mode."
+  (set symbol val)
+  (let*((key (if val '("\r" "\M-\C-m") '("\M-\C-m" "\r"))))
+    (cond
+     ((eq symbol 'mupad-auto-indent) ; for mupad-mode
+      (define-key mupad-mode-map (nth 0 key)
+        (if mupad-electric-p 'sli-electric-terminate-line 'sli-newline))
+      (define-key mupad-mode-map (nth 1 key) 'newline)))))
+
+(defcustom mupad-auto-indent t
+"Non-nil means emacs will try to indent properly each line ended
+by a carriage return in mupad-mode."
+:type 'boolean
+:initialize 'custom-initialize-default ;if you use :set, you should specify :initialize!
+:set 'mupad-toggle-electric-behavior
+:group 'mupad-indentation)
+
+(unless mupad-mode-map
+  (let ((map (make-sparse-keymap)))
+  (define-key map "\""       'mupad-electric-open-quote)
+  (define-key map "("        'mupad-electric-open-brace)
+  (define-key map "["        'mupad-electric-open-brace)
+  (define-key map "{"        'mupad-electric-open-brace)
+  (define-key map "\M-i"     'mupad-complete)
+  (define-key map "\177"     'backward-delete-char-untabify)
+  (define-key map "\M-*"     'mupad-star-comment)
+  (define-key map "\C-c\C-c" 'comment-region)
+  (define-key map "\C-c\C-e" 'sli-maid)
+  (define-key map "\C-c\C-f" 'sli-tutor)
+  (define-key map [?\C->]    'mupad-push-region)
+  (define-key map [?\C-<]    'mupad-pull-region)
+  (define-key map "\M-p"     'mupad-backward-to-same-indent)
+  (define-key map "\M-n"     'mupad-forward-to-same-indent)
+  (define-key map "\C-cF"    'mupad-fun-to-proc)
+  (define-key map "\C-ch"    'mupad-help)
+  (define-key map "\C-cf"    'mupad-for)
+  (define-key map "\C-cw"    'mupad-while)
+  (define-key map "\C-ct"    'mupad-title)
+  (define-key map "\C-cm"    'mupad-modify)
+  (define-key map "\C-ce"    'mupad-else)
+  (define-key map "\C-cl"    'mupad-local)
+  (define-key map "\C-cp"    'mupad-proc)
+  (define-key map "\C-c\C-k" 'mupad-kill-job)
+  (define-key map "\M-l"     'mupad-force-update-fontification)
+  (define-key map "\M-\C-f"  'mupad-forward-sexp)
+  (define-key map "\M-\C-b"  'mupad-backward-sexp)
+  (define-key map "\C-i"     'mupad-tab)
+  (setq mupad-mode-map map)
+  (mupad-toggle-electric-behavior 'mupad-auto-indent mupad-auto-indent)))
+
+(defvar mupad-motion-opposition-alist
+  '((mupad-history-recall-previous-next . (mupad-history-recall-previous  mupad-history-recall-next))
+    (previous-next-line . (previous-line next-line))
+    (mupad-previous-next-command . (mupad-previous-command mupad-next-command))))
+
+(defvar mupad-mode-syntax-table nil
+  "Syntax table in use in mupad-mode buffers.")
+
+(unless mupad-mode-syntax-table
+  (setq mupad-mode-syntax-table (make-syntax-table))
+  (mapcar (lambda (acons) (modify-syntax-entry (car acons) (cdr acons) mupad-mode-syntax-table))
+          '((?( . "()") (?) .  ")(") (?[ . "(]") (?] . ")[") (?{ . "(}") (?} . "){") ; parenthesis
+            (?/ . ". 124b") (?* . ". 23") (?\n . "> b") (?\^m . "> b")         ; comments
+            (?~ . "_") (?! . "_") (?% . "_")                          ; symbol constituent
+            (?> . "." ) (?| . "." ) (?+ . ".") (?- . ".") (?= . ".") (?< . "." ) (?$ . ".") ; ponctuation
+            (?_ . "w") (?` . "w")                 ; word constituent
+            (?\\ . "\\") ; the escape character (to quote strings in strings)
+           ))
+  (set-syntax-table mupad-mode-syntax-table))
+
+;; Global keys. They *should* be global.
+
+(define-key esc-map "o" (function mupad-restore-wind-conf))
+
+(define-key completion-list-mode-map [mouse-2] (function mupad-mouse-2))
+
+(define-key minibuffer-local-completion-map " " 'self-insert-command)
+;; It is usually 'minibuffer-complete-word, but C-i does that.
+
+;; To remove temp-files even if we quit a bit violently:
+(add-hook 'kill-emacs-hook (function mupad-clear-temp-files))
+
+(defsubst safe-delete-file (afile)
+  (if (file-exists-p afile) (delete-file afile)))
+
+;;-----------------------------
+;; Part III : Finders/Parsers.
+;;-----------------------------
+
+(defun mupad-backward-sexp nil
+  (interactive)
+  (if (and mupad-hash-comment (eq (following-char) ?#))
+      (search-backward "#" nil t) (backward-sexp)))
+
+(defun mupad-forward-sexp nil
+  (interactive)
+  (if (and mupad-hash-comment (eq (char-after (point)) ?#))
+      (search-forward "#" nil t 2) (forward-sexp)))
+
+;; Parsers related to 'mupad-mode:
+
+(defsubst mupad-within-string nil
+  (nth 3 (parse-partial-sexp (line-beginning-position) (point))))
+
+;; Comments : between # #, or /* */ or starting with //
+
+(defun mupad-get-safe-place nil
+  (save-excursion
+    (if (re-search-backward mupad-safe-place-regexp nil t mupad-noft-safe)
+        (match-end 1) (point-min))))
+
+(defsubst mupad-within-emacs-comment (&optional starting-point)
+  (let ((aux (mupad-get-safe-place)))
+    (nth 4 (parse-partial-sexp (if starting-point (max aux starting-point) aux) (point)))))
+
+(defsubst mupad-within-emacs-long-comment (&optional starting-point)
+    (let* ((aux (mupad-get-safe-place))
+           (res (parse-partial-sexp (if starting-point (max aux starting-point) aux) (point))))
+      (and (nth 4 res) (not (nth 7 res)))))
+
+(defsubst mupad-within-hash-comment (&optional starting-point)
+  (and mupad-hash-comment
+       (save-excursion
+         (let* ((howmany 0) (pt (point))
+                (aux (mupad-get-safe-place))
+                (st (if starting-point (max aux starting-point) aux)))
+           (goto-char st)
+           (while (search-forward "#" pt t)
+             (setq howmany (1+ howmany)))
+           (not (zerop (mod howmany 2)))))))
+
+(defun mupad-within-comment (&optional starting-point)
+" t if point is within a commented area, nil otherwise.
+The comment starts at the first character of the comment sequence."
+  (save-match-data
+   (or (mupad-within-emacs-comment starting-point)
+       (and mupad-hash-comment
+            (mupad-within-hash-comment starting-point)))))
+
+(defun mupad-skip-comments (&optional starting-point limit)
+  "Skips comments, white spaces, tab and newline characters.
+Answers nil if no comment has been skipped."
+  (interactive)
+  (save-restriction
+    (unwind-protect
+        (save-match-data
+          (when limit
+            (narrow-to-region (or starting-point (point-min)) limit))
+          (let ((has-been-used nil) (incomment nil))
+            ;; Looking for empty stuff or comment start:
+            (while (and (not (eobp))
+                        (or (looking-at "[ \t\n]+\\(#\\|/[/\\*]\\)?\\|#\\|/[/\\*]")
+                            (setq incomment (mupad-within-comment starting-point))))
+              (setq has-been-used t)
+              (if incomment
+                  (re-search-forward "\n\\|\\'\\|\\*/\\|#" limit t)
+                ;; We are outside comments:
+                (skip-chars-forward " \t\n" limit)
+                ;; A comment may start next door:
+                (if (looking-at "#")
+                    (re-search-forward "#" limit 1 2)))
+              (forward-comment 100))
+            has-been-used))  ;; 100 is as good a value as any, provided
+                             ;; it is large.
+      (when limit (widen)))))
+
+(defun mupad-find-closing-one (regexp-beg expr-end)
+  ;; Should be called from outside a commented area.
+  ;; Answer nil if no proper end_proc is found.
+  (save-excursion
+    (let*((pt (point)) (case-fold-search nil)
+          (regexp (concat "\\<" expr-end "\\>"))
+          (pt-end (re-search-forward regexp nil t)))
+      (while (mupad-within-comment)
+       (setq pt-end (re-search-forward regexp nil t)))
+      ;; pt-end is the candidate. Look whether there is another proc
+      ;; before it:
+      (if pt-end
+          (progn
+            (goto-char pt)
+            (while (and pt-end
+                        (re-search-forward
+                          (concat "\\<" regexp-beg) pt-end t))
+              (if (not (mupad-within-comment))
+                (progn
+                  ;; We have found another BEG before the closing END
+                  ;; which should close before this one. Find a new candidate:
+                  (setq pt (mupad-find-closing-one regexp-beg expr-end))
+                  (if pt
+                      (progn
+                         (goto-char pt)
+                         (setq pt-end (re-search-forward regexp nil t))
+                         (goto-char pt))
+                      ;; else trouble:
+                      (setq pt-end nil)))
+                ;; a proc within comment counts for nothing. Continue.
+                ))
+            (if pt-end (goto-char pt-end))
+            (if (looking-at "[:;]") (forward-char 1))
+            (point))
+          nil))))
+
+(defun mupad-find-closing-end_proc nil
+  ;; Answers nil if no proper end_proc is found.
+  ;; Should be called from outside a commented area.
+  (mupad-find-closing-one "proc[ \n\t]*(" "end_proc"))
+
+;;--------------------------------
+;; Part IV  : Highlighting stuff.
+;;--------------------------------
+
+(defun mupad-remove-empty-strings (alist)
+  (let ((new-list '()))
+    (while alist
+      (or (and (stringp (car alist)) (string-equal (car alist) ""))
+          (setq new-list (cons (car alist) new-list)))
+      (setq alist (cdr alist)))
+    new-list))
+
+(defun mupad-make-primitive-regexp-simple nil
+   (let ((simples (mapcar 'list mupad-all-completions)))
+     (setq mupad-primitive-regexp-simple
+           (concat
+            "\\<\\("
+            (mapconcat
+             (lambda (a) a)
+             (mupad-remove-empty-strings
+              (mapcar
+               (lambda (achar)
+                 (let ((aa (all-completions achar simples)))
+                   (if aa (regexp-opt aa) "")))
+               (mapcar 'char-to-string
+                       (string-to-list "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_"))))
+             "\\|")
+            "\\)\\>"))))
+
+(defun mupad-make-primitive-regexp-prefix-alist nil
+  (setq mupad-primitive-regexp-prefix-alist
+    (mupad-remove-empty-strings
+      (mapcar
+        (lambda (prefix)
+          (let ((aa (cdr (assoc prefix mupad-libraries-completion-alist))))
+            (if aa (list prefix (concat "\\<\\(" (regexp-opt aa) "\\)\\>")) "")))
+        mupad-libraries-list))))
+
+(defun mupad-make-regexp (name alist)
+  (unless (eval name) ; auquel cas, c'est vrai, vaut mieux pas l'allouer !
+    (set name (concat "\\<\\(" (regexp-opt alist) "\\)\\>"))))
+
+;;----------------------------
+;; Part V   : Window manager.
+;;----------------------------
+
+(defun mupad-mouse-2 (event)
+  "A kind of hook for 'mouse-choose-completion."
+  (interactive "e")
+  (funcall 'mouse-choose-completion event)
+  ;; 'mouse-choose-completion comes from the standard file "mouse.el".
+  (mupad-restore-wind-conf) (mupad-bus-forward-extended-mupadword))
+
+
+;;-------------------------------------------
+;; Part VI  : mupad-mode
+;;            and some other main functions.
+;;-------------------------------------------
+
+(defun mupad-clear-temp-files nil
+  (if zap-file
+      (safe-delete-file zap-file))
+  (safe-delete-file mupad-el-temp-file))
+
+(defun mupad-add-imenu-index nil
+   (if (progn (require 'easymenu) (featurep 'easymenu))
+       (imenu-add-to-menubar "MuPAD-Index")))
+
+(defsubst mupad-compact-list (lst)
+  ; remove same consecutive occurences.
+  (let* ((old (car lst)) (nlst (list old))  (lst (cdr lst)))
+    (while lst
+      (if (string-equal (car lst) old)
+          (setq lst (cdr lst))
+          (setq nlst (cons (setq old (car lst)) nlst) lst (cdr lst))))
+    (nreverse nlst)))
+
+(defun mupad-learns-indentation nil
+  (require 'sli-tools)
+  (sli-tools mupad-structures mupad-shift-alist mupad-separators
+             'mupad-is-a-separatorp
+             mupad-fixed-keys-alist
+             mupad-safe-place-regexp
+             mupad-keys-with-newline mupad-keys-without-newline
+             mupad-add-to-key-alist
+             '("//") mupad-no-heredity-list nil mupad-correction-alist)
+  (setq sli-more-maidp mupad-more-maidp
+        sli-tab-always-indent mupad-tab-always-indent))
+
+;;;###autoload
+(defun mupad-mode nil
+  "Major mode version `mupad-mode-version' for editing Mupad code.
+\\<mupad-mode-map>
+The main work is to indent code correctly while editing,
+to colour the code and to provide a menu-bar item.
+
+Available special keys:
+\\{mupad-mode-map}
+
+\\[comment-region] will place '//' at beginning of each line in region
+
+Main variable controlling indentation/edit style:
+
+ `mupad-indent-level'      (default 2)
+    Indentation of Mupad statements with respect to containing block.
+
+Turning on Mupad mode calls the value of the variable mupad-mode-hook with
+no args, if that value is non-nil."
+  (interactive)
+  (kill-all-local-variables)
+  (set-syntax-table mupad-mode-syntax-table)
+  (setq case-fold-search nil) ; always local.
+;bij - comments
+  (set (make-local-variable 'comment-start) "//")
+  (set (make-local-variable 'comment-start-skip) "^\\(\\(//\\)+ *\\)")
+  (set (make-local-variable 'comment-end) "")
+  (set (make-local-variable 'block-comment-start) "/\*")
+  (set (make-local-variable 'block-comment-end) "\*/")
+  (set (make-local-variable 'words-include-escapes) t)
+  (make-variable-buffer-local 'mupad-safe-place-regexp)
+  (make-variable-buffer-local 'mupad-noft-safe)
+  (make-variable-buffer-local 'mupad-string-opened) 
+
+  (setq imenu-case-fold-search nil)
+  (setq imenu-generic-expression
+        (list (list "Functions:" mupad-function-def-start 1)
+              (list "Global Vars:" mupad-global-var-start 1)))
+  (mupad-create-completions)
+  (mupad-make-regexp 'mupad-prefix-regexp mupad-libraries-list)
+  (mupad-make-regexp 'mupad-type-regexp mupad-types-list)
+  (mupad-make-regexp 'mupad-option-regexp mupad-options-list)
+  (mupad-make-regexp 'mupad-keyword-regexp mupad-keywords-list)
+
+  (unless mupad-primitive-regexp-simple (mupad-make-primitive-regexp-simple))
+  (unless mupad-primitive-regexp-prefix-alist (mupad-make-primitive-regexp-prefix-alist))
+  (use-local-map mupad-mode-map)
+  (setq major-mode 'mupad-mode mode-name "MuPAD")
+
+  (require 'cc-mode)
+  (c-initialize-cc-mode)
+  (set (make-local-variable 'fill-paragraph-function) 'c-fill-paragraph)
+  (setq comment-line-break-function 'c-comment-line-break-function)
+  (mupad-learns-indentation)
+  ;; mupad-learns-indentation binds 'indent-line-function to 'sli-electric-tab
+  ;; which in turn is bound to \C-i. We want a momre tricky behaviour:
+  ;(setq indent-line-function mupad-select-tab)
+  (set (make-local-variable 'parse-sexp-ignore-comments) t)
+  
+  (run-hooks 'mupad-mode-hook) ;; fontification is done there
+  (mupad-add-imenu-index)
+  (mupad-help-init)
+  (mupad-init-menu-bar))
+
+(defun mupad-toggle nil
+  "Change RET/M-RET from `sli-electric-terminate-line'
+to `sli-newline' and reciprocally"
+  (interactive)
+  (when (eq major-mode 'mupad-mode)
+    (mupad-toggle-electric-behavior 'mupad-auto-indent (not mupad-auto-indent)))
+  (message "Exchange bindings of RET/M-RET"))
+
+;;----------------------------------------------
+;;   Part VII : Functions for writing programs.
+;;----------------------------------------------
+
+(defun mupad-go-to-this-indent (step indent-level)
+  "Move point repeatedly by <step> lines till the current line
+has given indent-level or less, or the start/end of the buffer is hit.
+Ignore blank lines and comments."
+  (while (and
+          (zerop (forward-line step))
+          (or (looking-at "[ \t]*$")
+              (looking-at "[ \t]*#")
+              (> (current-indentation) indent-level)))
+    nil))
+
+(defun mupad-backward-to-same-indent ()
+  "Move point backwards to nearest line with same indentation or less.
+If not found, point is left at top of buffer."
+  (interactive)
+  (mupad-go-to-this-indent -1 (current-indentation))
+  (back-to-indentation))
+
+(defun mupad-forward-to-same-indent ()
+  "Move point forwards to nearest line with same indentation or less.
+If not found, point is left at start of last line in buffer."
+  (interactive)
+  (mupad-go-to-this-indent 1 (current-indentation))
+  (back-to-indentation))
+
+(defun mupad-for ()
+  "Build skeleton for-loop statment, prompting for the loop parameters."
+  (interactive)
+  (let ((for (read-string "var: ")))
+    (if (string-equal for "")
+        (let ((to (read-string "to: ")))
+          (if (not (string-equal to ""))
+              (insert " to " to)))
+      (insert "for " for)
+      (let ((in (read-string "in: ")))
+        (if (not (string-equal in ""))
+            (insert " in " in)
+          (let ((from (read-string "from: ")))
+            (if (not (string-equal from ""))
+                (insert " from " from)))
+          (let ((to (read-string "to: ")))
+            (if (not (string-equal to ""))
+                (insert " to " to))))))
+    (insert " do")
+    (sli-electric-terminate-line (point))
+    (insert "end_for;")
+    (sli-electric-terminate-line (point))
+    (mupad-force-update-fontification)
+    (forward-line -2)
+    (sli-indent-line)))
+
+(defun mupad-while ()
+  "Build skeleton while-loop statment, prompting for the loop parameters."
+  (interactive)
+  (insert "while " (read-string "conditional: "))
+  (insert " do")
+  (sli-electric-terminate-line (point))
+  (sli-newline (point))
+  (insert "end_while;")
+  (mupad-force-update-fontification)
+  (sli-electric-terminate-line (point))
+  (forward-line -2)
+  (sli-indent-line))
+
+(defun mupad-title ()
+  "Insert a comment block containing the module title, author, etc."
+  (interactive)
+  (let ((st (point)) (the-title (read-string "Title: " (buffer-name))))
+    (goto-char (point-min))
+    (insert "\n\n")
+    (forward-char -2)
+    (insert "/*    -*-MuPAD-*-\n"
+            "\n     Title:     " the-title
+            "\n     Created:   " (current-time-string)
+            "\n     Author:    " (user-full-name)
+            "\n                <" mupad-user-mail-address ">\n"
+            "\n Description: \n"
+            "\n Exported Libraries:\n\n*/\n")
+    (mupad-force-update-fontification)
+    (goto-char (1- (+ (point) st)))))
+
+(defun mupad-modify ()
+  "Insert a comment block containing the modification, author, etc."
+  (interactive)
+  (let ((st (point)) beg (modif (read-string "Modification: ")))
+    (goto-char (point-min))
+    (if (not (looking-at "[ \\w]")) (mupad-skip-comments))
+    (while (char-equal (preceding-char) ?\n) (forward-char -1))
+    (forward-char 1)
+    (setq beg (point))
+    (insert "\n/*    Modified: "
+            (current-time-string)
+            "\n      Author:   "
+            (user-full-name)
+            "\n      Modification: "
+            modif "\n*/\n")
+    (mupad-force-update-fontification)
+    (goto-char st)))
+
+(defun mupad-else ()
+  "Add an elif clause to an if statement, prompting for the condition.
+   When no condition is given, put an else."
+  (interactive)
+  (let ((condition (read-string "else/elif: "))
+        (st (point)))
+    (if (string-equal condition "")
+        (insert "else ")
+      (insert "elif " condition "then")
+      (sli-electric-terminate-line (point)))
+    (mupad-force-update-fontification)))
+
+(defun mupad-local ()
+  "Add a new local variable, inserting the word local if necessary."
+  (interactive)
+  (save-excursion
+  (let ((newvar (read-string "New variable: ")))
+    (beginning-of-line)
+    (while (and (not (looking-at mupad-proc-def-start))
+                (not (looking-at "[ \t]*proc[ \t]*("))
+                (not (looking-at "[ \t]*local ")))
+      (forward-line -1))
+    (let ((first-time (not (looking-at "[ \t]*local ")))
+          (st (point)))
+      (if first-time
+        (progn
+          (end-of-line)
+          (sli-electric-terminate-line (point))
+          (insert "local ;")
+          (setq first-time t))
+        (search-forward ";"))
+      (forward-char -1)
+      (if first-time (insert newvar)
+          (insert ", " newvar))
+      (mupad-force-update-fontification)))))
+
+(defun mupad-proc ()
+  (interactive)
+  ;; In this function, we let 'sli-electric-terminate-line do
+  ;; the indentation job.
+  (let ((name (read-string "Name: " )))
+    (insert name ":=proc (" (read-string "Arguments: ") ")")
+    (let ((options (read-string "Options: ")))
+      (if (not (string-equal options ""))
+        (progn
+          (sli-electric-terminate-line (point))
+          (insert "option " options ";"))))
+    (sli-electric-terminate-line (point))
+    (insert "begin")
+    (sli-electric-terminate-line (point))
+    (sli-newline (point))
+    (insert "end_proc: /* End of " name " */")
+    (mupad-force-update-fontification)
+    (sli-electric-terminate-line (point))
+    (forward-line -2)
+    (sli-indent-line) (end-of-line)))
+
+(defun mupad-display-comment ()
+  "Inserts 3 comment lines, making a display comment."
+  (interactive)
+  (save-excursion
+    (let ((st (point)))
+      (insert "/*\n\n*/")
+      (end-of-line)
+      (mupad-force-update-fontification)
+  (forward-char 3))))
+
+(defun mupad-star-comment ()
+  "Insert Mupad star comment at point."
+  (interactive)
+  (if (not (mupad-within-comment))
+      (progn (if (or (bolp)
+		     (string= (char-to-string
+				(char-syntax (preceding-char))) " "))
+		 (insert "/* ")
+	       (insert " /* "))
+	     (insert " */"))
+    (message "Stay always in commented-area or parenthesis mismatch.")
+    ))
+
+(defun mupad-exclude-area (beg end)
+  "Exclude an area of text."
+  (interactive "r")
+  (save-excursion
+    (goto-char beg)
+    (while (re-search-forward mupad-safe-place-regexp end t)
+      (beginning-of-line) (insert " ") (end-of-line)
+      (setq end (1+ end)))
+    (goto-char end)
+    (insert "\n" mupad-exclude-str-end "\n")
+    (goto-char beg)
+    (insert "\n" mupad-exclude-str-start "\n")
+    (mupad-force-update-fontification)))
+
+;;;
+;;;  Electric functions
+;;;
+
+(defun mupad-electric-open-brace ()
+  "Insert closed brace."
+  (interactive)
+  (if (or (not mupad-closed-brace) (not mupad-electric-p))
+      (insert last-command-char)
+    (let ((br (char-to-string last-command-char)))
+         (insert br)
+         (save-excursion
+          (if (not (or (mupad-within-string)
+		       (mupad-within-comment)
+		       (string=
+                         (char-to-string (char-syntax (following-char))) "w")))
+	    (insert (cond ((string= br "(") ")")
+		       	  ((string= br "[") "]")
+			  ((string= br "{") "}"))))
+      ))))
+
+(defun mupad-electric-open-quote ()
+  "Insert closed quote."
+  (interactive)
+  (if mupad-electric-p
+    (if (mupad-within-string)
+        (if (= mupad-string-opened 0)
+	    (insert "\\\"")
+	  (insert "\"")
+     	  (setq mupad-string-opened 0))
+      (insert "\"")
+      (if (not (string= (char-to-string (char-syntax (following-char))) "w"))
+	  (save-excursion
+	    (insert "\""))
+        (setq mupad-string-opened 1)))
+    (insert "\"")))
+
+(defun mupad-push-region (start end)
+  "Ein Zeichen nach rechts einr=FCcken.
+Adds one identation to the whole region."
+  (interactive "r")
+  (save-excursion
+    (goto-char end)
+    (setq end (point-marker))
+    (goto-char start)
+    (save-excursion
+      (while (< (point) end)
+	(progn (beginning-of-line)
+	       (skip-chars-forward " \t")
+	       (insert-char ?  1)
+	       (if (not (eobp)) (forward-line 1)))))))
+
+(defun mupad-pull-region (start end)
+  "Ein Zeichen nach rechts einr=FCcken.
+Removes one indentation to the right for the whole region."
+  (interactive "r")
+  (save-excursion
+    (goto-char end)
+    (setq end (point-marker))
+    (goto-char start)
+    (save-excursion
+      (while (< (point) end)
+	(progn (beginning-of-line)
+	       (skip-chars-forward " \t")
+	       (if (not (bolp))
+		   (backward-delete-char-untabify 1))
+	       (forward-line 1))))))
+
+(defun mupad-indent-comment (&optional arg)
+  "Indent current line as comment.
+If optional arg is non-nil, just return the
+column number the line should be indented to."
+    (let* ((stcol (save-excursion
+		    (re-search-backward (regexp-opt (list block-comment-start comment-start)) nil t)
+		    (1+ (current-column)))))
+      (if arg stcol
+	(delete-horizontal-space)
+	(indent-to stcol))))
+
+;;---------------------------------
+;; Part VIII: Completion mecanism.
+;;---------------------------------
+;; Three steps for completion: The usual one, <<-- also for fontify
+;;   Adding exported libraries methods names, <<-- also for fontify
+;;   Adding user-defined function/global-var names. <<-- choose if they should be fontified.
+
+(defsubst mupad-add-symbol (x)
+  (intern x mupad-completion-array))
+
+(defsubst mupad-remove-symbol (x)
+  (unintern x mupad-completion-array))
+
+(defun mupad-simplify-cpl-lst (lst)
+"  Simple enough: if a word appears alone and also followed by ::
+then it is a library name and its companions should be skipped
+and replaced by one single string, which is the library name.
+The list is then sorted."
+  (let ((new-lst '()) aux) ;(print (list "Let's simplify ..." lst))
+    (mapcar
+     (lambda (wd)
+       (if (null (cadr (setq aux (split-string wd "::"))))
+           (add-to-list 'new-lst wd)
+         (unless (member (car aux) lst)
+           (add-to-list 'new-lst wd))))
+     lst)
+     (sort new-lst 'string-lessp)))
+
+(defun mupad-string-to-list (astring)
+  "ASTRING is a succession of gp-words separated by , spaces or newlines.
+The answer is the list of these words."
+  (let ((lst nil) (beg 0) (end 1))
+    (while (<= end (length astring))
+      (cond ((member (aref astring (1- end)) '(?\  ?\n ?,))
+             (if (not (= beg (1- end)))
+                 (setq lst (nconc lst
+                                  (list (substring astring beg (1- end))))))
+             (setq beg end end (1+ end)))
+            (t (setq end (1+ end)))))
+    ;; taking care of the last one:
+    (if (not (= beg (1- end)))
+        (setq lst (nconc lst (list (substring astring beg (1- end))))))
+    lst))
+
+(defun mupad-sort-and-minimise (list1 list2)
+  "Take two lists of strings and build the list of all their
+elements with no repetition and sorted out."
+   (let ((lst (sort (nconc list1
+                           (mapcar
+                             (lambda (elt) (if (member elt list1) "" elt))
+                             list2))
+                    'string-lessp)))
+    (if (string= (car lst) "") (cdr lst) lst)))
+
+(defsubst mupad-standard-lst (word comp)
+   (cond ((and (string= (car comp) "") (null (nth 1 comp)))
+          (list ""))
+         ((null (nth 1 comp))
+          (list (concat word (car comp))))
+         (t (nth 1 comp))))
+
+(defun mupad-merge-cpls (word comp1 comp2)
+  (let* ((lst1 (mupad-standard-lst word comp1))
+         (lst2 (mupad-standard-lst word comp2))
+         (a-local-cpl-list (mapcar 'list (mupad-sort-and-minimise lst1 lst2))))
+    ;(print a-local-cpl-list)
+    (mupad-ask-cpl-via-list word 'a-local-cpl-list)))
+
+(defun mupad-ask-cpl-via-list (word lst)
+  "Careful! LST is a symbol whose value is a list of completion type,
+ie a list of lists whose cars are strings used for completion."
+  ;; LST can be an array also.
+  (setq lst (symbol-value lst))
+  (let ((comp (try-completion word lst))
+        to-insert fun-list) ;(print (list "mupad-ask-cpl :: " comp))
+    (cond ((equal comp nil)         ; No completion.
+           (list "" nil))
+          ((equal comp t)   ; Already complete.
+           (list "" nil))
+          ((> (length comp) (length word)) ; Some completion with a kernel.
+           (setq to-insert (substring comp (length word)))
+           (setq fun-list
+                 (all-completions comp lst))
+           (if (< (length fun-list) 2)
+               (list to-insert nil)  ; Unique completion.
+               (list to-insert fun-list)))
+          (t (setq fun-list 
+                   (all-completions comp lst))
+             (if (< (length fun-list) 2)
+                 (list "" nil)       ; Unique completion.
+                 (list "" fun-list))))))
+
+(defun mupad-complete nil
+" Attempts to complete a partially typed command.
+Displays possible completions in the completion buffer if no
+unique completion can be done."
+ ;; We use a buffer named "*Completions*" which is the buffer usually
+ ;; used, like when reading a file name from the minibuffer.
+  (interactive)
+  (condition-case err
+      (progn
+        (mupad-bus-backward-extended-mupadword)
+        (let* (cpl-lst
+               (word (buffer-substring-no-properties (point)
+			    (mupad-bus-forward-extended-mupadword)))
+               (comp (mupad-ask-cpl-via-list word 'mupad-completion-array)))
+          (setq comp (list (car comp) (mupad-simplify-cpl-lst (cadr comp))))
+                                        ;(print (list word comp))
+          ;; Insert the beginning of the completion
+          ;; BEFORE any window change :    
+          (if (not (string= (car comp) ""))
+              (insert (car comp))
+
+            (if (or (equal (nth 1 comp) nil) ;; de try-completion
+		    (equal (nth 1 comp) (list word))) ;; de mupad-simplify-cpl-lst
+                ;; no match:
+                (progn
+		  (if (and (get-buffer "*Completions*")
+			   (get-buffer-window "*Completions*"))
+		      ;; Occurs whenever an earlier completion has
+		      ;; been asked for.
+		      (progn ;(print "Restoring")
+			(mupad-restore-wind-conf)
+			(forward-word 1)))
+		  (message "No completion found or already complete"))
+              ;; more than two matches:
+              (when (string= (car comp) "")
+                ;; We do not display anything if a partial completion was possible.
+                (if (not (and (get-buffer "*Completions*")
+                              (get-buffer-window "*Completions*")))
+                    ;; No use storing wind-conf if some completion is in
+                    ;; progress.
+                    (mupad-store-wind-conf))
+                (with-output-to-temp-buffer "*Completions*"
+                  (display-completion-list (nth 1 comp))))
+              )) )) ; To check it, use "to" "beg" be" "gen"
+    (error (princ "An error occured in mupad-complete: ")(princ err) nil)))
+
+(defun mupad-tab nil
+  "First indent on odd number, complete on even numbers ..."
+  (interactive)
+  (if (eq last-command 'mupad-tab)
+      (progn
+	(mupad-complete)
+	(setq this-command 'mupad-even-tab))
+    (sli-electric-tab)))
+
+;;;###autoload
+(defun mupad-create-completions ()
+  ""
+  (unless mupad-create-completions-donep
+    (mapcar 'mupad-add-symbol mupad-all-completions)
+    (mapcar 'mupad-add-symbol mupad-types-list)
+    (mapcar 'mupad-add-symbol mupad-options-list)
+    (mapcar 'mupad-add-symbol mupad-libraries-list)
+    (mapcar 'mupad-add-symbol mupad-keywords-list)
+    (mapcar (lambda (x)
+              (let ((dom (cdr (assoc x mupad-libraries-completion-alist))))
+                (if (not (eq dom nil))
+                    (mapcar (lambda (m) (mupad-add-symbol (concat x "::" m)))
+                            dom))))
+            mupad-libraries-list)
+    (setq mupad-create-completions-donep t)))
+
+
+(defun mupad-extends-primitive-regexp-simple-from-libraries (prefix)
+  (setq mupad-primitive-regexp-simple-from-libraries
+        (if (null mupad-primitive-regexp-simple-from-libraries)
+            (nth 1 (assoc prefix mupad-primitive-regexp-prefix-alist))
+          (concat (substring (nth 1 (assoc prefix mupad-primitive-regexp-prefix-alist)) 0 -4)
+                "\\|"
+                (substring mupad-primitive-regexp-simple-from-libraries 4) "\\)\\>"))))
+
+(defun mupad-add-regexp-names (regexp num fontifyp regexp-name)
+  (save-excursion
+    (let ((words '()) (case-fold-search nil))
+      (goto-char (point-min))
+      (while (re-search-forward regexp nil t)
+        (add-to-list 'words (match-string-no-properties num)))
+      (mapcar 'mupad-add-symbol words)
+      (set regexp-name (if fontifyp (concat "\\<\\(" (regexp-opt words) "\\)\\>") "")))))
+
+;;-------------------------------
+;; Part IX  : Help and Examples.
+;;-------------------------------
+
+(defun mupad-show-mupad-info nil
+  "Show mupad.el-info on another window."
+  (interactive)
+  (condition-case err
+      (let ((wind (selected-window))
+            (where-it-is "")
+            (to-be-tested (list "/usr/local/lib/MuPAD/emacs/"
+                                "/usr/local/share/lib/MuPAD/emacs/"
+                                "/usr/share/lib/MuPAD/emacs/"
+                                "/usr/local/lib/MuPAD/"
+                                "/usr/local/share/lib/MuPAD/"
+                                "/usr/share/lib/MuPAD/")))
+        ;; Locate mupad.el-info:
+        (mapcar (lambda (afile) (if (file-exists-p afile) (setq where-it-is afile)))
+                (mapcar (lambda (apath) (expand-file-name (concat apath "/mupad.el-info")))
+                        (append to-be-tested load-path)))
+        (if (and mupad-el-info (file-exists-p mupad-el-info))
+            (setq where-it-is mupad-el-info))
+        
+        (if (not (string-equal where-it-is ""))
+            (progn
+              ;; We switch to the buffer *MuPAD Help* and erase its content:
+              (set-buffer (get-buffer-create "*MuPAD Help*"))
+              (erase-buffer)
+              (message where-it-is)  ;; tell *Messages* which version is used.
+              (insert-file where-it-is)
+              ;; Show the help buffer and tell user how to remove help window:
+              (mupad-bus-window-manager "*MuPAD Help*" 'mupad-show-help)
+              (setq buffer-read-only t)
+              (search-forward "Usage" nil t)
+              (beginning-of-line) (set-window-start (selected-window) (point))
+              (mupad-info-wind-conf)
+              (select-window wind))
+          ;; Tell the user the file was not found:
+          (mupad-bus-window-manager "*MuPAD Help*" 'mupad-beginning-temp)
+          (insert "The file mupad.el-info was not found. You should discover where it is, say in the directory /usr/local/lib/MuPAD/emacs/ and add the line\n (setq load-path (concat load-path \"/usr/local/lib/MuPAD/emacs/\"))\nto your .emacs file (create it if it doesn't already exist).")
+          (setq fill-column (1- (window-width (get-buffer-window "*MuPAD Help*"))))
+          (fill-individual-paragraphs (point-min) (point-max) 'left)
+          ;; Remove help window :
+          (mupad-bus-window-manager "*MuPAD Help*" 'mupad-remove-help-old-config)
+          (mupad-restore-wind-conf)))
+    (error (princ "An error occured in mupad-info: ")(princ err) nil)))
+
+(defun mupad-start-manual nil
+  (interactive)
+  (condition-case err
+      (start-process-shell-command "Manual" "*Messages*" mupad-manual-command)
+    (error (princ "Problem with the manual: ")(princ err) nil)))
+
+;;--------------------------
+;; Part XI  : The Debugger.
+;;--------------------------
+
+(defun gud-mdx-massage-args (file args)
+  (append (list "-g" "-P" "e") args))   ; -g:    MuPAD in debug mode
+                                        ; -P -e: MuPAD does not echo user input
+; I am not sure that this -P options exists in old MuPAD versions
+
+(defun gud-mdx-marker-filter (string)
+  ;; MuPAD <= 1.4 debugger:
+  (when (string-match
+         "\\(Stop\\|Procedure <[^>]*>\\) at line <\\([0-9]+\\)>\\s +in file <\\(\\S +\\)>."
+         string)
+    (setq gud-last-frame
+          (cons
+           (substring string (match-beginning 3) (match-end 3))
+           (string-to-int
+            (substring string (match-beginning 2) (match-end 2))))))
+  ;; MuPAD 2.0 debugger. Thanks Ralph for the compatibility with gdb!:
+  (when (string-match "^\\([0-9]+\\)\\s +in \\(\\S +\\)" string)
+    (setq gud-last-frame
+          (cons
+           (substring string (match-beginning 2) (match-end 2))
+           (string-to-int
+            (substring string (match-beginning 1) (match-end 1))))))
+  string)
+
+(defun gud-mdx-find-file (f) (find-file-noselect f))
+
+;;;###autoload
+(defun mdx (command-line)
+  "Run mdx on program FILE in buffer *gud-FILE*.
+The directory containing FILE becomes the initial working directory
+and source-file directory for your debugger."
+  (interactive
+   (list (read-from-minibuffer "Run mdx (like this): "
+	   (if (consp gud-mdx-history)
+	       (car gud-mdx-history)
+	       (concat mupad-command " "   ; mupad-args " " should be added.
+                       (mupad-possible-file-name)))
+	       nil nil '(gud-mdx-history . 1))))
+  (when (fboundp 'gud-overload-functions)
+    (gud-overload-functions '((gud-massage-args . gud-mdx-massage-args)
+                              (gud-marker-filter . gud-mdx-marker-filter)
+                              (gud-find-file . gud-mdx-find-file)
+                              )))
+  (gud-common-init command-line 'gud-mdx-massage-args 'gud-mdx-marker-filter
+                   'gud-mdx-find-file)
+
+  (gud-def gud-break  "S %f %l"   "\C-b" "Set breakpoint at current line.")
+  (gud-def gud-remove "d %l"      "\C-d" "Remove breakpoint at current line")
+  (gud-def gud-step   "s"         "\C-s" "Step one source line with display.")
+  (gud-def gud-next   "n"         "\C-n" "Step one line (skip functions).")
+  (gud-def gud-cont   "c"         "\C-r" "Continue with display.")
+  (gud-def gud-finish "f"         "\C-f" "Finish executing current function.")
+  (gud-def gud-up     "u %p"      "<"    "Up N stack frames (numeric arg).")
+  (gud-def gud-down   "d %p"      ">"    "Down N stack frames (numeric arg).")
+  (gud-def gud-print  "p %e"      "\C-p" "Evaluate perl expression at point.")
+  ;; actions added from mupad.el to gud.el:
+  (mupad-fontification-common-init)
+  (set (make-variable-buffer-local 'mupad-prompt-regexp)
+       (setq comint-prompt-regexp "^\\(mdx\\((\\S )\\)?>\\|>>\\) "))
+  (set (make-variable-buffer-local 'mupad-unbreakable-prompt-regexp)
+       comint-prompt-regexp)
+  (setq mupad-safe-place-regexp mupad-prompt-regexp
+        mupad-noft-safe 2)
+  (set (make-local-variable 'font-lock-defaults)
+       '((mupad-shell-fontification-keywords-1
+          ;mupad-shell-fontification-keywords-2
+          ;mupad-shell-fontification-keywords-3
+          ) nil nil nil mupad-get-safe-place))
+  (mupad-force-update-fontification) (font-lock-fontify-buffer)
+  (or
+   (member "^/tmp/debug" revert-without-query)
+   (setq revert-without-query (cons "^/tmp/debug" revert-without-query)))
+  ;; actions added from mupad.el to comint.el:
+  (define-key comint-mode-map "\C-i" (function mupad-complete))
+  (define-key comint-mode-map "\M-i" (function mupad-complete))
+
+  (run-hooks 'mupad-mdx-mode-hook))
+
+(defmacro mdx-help ()
+  (` (if mupad-tutorial-requiredp
+     (let ((wind (selected-window)))
+       ;; We either create another window, either switch to another window
+       ;; if there are already at least two of them.
+       (mupad-bus-window-manager "*MuPAD Help*" 'mupad-beginning-temp)
+       (insert
+         " To start mdx:                          M-x mdx\n"
+         " To get internal help of the debugger:  'h ENTER' in the buffer\n"
+         " To get help on gud:                    M-h m\n")
+       (select-window wind)))))
+
+(defun mupad-mdx nil
+  (interactive)
+  (mdx-help)
+  (mdx (read-from-minibuffer "Run mdx (like this): "
+	   (if (consp gud-mdx-history)
+	       (car gud-mdx-history)
+	       (concat mupad-command " " ;; mupad-args " " should be added.
+                       (mupad-possible-file-name)))
+	       nil nil
+	       '(gud-mdx-history . 1))))
+
+;;---------------------------
+;; Part XII  : Writing Tools
+;;---------------------------
+
+(defun mupad-comment-proc (name arguments options)
+"Inserts javadoc-style comments."
+  (let ((startpos 0))
+    (insert "/**\n* Procedure " name " is not yet documented.\n* Insert description for procedure here.\n* @AUTHOR " "<A>href=\"mailto:"  mupad-user-mail-address "\">" (user-full-name) "</A>\n")
+    (while (string-match " *\\([A-Za-z_]\\w*\\) *"
+                         arguments startpos)
+        (insert "* @PARAM "
+          (substring arguments (match-beginning 1) (match-end 1))
+          " not documented.\n")
+        (setq startpos (match-end 0))
+        (setq startpos (if (string-match "," arguments startpos)
+                           (match-end 0) (length arguments))))
+    (insert "* @RETURN " "return value not documented.\n*/")
+    (sli-electric-terminate-line (point))
+    (mupad-force-update-fontification)))
+
+(defun mupad-describe-this-proc ()
+  "Generate JavaDoc-style comment-header for procedure at cursor."
+  (interactive)
+  (save-excursion
+    (beginning-of-line)
+    (if (looking-at " *\\([A-Za-z_]\\w*\\) *:= *proc*(\\(.*\\))")
+       (let ((name (match-string-no-properties 1))
+             (arguments (match-string-no-properties 2))
+             (options nil)
+            )
+          (beginning-of-line)
+          (mupad-comment-proc name arguments options))
+     (message "Cursor is not on a function definition line."))))
+
+(defun mupad-replace-hash-comment nil
+  (interactive)
+  (save-excursion
+    (goto-char (point-min))
+    (let ((endp t))
+      (while (search-forward "#" nil t)
+        (replace-match (if (setq endp (not endp)) "*/" "/*"))))))
+
+(defun mupad-next-balanced-brace ()
+  "Gibt die Position der nächsten geschlossenen Klamer zurück
+ (innerhalb der Zeile)"
+  (interactive)
+  (save-excursion
+    (nth 0 (parse-partial-sexp (point) (buffer-size) 0))
+    (point-marker)))
+
+;;; bij 
+(defun mupad-fun-to-proc ()
+  "Schneidet 'fun(...)' aus und gibt '(()->(...))' zurück"
+  (interactive)
+  (let ((now (point-max)) ende anf reg (case-fold-search nil))
+  (while (progn (re-search-forward "\\\<fun\\\>" nil t)
+                (re-search-backward "\\\<fun\\\>" 1 t))
+    (if (string= (char-to-string (char-syntax (preceding-char))) "\"")
+        (progn (message "fun als Zeichenkette")
+               (sit-for 1)
+               (goto-char (1+ (point))))
+      (save-excursion (setq ende (mupad-next-balanced-brace)))
+      (setq anf (point-marker))
+      (replace-match "" t t)     (print (list anf ende "OOOOOOO"))
+      (kill-region anf ende)     (print "OOOOOOO")
+      (setq reg (substring (current-kill 0) 1 -1))
+      (goto-char ende)
+      (insert (concat "(()->(" (concat reg) "))"))))))
+
+(defun mupad-clean-script nil
+  (interactive)
+  (save-excursion
+    (goto-char (point-min))
+    (mupad-fun-to-proc )
+    (mupad-replace-hash-comment)))
+
+;;--------------------------------
+;; Part XIII : Menu-bar builders.
+;;--------------------------------
+
+(defun mupad-customize-mupad-group nil
+  (interactive)
+  (mupad-store-wind-conf)
+  (customize-group "mupad")
+  (mupad-info-wind-conf))
+
+(defmacro mupad-build-main-syn-menu nil
+   (` (list
+        (append
+          (list "Shapes" :help "Templates"
+            ["Procedure"  mupad-proc :active t :help "A procedure template"]
+            ["Describe"   mupad-describe-this-proc :active t :included mupad-javadoc-stylep]
+            ["Local"  mupad-local :active t :help "Declare another local variable"]
+            ["Else/Elif"  mupad-else :active t :help "Insert an if/else/elif/end_if block"]
+            ["While"  mupad-while :active t :help "Insert a while/end_while block"]
+            ["For"  mupad-for :active t :help "Insert a for/end_for block"]
+            "----------------------"
+            ["Title"  mupad-title :active t :help "Insert heading to your program"]
+            ["Modification"  mupad-modify :active t 
+	     :help "Insert the description of modification to the heading to your program"]
+            "----------------------"
+            ["Exclude Area" mupad-exclude-area :active mark-active :help "Comment out the region"]
+            ["Display Comments" mupad-display-comment :active t :help "Insert a large comment template"]
+            ["/*...*/" mupad-star-comment :active t :help "Insert a comment template"]
+            "----------------------"
+            ["Fun to Proc" mupad-fun-to-proc :active t :help "Convert fun definitions to proc definitions"]
+            ["Cleans" mupad-clean-script :active t :key-sequence nil
+	     :help "Convert all fun to proc and replace hash comments by c-style comments"]))
+        (list "Indentation"
+          ["Push Region" mupad-push-region :active mark-active]
+          ["Pull Region" mupad-pull-region :active mark-active]
+          ["Indent Region" sli-indent-region :active mark-active :key-sequence nil]
+          ["Forward to same indent"  mupad-forward-to-same-indent :active t]
+          ["Backward to same indent" mupad-backward-to-same-indent :active t]))))
+
+(defun mupad-environment-menu nil
+  (list
+   (list "Environment"
+	["Set DIGITS..." mupad-bus-set-digits :active (buffer-live-p "*MuPAD*")]
+	["Adapt TEXTWIDTH" mupad-bus-adapt-textwidth :active (buffer-live-p "*MuPAD*")
+	 :help "Set the textwidth of the mupad process to the actual width of your window"]
+	["PrettyPrint switch" mupad-bus-prettyprint-switch :active t
+         :help "Toggle the value of PRETTYPRINT"]
 	"--------------------"
 	["Exchange Keys" mupad-toggle :active t :help "Exchange bindings of RET/M-RET" ]
 	["Customize" mupad-customize-mupad-group :active t :key-sequence nil])))
