@@ -12,7 +12,7 @@ nobase_dist_lisp_LISP = \
 	mupad-bus.el mupad.el mupad-help.el mupad-xemacs.el \
 	mupad-cpl.el mupad-fontification.el mupad-run.el\
 	sli-tools.el \
-	site-start.d/mupacs.el mupad.el-info
+	site-start.d/mupacs.el mupad.el-info mupad-run.el-info
 # Don't byte-compile site-start.d/mupacs.el and mupad.el-info:
 ELCFILES = \
 	mupad-bus.elc mupad.elc mupad-help.elc mupad-xemacs.elc \
