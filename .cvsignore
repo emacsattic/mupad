@@ -1,0 +1,6 @@
+Makefile
+packages/rpm
+*.spec
+*.info
+*.elc
+*.~*.*~
