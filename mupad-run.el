@@ -124,7 +124,7 @@ should be present."
 
 (defcustom mupad-run-mode-hook nil
   "Hook for mupad-mode. Read last by mupad-mode."
-  :options '(mupad-bus-adapt-textwidth)
+  :options '(mupad-help-init mupad-bus-adapt-textwidth)
   :type 'hook :group 'mupad-run)
 
 (defun mupad-run-set-system-trace (sym val)
