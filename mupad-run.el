@@ -243,7 +243,7 @@ should be present."
     (define-key map "\C-c0" (function mupad-run-reset))
     (define-key map "\C-c1" (function mupad-run-insert-last-session))
     (define-key map "\C-c\C-h" (function mupad-help-emacs-search))
-    (define-key map [delete] (function mupad-run-suppression))
+    (define-key map [delete] (function mupad-run-suppression)) 
     (define-key map [backspace] (function mupad-run-backspace))
     (define-key map [f5] (function mupad-help-emacs-search))
     (define-key map [f6] (function mupad-help-emacs-ask))
@@ -264,13 +264,6 @@ should be present."
   "See `mupad-run-arrow-behaviour'"
   (setq mupad-run-arrow-behaviour val)
   (cond 
-    ((and (string= val "Usual") xemacsp)
-      (define-key mupad-run-mode-map 
-        [(control up)] (function mupad-run-previous-history))
-      (define-key mupad-run-mode-map 
-        [(control down)] (function mupad-run-next-history))
-      (define-key mupad-run-mode-map [(up)] (function previous-line))
-      (define-key mupad-run-mode-map [(down)] (function next-line)))
     ((string= val "Usual")
       (define-key mupad-run-mode-map 
         [C-up] (function mupad-run-previous-history))
@@ -278,12 +271,6 @@ should be present."
         [C-down] (function mupad-run-next-history))
       (define-key mupad-run-mode-map [up] (function previous-line))
       (define-key mupad-run-mode-map [down] (function next-line)))
-    (xemacsp
-      (define-key mupad-run-mode-map 
-        [(up)] (function mupad-run-previous-history))
-      (define-key mupad-run-mode-map [(down)] (function mupad-run-next-history))
-      (define-key mupad-run-mode-map [(control up)] (function previous-line))
-      (define-key mupad-run-mode-map [(control down)] (function next-line)))
     (t 
       (define-key mupad-run-mode-map 
         [up] (function mupad-run-previous-history))

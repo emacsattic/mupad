@@ -232,19 +232,19 @@ The variable OPTION is
 The variable MY-BUFFER-NAME is one of
 \"*MuPAD*\"  \"*MuPAD Help*\". "
 
-  (cond ((and (compare-strings my-buffer-name 1 6 "*MuPAD" 1 6)
+  (cond ((and (eq major-mode 'mupad-run-mode)
               (eq option 'mupad-beginning)
               (get-buffer-window my-buffer-name))
          ;; We go to *MuPAD* and a window already exists with this buffer.
          (select-window (get-buffer-window my-buffer-name)))
        
-        ((and (compare-strings my-buffer-name 1 6 "*MuPAD" 1 6)
+        ((and (eq major-mode 'mupad-run-mode)
               (eq option 'mupad-beginning)
               (not (get-buffer-window my-buffer-name)))
          ;; We go to *MuPAD* and a window doesn't exist with this buffer.
          (mupad-bus-select-other-window my-buffer-name))
 
-        ((and (compare-strings my-buffer-name 1 6 "*MuPAD" 1 6)
+        ((and (eq major-mode 'mupad-run-mode)
               (not option)
               (get-buffer my-buffer-name))
          ;; We want to exit from *MuPAD*.
