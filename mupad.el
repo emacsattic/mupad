@@ -140,14 +140,6 @@ See `mupad-describe-this-proc' and `mupad-user-mail-address'."
 "Indentation of Mupad statements with respect to containing block."
 :type 'integer :group 'mupad-indentation)
 
-(defcustom mupad-case-indent 2
-"Indentation for case statements."
-:type 'integer :group 'mupad-indentation)
-
-(defcustom mupad-domain-indent 4
-"Indentation for domain, category and axiom statements."
-:type 'integer :group 'mupad-indentation)
-
 (defun mupad-set-and-recompute-indentation (sym val)
 "Used to set things dynamically in some customizable variable."
   (save-current-buffer
@@ -156,6 +148,34 @@ See `mupad-describe-this-proc' and `mupad-user-mail-address'."
      (set sym val)
      (when (eq major-mode 'mupad-mode)
        (mupad-learns-indentation)))))
+
+(defcustom mupad-case-indent 2
+"Indentation for case statements."
+:type 'integer
+:initialize 'custom-initialize-default
+:set 'mupad-set-and-recompute-indentation
+:group 'mupad-indentation)
+
+(defcustom mupad-domain-indent 4
+"Indentation for domain, category and axiom statements."
+:type 'integer
+:initialize 'custom-initialize-default
+:set 'mupad-set-and-recompute-indentation
+:group 'mupad-indentation)
+
+(defcustom mupad-block-comment-middle-offset -1
+"See `sli-block-comment-middle-offset'."
+:type 'integer
+:initialize 'custom-initialize-default
+:set 'mupad-set-and-recompute-indentation
+:group 'mupad-indentation)
+
+(defcustom mupad-block-comment-end-offset -1
+"See `sli-block-comment-middle-offset'."
+:type 'integer
+:initialize 'custom-initialize-default
+:set 'mupad-set-and-recompute-indentation
+:group 'mupad-indentation)
 
 (defcustom mupad-structures
   '((["if" head 3]
@@ -179,7 +199,7 @@ See `mupad-describe-this-proc' and `mupad-user-mail-address'."
        (["downto" beacon 7]
         (["step" beacon 5])))
      ["do"  soft mupad-indent-level]
-     (["private" special-head 8 ";"])
+     (["private" special-head 8 (";" ":")])
      (["parallel" strong mupad-indent-level])
      ["end_for"  end]
      ["end" end])
@@ -188,21 +208,22 @@ See `mupad-describe-this-proc' and `mupad-user-mail-address'."
      ["end_while" end]
      ["end" end])
     (["proc"     head mupad-indent-level]
-     (["local" special-head 6 ";"])
-     (["name" special-head 5 ";"])
-     (["option" special-head 7 ";"])
+     (["local" special-head 6 (";" ":")])
+     (["name" special-head 5 (";" ":")])
+     (["option" special-head 7 (";" ":")])
      ["begin"    strong mupad-indent-level]
      ["end_proc" end]
      ["end" end])
     (["category" head mupad-domain-indent]
-     (["category" special-head 10 ";"])
-     (["axiom" special-head 10 ";"])
+     (["category" special-head 10 (";" ":")])
+     (["axiom" special-head 10 (";" ":")])
      ["begin" strong mupad-domain-indent] ; should be the same as above !!
      ["end_category" end]
      ["end" end])
     (["domain" head mupad-domain-indent]
-     (["category" special-head 10 ";"])
-     (["axiom" special-head 10 ";"])
+     (["inherits" special-head 10 (";" ":")])
+     (["category" special-head 10 (";" ":")])
+     (["axiom" special-head 10 (";" ":")])
      ["begin" strong mupad-domain-indent] ; should be the same as above !!
      ["end_domain" end]
      ["end" end])
@@ -237,6 +258,7 @@ See `mupad-describe-this-proc' and `mupad-user-mail-address'."
     (["$" math-relation 1])
     (["or" math-relation 3])
     (["in" math-relation 3])
+    (["::" constructor 3])
     )
 "See `sli-structures'.
 If you want C-c C-e to add \"end\" instead of \"end_for\" for instance,
@@ -755,7 +777,9 @@ Answers nil if no comment has been skipped."
              mupad-add-to-key-alist
              '("//") mupad-no-heredity-list nil mupad-correction-alist mupad-show-sexpp)
   (setq sli-more-maidp mupad-more-maidp
-        sli-tab-always-indent mupad-tab-always-indent))
+        sli-tab-always-indent mupad-tab-always-indent
+        sli-block-comment-middle-offset mupad-block-comment-middle-offset
+        sli-block-comment-end-offset mupad-block-comment-end-offset))
 
 ;;;###autoload
 (defun mupad-mode nil
@@ -784,8 +808,8 @@ no args, if that value is non-nil."
   (set (make-local-variable 'comment-start) "//")
   (set (make-local-variable 'comment-start-skip) "^\\(\\(//\\)+ *\\)")
   (set (make-local-variable 'comment-end) "")
-  (set (make-local-variable 'block-comment-start) "/\*")
-  (set (make-local-variable 'block-comment-end) "\*/")
+  (set (make-local-variable 'block-comment-start) "/*")
+  (set (make-local-variable 'block-comment-end) "*/")
   (set (make-local-variable 'words-include-escapes) t)
   (make-variable-buffer-local 'mupad-safe-place-regexp)
   (make-variable-buffer-local 'mupad-noft-safe)
