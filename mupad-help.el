@@ -337,7 +337,7 @@ Available special keys:
       (insert brs)
       ; Remove the extra indentation
       (goto-char brp2)
-      (while (re-search-forward "^    " nil t) (replace-match ""))
+      (while (re-search-forward "^    \\( *\\)" nil t) (replace-match "\\1"))
       ; Execute the example (optional)
       (when mupad-help-examples-execute
 	(mupad-run-return))
