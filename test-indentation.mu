@@ -9,13 +9,28 @@
 
 /**
  * 2004/01/11 Bug: the indentation of axiom and bla below is incorrect
+ * See email discussion of 12/01/2004
  **/
 domain bla
   category ble, bli;
   axiom bla;
-  
   bla;
-begin
+end_domain;
+
+// Variants with other characters
+domain bla
+  category ble([1]);
+  axiom bla;
+end_domain;
+
+domain bla
+  category ble({1});
+  axiom bla;
+end_domain;
+
+domain bla
+  category ble("a");
+  axiom bla;
 end_domain;
 
 /**
@@ -190,7 +205,7 @@ end_proc:
  * (sli-indent-line): (wrong-type-argument number-or-marker-p nil)
  * (2003/12/02: discovered)
  * (2004/01/10: fixed)
-
+ 
 // Local Variables:
 // mode: mupad
 // mupad-domain-indent: 2
