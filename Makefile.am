@@ -42,7 +42,6 @@ install-data-local:
 		echo Installing the emacs startup file site-start.d/mupacs.el in $(DESTDIR)$$dir; \
 		$(INSTALL) -d $(DESTDIR)$$dir;	\
 		$(INSTALL_DATA) $(srcdir)/site-start.d/mupacs.el $(DESTDIR)$$dir;	\
-		break;							\
 	  fi;								\
 	done;								\
 	if [ $$found = no ]; then					\
