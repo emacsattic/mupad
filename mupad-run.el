@@ -64,8 +64,8 @@
 ;;   vcam lors de l'initialisation de mupad, dans ~/.mupad/userinit.mu.
 ;;
 ;; La valeur de mupad-help-method concerne l'aide en ligne ; 
-;; elle est 'mupad-help-from-toc-to-buffer avec l'option -E, 
-;; et est 'mupad-help-from-file-to-buffer avec l'option -R.
+;; elle est 'mupad-help-from-toc-to-buffer avec l'option -R, 
+;; et est 'mupad-help-from-file-to-buffer avec l'option -E.
 ;;
 ;; La variable mupad-run correspond indique le chemin d'accès au
 ;; fichier de présentation de mupad-run.
@@ -87,20 +87,22 @@
   "Indique où est le fichier de présentation de mupad-run"
   :type 'string :group 'mupad-run)
 
-(defvar mupad-help-method 'mupad-help-from-file-to-buffer)
-; mupad-help-from-toc-to-buffer  --> valable pour l'option -E
-; mupad-help-from-file-to-buffer --> valable pour l'option -R
+(defvar mupad-help-method 'mupad-help-from-toc-to-buffer)
+;mupad-help-from-toc-to-buffer  --> valable pour l'option -R
+;mupad-help-from-file-to-buffer --> valable pour l'option -E
 
 (defun mupad-run-set-options (sym val)
   (set sym val)
   (cond ((member "-E" val)
-          (setq mupad-help-method 'mupad-help-from-toc-to-buffer))
+          (setq mupad-help-method 'mupad-help-from-file-to-buffer))
         ((member "-R" val)
-          (setq mupad-help-method 'mupad-help-from-file-to-buffer))))
+          (setq mupad-help-method 'mupad-help-from-toc-to-buffer))))
 
 (defcustom mupad-run-pgm-opt
   '("-R" "-U" "EMACS")
-  "Options given to the mupad process"
+  "Options given to the mupad process.
+In fact other options can be given but one of these two blocks
+should be present."
   :type '(choice (const ("-R" "-U" "EMACS")) (const ("-E" "-U" "EMACS")))
   :initialize 'custom-initialize-default
   :set 'mupad-run-set-options
@@ -359,11 +361,21 @@
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
+(defun mupad-run-ask-pgm-opt nil
+  (let ((cmd-to-start
+	 (read-from-minibuffer
+	  "Command to start mupad: "
+	  (concat mupad-run-pgm " "
+		  (mapconcat (lambda (wd) wd) mupad-run-pgm-opt " ")))))
+    (mupad-run-set-options
+     'mupad-run-pgm-opt (cdr (split-string cmd-to-start " ")))))
+
 (defalias 'run-mupad 'mupad-run)
-(defun mupad-run ()
-   (interactive)
-   (switch-to-buffer "*MuPAD*")
-   (mupad-run-mode))
+(defun mupad-run nil
+  (interactive)
+  (mupad-run-ask-pgm-opt)
+  (switch-to-buffer "*MuPAD*")
+  (mupad-run-mode))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;

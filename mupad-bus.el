@@ -92,6 +92,7 @@ of \\([a-zA-Z_0-9]\\|::\\). Returns point."
   (mupad-bus-window-manager (or buff-to-select "*MuPAD*") 'mupad-beginning)
   ; in case of a new process, start mode and adapt textwidth
     (unless mupad-run-process
+      (mupad-run-ask-pgm-opt)
       (mupad-run-mode)
       (setq mupad-bus-my-mupad-run-process mupad-run-process)
       (mupad-bus-adapt-textwidth)))
@@ -260,22 +261,23 @@ The variable MY-BUFFER-NAME is one of
              (remove-text-properties (point-min) (point-max) '(read-only nil))))
          (kill-buffer my-buffer-name))
 
-	((and (get-buffer "*MuPAD*")
+	((and ;(get-buffer "*MuPAD*")
               (string= my-buffer-name "*MuPAD Help*")
               (eq option 'mupad-remove-help-now))
          ;; A buffer displaying "*MuPAD Help*" exists.
          ;; We want to remove the message.
          (let ((buffer-to-select ""))
            (save-excursion
-           (let ((abufferlist (buffer-list)))
-                (while (and (string= buffer-to-select "") abufferlist)
-                  (set-buffer (car abufferlist))
-                  (if (memq major-mode '(mupad-run-mode mupad-mode))
-                      (setq buffer-to-select (buffer-name)))
-                  (setq abufferlist (cdr abufferlist)))))
-         (if (string= buffer-to-select "") nil
-             (switch-to-buffer buffer-to-select)))
-         (mupad-restore-wind-conf))
+	     (let ((abufferlist (buffer-list)))
+	       (while (and (string= buffer-to-select "") abufferlist)
+		 (set-buffer (car abufferlist))
+		 (if (memq major-mode '(mupad-run-mode mupad-mode))
+		     (setq buffer-to-select (buffer-name)))
+		 (setq abufferlist (cdr abufferlist)))))
+	   (if (string= buffer-to-select "")
+	     (bury-buffer)
+	     (switch-to-buffer buffer-to-select)
+	     (mupad-restore-wind-conf))))
 
         ((and (get-buffer my-buffer-name)
               (string= my-buffer-name "*MuPAD Help*")

@@ -114,7 +114,7 @@ if test -f mupad-help.el; then
 
    #Variable mupad-help-method:
    if [ `mupad -V` = 2.5.1 ]; then
-      sed "s|(defvar mupad-help-method 'mupad-help-from-toc-to-buffer)|(defvar mupad-help-method 'mupad-help-from-file-to-buffer)|" mupad-run.el > mupad-run-bis.el
+      sed "s|(defvar mupad-help-method 'mupad-help-from-file-to-buffer)|(defvar mupad-help-method 'mupad-help-from-toc-to-buffer)|" mupad-run.el > mupad-run-bis.el
    else
       sed "s|(defvar mupad-help-method 'mupad-help-from-file-to-buffer)|(defvar mupad-help-method 'mupad-help-from-toc-to-buffer)|" mupad-run.el > mupad-run-bis.el
    fi
@@ -149,7 +149,12 @@ if test -f mupad-run.el; then
    echo ""
    echo "Options for MuPAD process:"
    if [ `mupad -V` = 2.5.1 ]; then
-      echo "Your MuPAD version is 2.5.1: nothing to modify"
+      echo "Your MuPAD version is 2.5.1"
+
+      sed 's|'\''("-E" "-U" "EMACS")|'\''("-R" "-U" "EMACS")|' mupad-run.el > mupad-run-bis.el
+
+      rm mupad-run.el
+      mv mupad-run-bis.el mupad-run.el
    else
       echo "Your MuPAD version is assumed to be 3.0"
 

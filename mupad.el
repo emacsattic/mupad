@@ -1437,15 +1437,17 @@ unique completion can be done."
   "Menu-bar item MuPAD"
    (` (append
         (list "MuPAD"
-              ["Start MuPAD" mupad-bus-start :active (featurep 'mupad-run)
+              ["Start MuPAD" mupad-bus-start :included (featurep 'mupad-run)
+	       :active t
 	       :help "Start a mupad process in another buffer"]
          (list
           "Send file to MuPAD..."
-          ["Silently"  mupad-bus-file :active (featurep 'mupad-run)
+          ["Silently"  mupad-bus-file :active t :included (featurep 'mupad-run)
 	   :help "Send a file to the mupad-process by `read(...):'"]
-          ["Openly"    mupad-bus-execute-file :active (featurep 'mupad-run)
+          ["Openly"    mupad-bus-execute-file :active t :included (featurep 'mupad-run)
 	   :help "Send a file to the mupad-process by `read(...);'"])
-         ["Send region to MuPAD"  mupad-bus-region :active (and (featurep 'mupad-run) mark-active)]
+         ["Send region to MuPAD"  mupad-bus-region :included (featurep 'mupad-run)
+	  :active (and (featurep 'mupad-run) mark-active)]
          "---------------------")
         (mupad-build-main-syn-menu)
         (list
