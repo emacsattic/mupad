@@ -8,8 +8,8 @@
 //////////////////////////////////////////////////////////////////////////////
 
 /**
-  Bug: the indentation of bla below is incorrect
-**/
+ * Bug: the indentation of bla below is incorrect (fixed 2003/08/29)
+ **/
 domain bla
   inherits zut;
   category ble::bli;
@@ -129,17 +129,19 @@ end_proc:
 
 domain bla
   /**
-    Bugs: indent-region with all this domain selected raises an error
-    Hitting return below this comment does not indent properly
-    (2003/08/28: seems to be fixed)
-  **/
+   * Bugs:
+   * indent-region with all this domain selected raises an error
+   * (2003/08/29: fixed)
+   * Hitting return below this comment does not indent properly
+   * (2003/08/28: seems to be fixed)
+   **/
   bla := 1;
 end;
 
 /**
  * Embedded proc's with end inside instead of end_proc
  * Bug: Hitting return after end does not indent properly
- * (2003/08/28: seems to be fixed)
+ * (2003/08/28: fixed)
  **/
 proc()
 begin
