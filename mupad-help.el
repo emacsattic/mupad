@@ -17,7 +17,7 @@
 (defconst mupad-help-mode-version "2.00" "Version of `mupad-help.el'.")
 
 ;; This variable should be set by a CONFIGURE if it ever exists...
-(defvar mupad-directory "/usr/local/src/MuPAD/"
+(defvar mupad-directory "/usr/local/mupad/"
 "Used for initializing some variables below.")
 
 (defcustom mupad-help-tree (concat mupad-directory "/doc/")
@@ -56,10 +56,15 @@ Used to set `mupad-help-file-name-tar' and `mupad-help-file-name-toc'."
     (setq mupad-help-mode-map map)))
 
 (defconst mupad-help-face
-  '((mupad-help-face-gras-soul    "red"         )
-    (mupad-help-face-gras         "blue"        ) 
-    (mupad-help-face-soul         "forestgreen" )
-    (mupad-help-face-normal       "black"       )))
+  (if (or (eq frame-background-mode 'light) (not frame-background-mode))
+    '((mupad-help-face-gras-soul    "red"         )
+      (mupad-help-face-gras         "blue"        ) 
+      (mupad-help-face-soul         "forestgreen" )
+      (mupad-help-face-normal       "black"       ))
+    '((mupad-help-face-gras-soul    "red"         )
+      (mupad-help-face-gras         "lightblue"   ) 
+      (mupad-help-face-soul         "lightgreen" )
+      (mupad-help-face-normal       "white"       ))))
 
 ;; 3776 symbols in MuPAD 2.0 ; a prime number as a length is a good thing !
 (defvar mupad-help-completion-array 
