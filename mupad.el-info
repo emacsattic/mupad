@@ -76,6 +76,15 @@ and emacs will automagically switch into MuPAD-mode. The symbol
 MuPAD-mode is an alias for mupad-mode. Some user may prefer the .MU
 suffix, and it is easily fixed above.
 
+You may want to add the following shortcuts as wel
+
+----- 8< ----- cut here ----- 8< -----
+(add-hook 'mupad-run-mode-hook (lambda ()
+           (local-set-key [f5] 'mupad-help-emacs-search)
+           (local-set-key [f6] 'mupad-help-emacs-ask)))
+----- 8< ----- cut here ----- 8< -----
+
+
 (3)  Finally the name of the executables of mupad (mupad itself, manual
 and vcam) should be set as follows:
 
