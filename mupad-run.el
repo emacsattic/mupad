@@ -121,9 +121,15 @@ In which case the options for starting mupad won't be asked for.")
 
 (defcustom mupad-run-commandline
   "mupad -R -U EMACS=TRUE"
-  "Command-line for mupad process.
-In fact other options can be given but one of these two blocks
-should be present."
+  "The command-line for the mupad process.
+
+One of the '-R' or '-E' options is mandatory. Both tell MuPAD to use
+its raw communication protocol. The -E options allows for some extra
+features (e.g. P in the debugger), but requires MuPAD >= 2.5.1.
+
+The '-U EMACS=TRUE' option is not mandatory, but this is the standard
+and recommended way for telling MuPAD programms (typically in the user
+initialization file) that MuPAD is currently running under emacs."
   :type '(choice (const "mupad -R -U EMACS=TRUE")
 		 (const "mupad -E -U EMACS=TRUE")
 		 (string :tag "Manual input"))
