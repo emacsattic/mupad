@@ -37,6 +37,54 @@ home page, in French</a></h2>
 	In any cases, prefer this version to any previous ones.
 </dl>
 
+<h2><a name="">Features</a></h2>
+
+If you want to do more than computing single statements with MuPAD,
+e.g. writing whole programs for it, then mupacs may well be for
+you. It is a plugin for notorious text editor emacs, and makes writing
+MuPAD programs more comfortable. It provides a major-mode for editing
+mupad code (mupad-mode), and allows for running mupad in an emacs
+buffer with full access to the documentation and with debugger
+interaction. Here is a feature summary:
+
+<ul>
+<li>Automatic indentation;
+<li>Electric braces, universal closing of constructs (via "C-c C-e"),
+    and ready-made shapes (like while-, for- or if- constructs);
+<li>Commenting / excluding areas;
+<li>Syntax highlighting of
+    <ul>
+    <li>Comments (starting by "//", enclosed in "#"--"#", enclosed in
+                  "/*"--"*/");
+    <li>Strings;
+    <li>Keywords (all operators, even starting by "&", punctuation,
+                  words from the list mupad-keywords-list);
+    <li>Primitive-names (like "hold", the "transpose" of "linalg::transpose");
+    <li>Options;
+    <li>Domains (like "Dom::Integer" or "groebner");
+    <li>Types (all starting with "DOM_");
+    <li>Userinfo strings (starting with "userinfo(");
+    <li>Function names (definitions of user defined ones);
+    <li>Global variable names (definitions of user defined ones);
+    <li>User defined things (function names and/or global variables
+                             whenever they are used).
+    </ul>
+<!--  (3) Removed feature: rewriting of MuPAD scripts.!-->
+
+<li>Getting help in several forms: asking for a command name, or
+    starting an external graphical manual.
+
+<li>Automatic completion of all the standard command names of
+    MuPAD. Like for the help-mechanism, this uses a mupad-process at
+    the beginning. See the corresponding section below.
+</ul>
+
+<b2><a name="screenshots">Screen shots</a></h2>
+
+<ul><li><a href="screenshot-mupad.png">MuPAD code editing</a>
+    <li><a href="screenshot-mupad-run.png">Running MuPAD in a buffer</a>
+    <li><a href="screenshot-debugger.png">A debugging session</a>
+</ul>
 
 <h2><a name="doc">Documentation</a></h2>
 
@@ -46,7 +94,7 @@ home page, in French</a></h2>
     <li><a href="AUTHORS">Authors</a> and <a href="THANKS">thanks</a>.
     <li><a href="QuickInstall">Quick installation procedure</a> and
         <a href="INSTALL">generic installation instructions</a>.
-    <li><a href="TODO">TODO: future plans for MuPAD Combinat</a>
+    <li><a href="TODO">TODO: future plans for mupacs</a>
     <li><a href="BUGS">Known bugs</a>
 </ul>
 
