@@ -79,7 +79,7 @@ II.a.bis. Lancement de mupad : vous êtes enseignant.
 
 Et vous souhaitez que vos étudiants aient accès à moins de réglages.
 Pour cela, éditez le script mupad-run.el et regarder la variable
-'mupad-run-is-for-students : et mettez la à t. A l'heure actuelle,
+'mupad-run-less-questions : et mettez la à t. A l'heure actuelle,
 cela évitera seulement que emacs demande quelles sont les options
 du processus mupad.
 

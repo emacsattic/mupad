@@ -91,8 +91,8 @@
 ;mupad-help-from-toc-to-buffer  --> valable pour l'option -R
 ;mupad-help-from-file-to-buffer --> valable pour l'option -E
 
-(defvar mupad-run-is-for-students nil
-  "Set it to t if this is the version for students.
+(defvar mupad-run-less-questions nil
+  "Set it to t if you want a more automated behaviour.
 In which case the options for starting mupad won't be asked for.")
 
 (defun mupad-run-set-options (sym val)
@@ -366,7 +366,7 @@ should be present."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 (defun mupad-run-ask-pgm-opt nil
-  (unless mupad-run-is-for-students
+  (unless mupad-run-less-questions
     (let ((cmd-to-start
 	   (read-from-minibuffer
 	    "Command to start mupad: "
