@@ -91,7 +91,8 @@ of \\([a-zA-Z_0-9]\\|::\\). Returns point."
     (error (princ err) nil)))
 
 (defun mupad-bus-switch-to-mupad (&optional buff-to-select)
-  (mupad-bus-window-manager (or buff-to-select "*MuPAD*") 'mupad-beginning)
+  (mupad-bus-window-manager
+   (or buff-to-select "*MuPAD*") 'mupad-beginning 'mupad-run-mode)
   ; in case of a new process, start mode and adapt textwidth
     (unless mupad-run-process
       (mupad-run-ask-pgm-opt)
@@ -214,7 +215,7 @@ CLOSING-STATEMENT can be \";\". See `mupad-region' for more information."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun mupad-bus-window-manager (my-buffer-name option)
+(defun mupad-bus-window-manager (my-buffer-name option &optional buffer-future-mode)
 "Takes care of the windows in mupad-mode and mupad-run-mode.
 Displays the buffer MY-BUFFER-NAME in a proper window.
 The variable OPTION is
@@ -232,13 +233,13 @@ The variable OPTION is
 The variable MY-BUFFER-NAME is one of
 \"*MuPAD*\"  \"*MuPAD Help*\". "
 
-  (cond ((and (eq major-mode 'mupad-run-mode)
+  (cond ((and (eq buffer-future-mode 'mupad-run-mode)
               (eq option 'mupad-beginning)
               (get-buffer-window my-buffer-name))
          ;; We go to *MuPAD* and a window already exists with this buffer.
          (select-window (get-buffer-window my-buffer-name)))
        
-        ((and (eq major-mode 'mupad-run-mode)
+        ((and (eq buffer-future-mode 'mupad-run-mode)
               (eq option 'mupad-beginning)
               (not (get-buffer-window my-buffer-name)))
          ;; We go to *MuPAD* and a window doesn't exist with this buffer.

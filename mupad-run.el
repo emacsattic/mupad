@@ -249,6 +249,7 @@ should be present."
     (define-key map [f6] (function mupad-help-emacs-ask))
     (define-key map "\C-c\C-i" (function mupad-help-emacs-ask))
     (define-key map "\C-y" (function mupad-run-yank))
+    (define-key map [mouse-2] (function mupad-run-yank-at-click))
     (define-key map [C-return] (function mupad-run-creturn))
     (define-key map [C-up] (function mupad-run-previous-history))
     (define-key map [C-down] (function mupad-run-next-history))
@@ -2030,6 +2031,16 @@ Available special keys:
             (put-text-property (point) (1+ (point)) 'front-sticky nil)
             (put-text-property (point) (1+ (point)) 'read-only t)
             (forward-char)))))))
+
+(defun mupad-run-yank-at-click (click arg)
+  (interactive "e\nP")
+   ;; Give temporary modes such as isearch a chance to turn off.
+  (run-hooks 'mouse-leave-buffer-hook)
+  (or mouse-yank-at-point (mouse-set-point click))
+  (setq this-command 'yank)
+  (setq mouse-selection-click-count 0)
+  (mupad-run-yank arg))
+
 ;;
 ;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 ;
