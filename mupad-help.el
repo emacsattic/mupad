@@ -172,7 +172,7 @@ Used to set `mupad-help-file-name-tar' and `mupad-help-file-name-toc'."
     (and 
       (setq br (assoc (concat "ascii/" ind ".help") mupad-help-file-to-offset))
       (setq br (cdr br)))
-    (unless br (error "Help file is missing in ascii format"))
+    (unless br (error (concat "Help file `" ind "` is missing in ascii format")))
 ; création d'un tampon d'aide et remise à zéro s'il existe déjà.
     (mupad-bus-window-manager "*MuPAD Help*" 'mupad-show-help)
     (set-buffer "*MuPAD Help*")
