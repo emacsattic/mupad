@@ -130,6 +130,9 @@ Fix: the undo list is now flushed after each command is inserted in
 the todo list, and after each insertion of a prompt. See the comments
 in the code. Any other places where we should do that?
 
+(fixed 3.2.4 2005/03/11)
+Yes, after a debugger prompt!
+Fix: factorize all the prompts display code at a single place
 ------------------------------------------------------------------------------
 (fixed)
 Hitting backspace right after the xx in the line below in MuPAD mode
