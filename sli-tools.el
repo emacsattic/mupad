@@ -937,15 +937,15 @@ If beg1 = beg2= ... = begN, we answer (beg1 end1 end2 ... endN)."
   "t if point is between beginning-of-line
 and first non-whitespace character, nil else.
 nil if point is at beginning of line."
-  (let (res (beg (line-beginning-position)))
+  (let (res)
     (save-excursion
       (save-restriction
-        (narrow-to-region beg (line-end-position))
+        (narrow-to-region (line-beginning-position) (line-end-position))
         (skip-syntax-forward " ") ; beware: linefeed/newline are whitespaces
         (setq res
-              (if (= (point) beg)
+              (if (= 0 (current-column))
                   nil
-                (= (current-indentation) (- (point) beg)))))
+                (= (current-indentation) (current-column)))))
       (widen))
     res))
 
@@ -954,17 +954,19 @@ nil if point is at beginning of line."
   (if (not (sli-only-spaces-on-line-before))
       (delete-char -1)
     (let ((foundp nil) (cc (current-indentation)) ncc)
+      ;;(if sli-verbose
+      ;;  (print (list "(sli-backward-to-indentation) Current indentation: " cc)))
       (save-excursion
-        (while (and (not (eobp)) (not foundp))
-          (forward-line -1)
-          (beginning-of-line) ; for the eobp to work
+        (while (and (not (bobp)) (not foundp))
+	  (forward-line -1)
+          (beginning-of-line) ; for the bobp to work
           (setq foundp (> cc (setq ncc (current-indentation))))))
       (save-restriction
         (narrow-to-region (line-beginning-position) (line-end-position))
         (skip-syntax-forward " ")
         (if (not foundp)
-            (delete-char (- cc))
-          (delete-char (- ncc cc)))
+	    (backward-delete-char-untabify cc)
+          (backward-delete-char-untabify (- cc ncc)))
         (widen)))))
 
 (defsubst sli-point-to-indent (pt)
@@ -2289,7 +2291,7 @@ and the syntax table should be ok."
           (setq sli-put-newline-fn newl))
         (set (make-local-variable 'indent-line-function) 'sli-electric-tab)
         (set (make-local-variable 'indent-region-function) 'sli-indent-region)
-        (setq sli-handles-sexp t sli-verbose nil sli-prop-verbose nil)
+        (setq sli-handles-sexp t sli-verbose t sli-prop-verbose nil)
         (sli-show-sexp-semi-mode (if showsexpp 1 0))
         (sli-precomputations))
     (error (princ "\nSomething went wrong in sli-tools: ")(princ err) nil)))
