@@ -298,18 +298,13 @@ Available special keys:
          (goto-char br2) (insert " ;"))))
 
 ;----------------------------------------------------------------------------------------
-(unless (fboundp 'backward-extended-mupadword)  ;  These functions come from mupad.el
-  (defun backward-extended-mupadword nil (backward-word 1)))  ;
-(unless (fboundp 'forward-extended-mupadword)   ;
-  (defun forward-extended-mupadword nil (forward-word 1) (point)))  ;
-;----------------------------------------------------------------------------------------
 (defun mupad-help-completion (question)
   (save-excursion
     (let* 
       ((posfuncname
          (buffer-substring-no-properties 
-           (or (backward-extended-mupadword) (point))
-	   (forward-extended-mupadword)))
+           (or (mupad-bus-backward-extended-mupadword) (point))
+	   (mupad-bus-forward-extended-mupadword)))
          (funcname (completing-read
            (if (string-equal posfuncname "") 
              (concat question ": ")

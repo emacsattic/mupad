@@ -598,34 +598,6 @@ Answers nil if no comment has been skipped."
                              ;; it is large.
       (when limit (widen)))))
 
-(defun backward-extended-mupadword nil
-  "Seeks the beginning of an extended mupadword. An extended
-mupadword is a continuous chain of \\([a-zA-Z_0-9]\\|::\\). Returns point."
-  (let (where) 
-    (if (and (eq (char-syntax (preceding-char)) ? )
-	     (or (eobp) (eq (char-syntax (char-after)) ?w)))
-        (point) ; Don't move !!!!
-      ;(print "On est la")
-      (if (save-excursion
-	    (when (re-search-backward
-		   "\\([^a-zA-Z0-9_:]\\|[^:]:\\|\\^:\\|\\^\\)\\(\\(\\w\\|::\\)+\\)" nil t)
-	      ;; le suivant, c'est du raffine: la recherche va mettre le curseur
-	      ;; devant le caractere qui n'appartient pas au mot (voir la regexp).
-	      ;; Donc pour determiner le prompt, faut se decaler ...
-	      (goto-char (setq where (match-beginning 2))) t)
-	    )
-          (goto-char where)
-        nil))))  ;; nil if not found
-
-(defun forward-extended-mupadword nil
-  "Seeks the end of an extended mupadword. A mupadword is a continuous chain
-of \\([a-zA-Z_0-9]\\|::\\). Returns point."
-    (if (re-search-forward
-           "\\(\\(\\w\\|::\\)+\\)\\([^a-zA-Z0-9_:]\\|:[^:]\\|:\\'\\|\\'\\)"
-           nil t)
-        (goto-char (match-end 2))
-      (point)))
-
 (defun mupad-find-closing-one (regexp-beg expr-end)
   ;; Should be called from outside a commented area.
   ;; Answer nil if no proper end_proc is found.
@@ -718,7 +690,7 @@ of \\([a-zA-Z_0-9]\\|::\\). Returns point."
   (interactive "e")
   (funcall 'mouse-choose-completion event)
   ;; 'mouse-choose-completion comes from the standard file "mouse.el".
-  (mupad-restore-wind-conf) (forward-extended-mupadword))
+  (mupad-restore-wind-conf) (mupad-bus-forward-extended-mupadword))
 
 
 ;;-------------------------------------------
@@ -1205,9 +1177,10 @@ unique completion can be done."
   (interactive)
   (condition-case err
       (progn
-        (backward-extended-mupadword)
+        (mupad-bus-backward-extended-mupadword)
         (let* (cpl-lst
-               (word (buffer-substring-no-properties (point) (forward-extended-mupadword)))
+               (word (buffer-substring-no-properties (point)
+			    (mupad-bus-forward-extended-mupadword)))
                (comp (mupad-ask-cpl-via-list word 'mupad-completion-array)))
           (setq comp (list (car comp) (mupad-simplify-cpl-lst (cadr comp))))
                                         ;(print (list word comp))

@@ -14,6 +14,34 @@
   "Returns t if buffer abuffer has a name with a .mupad extension suffix."
   (` (string= (name-extension (buffer-name (, abuffer))) "mu")))
 
+(defun mupad-bus-backward-extended-mupadword nil
+  "Seeks the beginning of an extended mupadword. An extended
+mupadword is a continuous chain of \\([a-zA-Z_0-9]\\|::\\). Returns point."
+  (let (where) 
+    (if (and (eq (char-syntax (preceding-char)) ? )
+	     (or (eobp) (eq (char-syntax (char-after)) ?w)))
+        (point) ; Don't move !!!!
+      ;(print "On est la")
+      (if (save-excursion
+	    (when (re-search-backward
+		   "\\([^a-zA-Z0-9_:]\\|[^:]:\\|\\^:\\|\\^\\)\\(\\(\\w\\|::\\)+\\)" nil t)
+	      ;; le suivant, c'est du raffine: la recherche va mettre le curseur
+	      ;; devant le caractere qui n'appartient pas au mot (voir la regexp).
+	      ;; Donc pour determiner le prompt, faut se decaler ...
+	      (goto-char (setq where (match-beginning 2))) t)
+	    )
+          (goto-char where)
+        nil))))  ;; nil if not found
+
+(defun mupad-bus-forward-extended-mupadword nil
+  "Seeks the end of an extended mupadword. A mupadword is a continuous chain
+of \\([a-zA-Z_0-9]\\|::\\). Returns point."
+    (if (re-search-forward
+           "\\(\\(\\w\\|::\\)+\\)\\([^a-zA-Z0-9_:]\\|:[^:]\\|:\\'\\|\\'\\)"
+           nil t)
+        (goto-char (match-end 2))
+      (point)))
+
 (defun mupad-possible-file-name nil
   "Try to guess the name of a likely mupad-program"
   ;; First tries the existing windows, then the existing buffers.
