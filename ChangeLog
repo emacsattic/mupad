@@ -1,3 +1,52 @@
+2003-09-27  Nicolas M. Thiéry  <nthiery@users.sf.net>
+
+	* NEWS, index.html.in: Switch to 3.2.1
+
+	* configure.ac:
+	mupacs.el is now created in two passes to ensure that the shell
+	variables are fully substituted.
+	Switch to 3.2.1
+
+	* Makefile.am:
+	mupacs.el is now created in two passes to ensure that the shell
+	variables are fully substituted.
+	Improved heuristics to find the site-start.d directory.
+	Added test-indentation.mu to the distribution.
+
+	* site-start.d/mupacs.el.in.in, site-start.d/mupacs.el.in:
+	mupacs.el is now created in two passes to ensure that the shell
+	variables are fully substituted.
+
+	* BUGS: *** empty log message ***
+
+	* mupad-run.el:
+	Bug fix: mupad-run-recenter-br has been completely broken for a while
+	when mupad-run-recenter-behaviour was nil; on starting of mupad-run,
+	and after each input line, the following error message was issued
+	error in process-filter: cond: Wrong number of arguments: #<subr if>, 1
+
+2003-09-23  Nicolas M. Thiéry  <nthiery@users.sf.net>
+
+	* index.html.in: Update for 3.2.
+
+	* README, Makefile.in, configure: Update of the autotools build system.
+
+	* Makefile.am:
+	Try to also install the site-start.el file in /etc/emacs if this
+	directory exists (Mandrake).
+
+	* ChangeLog: Switch to version 3.2, and update.
+
+	* configure.ac, NEWS: Switch to version 3.2.
+
+2003-09-21  ramare  <ramare@eole>
+
+	* mupad.el:
+	( and ) are now declared also as constructors.
+
+	* sli-tools.el:
+	Comments added concerning constructors.
+
 2003-09-21  ramare  <ramare@eole>
 
 	* mupad.el:

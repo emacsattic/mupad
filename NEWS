@@ -1,3 +1,11 @@
+Overview of changes in mupacs 3.2.1:
+====================================
+
+Mainly a critical bug fix release (see BUGS file)
+Improved installation procedure: the startup file
+site-start.d/mupacs.el gets better chances to be installed at the
+proper place
+
 Overview of changes in mupacs 3.2:
 ==================================
 
