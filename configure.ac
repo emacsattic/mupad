@@ -25,8 +25,8 @@ PKG_INIT_RPM(		[1])dnl
 #PKG_INIT_DEB(		[1])dnl
 # The long description should not contain ','
 PKG_INIT_DESCRIPTION(
-[mupacs -- a MuPAD mode for emacs],
-[mupacs is an open-source MuPAD mode for the text editor emacs.\
+[MuPACS -- a MuPAD mode for emacs],
+[MuPACS is an open-source MuPAD mode for the text editor emacs.\
 Features:\
  - Syntax highlighting and automatic indentation of MuPAD code;\
  - Running MuPAD in a buffer with full access to the documentation\
