@@ -246,6 +246,9 @@ simply exchange both strings in this definition."
   '((["case" "of"] . mupad-case-indent)
     (["domain" "begin"] . -2)
     (["category" "begin"] . -2))
+;    Shouldn't we use mupad-domain-indent instead of 2 ?
+;    (["domain" "begin"] . -mupad-domain-indent)
+;    (["category" "begin"] . -mupad-domain-indent)
 "See `sli-shift-alist'."
 :type '(repeat (cons (vector string string) sexp))
 :initialize 'custom-initialize-default
@@ -273,7 +276,7 @@ simply exchange both strings in this definition."
 
 (defcustom mupad-keys-with-newline
 '("begin" "proc" "repeat" "seqbegin"
-  "parbegin" "then" "do" ";" "category" "domain")
+  "parbegin" "then" "do" ";" "category" "domain" "axiom")
 "See `sli-keys-with-newline'."
 :type '(repeat string)
 :initialize 'custom-initialize-default
@@ -299,7 +302,8 @@ simply exchange both strings in this definition."
     ("seqbegin" . "")         ("parbegin" . "")
     (";" . "")                ("then" . "")
     ("do" . "")               ("end_domain" . ":")
-    ("end_category" . ":"))
+    ("end_category" . ":")    ("end_axiom" . ":")
+    )
 "See `sli-add-to-key-alist'."
 :type '(repeat (cons string string))
 :initialize 'custom-initialize-default
