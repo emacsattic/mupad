@@ -6,6 +6,7 @@
 
 (setq mupad-directory "@MUPADdir@")
 (setq mupad-el-info "@lispdir@/mupad.el-info")
+(setq mupad-run-info "@lispdir@/mupad-run.el-info")
 
 (autoload 'mupad-mode "mupad.el" "MuPAD editing mode" t)
 (autoload 'mupad-help-mode "mupad-run.el" "MuPAD help mode" t)
