@@ -227,9 +227,12 @@ See `mupad-describe-this-proc' and `mupad-user-mail-address'."
     (["(" head 1] [")" end])
     (["[" head 1] ["]" end])
     (["{" head 1] ["}" end])
-    (["=" math-relation 1]) ; that's the last item of any relation, like in ':='
+    (["=" math-relation 1]) 
+    ([":=" math-relation 1]) 
     (["<" math-relation 1])
     ([">" math-relation 1])
+    (["<=" math-relation 1])
+    ([">=" math-relation 1])
     (["and" math-relation 4])
     (["$" math-relation 1])
     (["or" math-relation 3])
