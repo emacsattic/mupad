@@ -21,3 +21,6 @@ Allow for deleting blocs of input/output
 ------------------------------------------------------------------------------
 Add a init.mu file to the MuPAD directory for vcam ?
 Ou demander `a mupad-bus d'envoyer les commandes qui vont bien à MuPAD ?
+
+------------------------------------------------------------------------------
+Set by default C-up/down to mupad-run-previous-history-search
