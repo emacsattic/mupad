@@ -2227,7 +2227,7 @@ and the syntax table should be ok."
           (setq sli-put-newline-fn newl))
         (set (make-local-variable 'indent-line-function) 'sli-electric-tab)
         (set (make-local-variable 'indent-region-function) 'sli-indent-region)
-        (setq sli-handles-sexp t sli-verbose t sli-prop-verbose nil)
+        (setq sli-handles-sexp t sli-verbose nil sli-prop-verbose nil)
         (sli-show-sexp-semi-mode (if showsexpp 1 0))
         (sli-precomputations))
     (error (princ "\nSomething went wrong in sli-tools: ")(princ err) nil)))
