@@ -8,6 +8,17 @@
 //////////////////////////////////////////////////////////////////////////////
 
 /**
+ * 2003/09/19 Bug: the indentation of axiom and bla below is incorrect
+ **/
+domain combinat::subClass(class : DOM_DOMAIN)
+  category op(class::getCategories());
+  axiom op(class::allAxioms());
+
+  bla;
+begin
+end_domain;
+
+/**
  * 2003/09/01 Bug: the indentation of inherits and bla below is incorrect
  * 2003/09/02 Fixed.
  **/
