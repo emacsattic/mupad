@@ -499,6 +499,13 @@ without showing empty lines after it."
 recentering."
   :type 'integer :group 'mupad-run)
 
+(defcustom mupad-run-completion-style 'temporary-buffer
+  "Selects where completion lists are displayed:
+* temporary-buffer means in a temporary buffer
+* inline means inside the MuPAD buffer"
+  :type '(radio (const inline) (const temporary-buffer))
+  :group 'mupad-run)
+
 (defconst mupad-run-automate-exception
   '((( 0 . ?\n) .  1) (( 0 . ?\\) .  2) (( 0 . ?\") . 10) (( 0 . ?\/) .  3) 
     (( 0 . ?\*) .  5)
@@ -1349,8 +1356,15 @@ Available special keys:
             mupad-run-comp-begin "' !")))
       (mupad-run-emacs-completion ; éliminer le cas de completion vide
 ; (message "ici1")
-   (with-output-to-temp-buffer "*MuPAD Completions*"
-     (display-completion-list (split-string mupad-run-emacs-completion ", "))))
+   ;
+   (cond
+    ((eq mupad-run-completion-style 'temporary-buffer)
+     (with-output-to-temp-buffer "*MuPAD Completions*"
+       (display-completion-list (split-string mupad-run-emacs-completion ", "))))
+    ((eq mupad-run-completion-style 'inline)
+     (mupad-run-momentary-string-display
+      (concat "\n" mupad-run-emacs-completion)
+      (line-end-position) "" "Several completions available; type any key to erase the completion list"))))
 ; (message "ici2"))
 ;        (delete-region (point) (- (point) (length mupad-run-comp-begin)))
 ;        (if (= (point) (marker-position mupad-run-comp-edit))
@@ -2586,6 +2600,58 @@ Available special keys:
 
 (defun mupad-run-delete-windows (str)
   (let ((br (get-buffer str))) (if br (delete-windows-on br))))
+
+;; Taken from momentary-string-display in subr.el, emacs 21.2
+;; Changed the vertical recentering to just display enough
+;; of the output instead of moving to the middle of the window
+
+(defun mupad-run-momentary-string-display (string pos &optional exit-char message) 
+  "Momentarily display STRING in the buffer at POS.
+Display remains until next character is typed.
+If the char is EXIT-CHAR (optional third arg, default is SPC) it is swallowed;
+otherwise it is then available as input (as a command if nothing else).
+Display MESSAGE (optional fourth arg) in the echo area.
+If MESSAGE is nil, instructions to type EXIT-CHAR are displayed there."
+  (or exit-char (setq exit-char ?\ ))
+  (let ((inhibit-read-only t)
+	;; Don't modify the undo list at all.
+	(buffer-undo-list t)
+	(modified (buffer-modified-p))
+	(name buffer-file-name)
+	insert-end)
+    (unwind-protect
+	(progn
+	  (save-excursion
+	    (goto-char pos)
+	    ;; defeat file locking... don't try this at home, kids!
+	    (setq buffer-file-name nil)
+	    ;(insert-before-markers string)
+	    (insert string)
+	    (setq insert-end (point))
+	    (cond
+	     ;; If the message does not fit in the window height,
+	     ;; scroll so that the top of the message is on the second
+	     ;; line of the window
+	     ((> (count-lines pos insert-end) (window-height))
+	      (goto-char pos)
+	      (recenter 1))
+	     ;; Otherwise, if the message ends below the last line of
+	     ;; the window, scroll up so that the bottom of the
+	     ;; message is on that last line
+	     ((>= (count-lines (window-start) insert-end) (window-height))
+	      (recenter -1))))
+	  (message (or message "Type %s to continue editing.")
+		   (single-key-description exit-char))
+	  (let ((char (read-event)))
+	    (or (eq char exit-char)
+		(setq unread-command-events (list char)))))
+      (if insert-end
+	  (save-excursion
+	    (delete-region pos insert-end)))
+      (setq buffer-file-name name)
+      (set-buffer-modified-p modified))))
+
+
 ;;
 ;;
 ;;
