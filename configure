@@ -1788,14 +1788,14 @@ Note: this is only required for building the RPM package
 #PKG_INIT_DEB(		[1])dnl
 # The long description should not contain ','
 
-	if test -z 'mupacs -- a MuPAD mode for emacs'; then
+	if test -z 'MuPACS -- a MuPAD mode for emacs'; then
 		{ echo "$as_me:$LINENO: WARNING: PKG INIT DESCRIPTION requires two params" >&5
 echo "$as_me: WARNING: PKG INIT DESCRIPTION requires two params" >&2;}
 	else
-		PKG_SHORTDESCRIPTION='mupacs -- a MuPAD mode for emacs'
+		PKG_SHORTDESCRIPTION='MuPACS -- a MuPAD mode for emacs'
 	fi
 
-	if test -z 'mupacs is an open-source MuPAD mode for the text editor emacs.\
+	if test -z 'MuPACS is an open-source MuPAD mode for the text editor emacs.\
 Features:\
  - Syntax highlighting and automatic indentation of MuPAD code;\
  - Running MuPAD in a buffer with full access to the documentation\
@@ -1804,7 +1804,7 @@ Features:\
 		{ echo "$as_me:$LINENO: WARNING: PKG INIT DESCRIPTION requires two params" >&5
 echo "$as_me: WARNING: PKG INIT DESCRIPTION requires two params" >&2;}
 	else
-		PKG_LONGDESCRIPTION='mupacs is an open-source MuPAD mode for the text editor emacs.\
+		PKG_LONGDESCRIPTION='MuPACS is an open-source MuPAD mode for the text editor emacs.\
 Features:\
  - Syntax highlighting and automatic indentation of MuPAD code;\
  - Running MuPAD in a buffer with full access to the documentation\

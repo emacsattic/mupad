@@ -7,13 +7,13 @@ General information
 
 Name		: mupacs
 Version		: 3.2.3
-Summary		: mupacs -- a MuPAD mode for emacs
+Summary		: MuPACS -- a MuPAD mode for emacs
 License		: GPL
 Vendor:		: Nicolas M. Thiéry <nthiery@users.sourceforge.net>
 URL		: http://mupacs.sourceforge.net/
 Requires	: 
 Description	:
-mupacs is an open-source MuPAD mode for the text editor emacs.
+MuPACS is an open-source MuPAD mode for the text editor emacs.
 Features:
  - Syntax highlighting and automatic indentation of MuPAD code;
  - Running MuPAD in a buffer with full access to the documentation
