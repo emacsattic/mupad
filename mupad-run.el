@@ -565,7 +565,7 @@ should be present."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 (defun mupad-end ()
-   (interactive)
+  (interactive)
   (let ((br))
    (when (setq br (get-buffer "*MuPAD*")) 
      (switch-to-buffer br) (mupad-run-end))))
@@ -573,7 +573,7 @@ should be present."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 (defun mupad-reset ()
-   (interactive) (mupad-end) (mupad-run))
+  (interactive) (mupad-end) (mupad-run))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -1911,8 +1911,8 @@ Available special keys:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 (defun mupad-run-previous-history ()
-  (mupad-run-delete-windows "*MuPAD Completions*")
   (interactive)
+  (mupad-run-delete-windows "*MuPAD Completions*")
   (when (>= (point) (marker-position mupad-run-edit))
     (let 
       ( (br (buffer-substring mupad-run-edit (point-max))) br1 br2 br3
