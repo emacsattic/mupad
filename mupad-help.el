@@ -5,10 +5,6 @@
 ;; Maintainer: Francois Maltey <Francois.Maltey@enst-bretagne.fr>
 ;; keywords: progmodes
 
-;; Ce programme est un logiciel libre en cours de développement distribué 
-;; sans aucun support ni garantie de la part de l'auteur. 
-;; L'utilisateur est donc conscient qu'il le teste à ses risques et périls.
-
 ;; This library is free software; you can redistribute it and/or
 ;; modify it under the terms of the GNU Lesser General Public
 ;; License as published by the Free Software Foundation version 2.1.
@@ -66,24 +62,7 @@ Used to set `mupad-help-file-name-tar' and `mupad-help-file-name-toc'."
   nil 
   "Touches définies dans l'aide en ligne de mupad.")
 
-(when (and (not mupad-help-mode-map) (not xemacsp))
-  (let ((map (make-sparse-keymap)))
-    (define-key map "q" (function mupad-help-quit))
-    (define-key map "Q" (function mupad-help-quit))
-    (define-key map "\r" (function mupad-help-return))
-    (define-key map ">" (function end-of-buffer))
-    (define-key map "<" (function beginning-of-buffer))
-    (define-key map [f5] (function mupad-help-emacs-search))
-    (define-key map "\C-c\C-h" (function mupad-help-emacs-search))
-    (define-key map [f6] (function mupad-help-emacs-ask))
-    (define-key map "\C-c\C-i" (function mupad-help-emacs-ask))
-    (define-key map [mouse-2] (function mupad-help-mouse-2))
-    (define-key map "\M-o" (function mupad-restore-wind-conf))
-    (define-key map [C-left] (function mupad-help-previous-exemple))
-    (define-key map [C-right] (function mupad-help-next-exemple))
-    (setq mupad-help-mode-map map)))
-
-(when (and (not mupad-help-mode-map) xemacsp)
+(when (not mupad-help-mode-map) 
   (let ((map (make-sparse-keymap)))
     (define-key map "q" (function mupad-help-quit))
     (define-key map "Q" (function mupad-help-quit))
@@ -98,18 +77,8 @@ Used to set `mupad-help-file-name-tar' and `mupad-help-file-name-toc'."
     (define-key map "\M-o" (function mupad-restore-wind-conf))
     (define-key map [(control left)] (function mupad-help-previous-exemple))
     (define-key map [(control right)] (function mupad-help-next-exemple))
+    (define-key map [(control ?c) ?0]  (function mupad-help-reset))
     (setq mupad-help-mode-map map)))
-
-(defconst mupad-help-face
-  (if (or (eq frame-background-mode 'light) (not frame-background-mode))
-    '((mupad-help-face-gras-soul    "red"         )
-      (mupad-help-face-gras         "blue"        ) 
-      (mupad-help-face-soul         "forestgreen" )
-      (mupad-help-face-normal       "black"       ))
-    '((mupad-help-face-gras-soul    "red"         )
-      (mupad-help-face-gras         "lightblue"   ) 
-      (mupad-help-face-soul         "lightgreen" )
-      (mupad-help-face-normal       "white"       ))))
 
 ;; 3776 symbols in MuPAD 2.0 ; a prime number as a length is a good thing !
 (defvar mupad-help-completion-array 
@@ -301,13 +270,13 @@ Available special keys:
 (defun mupad-help-next-exemple ()
   (interactive)
   (if (< (point) (point-max)) (forward-char 1))
-  (if (search-forward ">> " nil t) 
+  (if (re-search-forward "^ *>> " nil t) 
     (forward-char -3)
     (goto-char (point-max))))
 
 (defun mupad-help-previous-exemple ()
   (interactive)
-  (unless (search-backward ">> " nil t) (goto-char (point-min))))
+  (unless (re-search-backward "^ *>> " nil t) (goto-char (point-min))))
 
 (defun mupad-help-return ()
   (interactive)
@@ -376,8 +345,26 @@ Available special keys:
 (defun mupad-help-info-mode ()
    (message 
      "q/Q pour sortir, </> début/fin, voir aussi C-left/C-right/RET/C-cC-h"))
-;;  
-;;
+
+(defun mupad-help-reset ()
+  (interactive)
+  (unless mupad-run-less-questions
+    (let 
+      ((brd (read-from-minibuffer "Directory of the mupad help database: "
+                                  mupad-help-tree)))
+      (cond
+        ((and 
+           (file-readable-p (concat brd "ascii.tar"))
+           (file-readable-p (concat brd "ascii.toc")))
+          (setq mupad-help-file-name-tar (concat brd "ascii.tar"))
+          (setq mupad-help-file-name-toc (concat brd "ascii.toc"))
+          (setq mupad-help-tree brd)
+          (setq mupad-help-init-item-to-file nil)
+          (mupad-help-init))
+        (t 
+           (error 
+ "Ascii.tar or ascii.toc files are missing or unreadable in the directory."
+                 ))))))
 ;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 ;;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 ;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -389,12 +376,31 @@ Available special keys:
 ;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 ;;
 
+(defface mupad-help-face-gras-soul
+  `((t (:foreground "red")))
+  "Bold and underlined face in mupad-help buffer"
+  :group 'mupad-help-faces)
+
+(defface mupad-help-face-gras
+  `((((background dark)) (:foreground "lightblue"))
+    (t                   (:foreground "blue")))
+  "Bold face in mupad-help buffer"
+  :group 'mupad-help-faces)
+
+(defface mupad-help-face-soul 
+  `((((background dark)) (:foreground "green"))
+    (t                   (:foreground "forestgreen")))
+  "Underlined face in mupad-help buffer"
+  :group 'mupad-help-faces)
+
+(defface mupad-help-face-normal 
+  `((((background dark)) (:foreground "white"))
+    (t                   (:foreground "black")))
+  "Normal face in mupad-help buffer"
+  :group 'mupad-help-faces)
+
+
 (defun mupad-help-init nil
-; initialisation des couleurs
-  (mapcar 
-   (lambda (a-face) (make-face (car a-face)) 
-     (set-face-foreground (car a-face) (cadr a-face)))
-   mupad-help-face)
 ; construction des bases de données de l'aide en ligne 
 ;    relations entre le nom du fichier dans l'aide en ligne, 
 ;    la position de ce fichier dans l'archive .tar, 
@@ -411,3 +417,4 @@ Available special keys:
 ;; (add-hook 'mupad-mode-hook 'mupad-help-init)
 (custom-add-option 'mupad-run-mode-hook 'mupad-help-init)
 (custom-add-option 'mupad-mode-hook 'mupad-help-init)
+

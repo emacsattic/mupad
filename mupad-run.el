@@ -393,7 +393,8 @@ should be present."
     mupad-run-itema mupad-run-itemb mupad-run-last-type
     mupad-run-output mupad-run-state mupad-run-time-start 
     mupad-run-hist-commands mupad-run-save-except mupad-run-debug 
-    mupad-run-save-buffer mupad-run-comp-begin mupad-run-prompt
+    mupad-run-save-buffer mupad-run-prompt
+    mupad-run-comp-begin mupad-run-emacs-completion
     mupad-run-rawcommand mupad-run-debugger-file mupad-run-debugger-line
     mupad-run-last-session mupad-run-buffer-face)))
 
@@ -499,6 +500,7 @@ should be present."
 ;;   un marqueur au début du prompt précédent        [ mupad-run-last-prompt ]
 ;;   un marqueur où insérer la complétion              [ mupad-run-comp-edit ]
 ;;   début du nom dont la complétion est recherchée   [ mupad-run-comp-begin ]
+;;                                                 [mupad-run-emas-completion]
 ;;   chaîne du prompt                                     [ mupad-run-prompt ]
 ;;   un compteur pour séparer les commandes en attente     [ mupad-run-itema ]
 ;;   un compteur pour séparer les sorties de mupad         [ mupad-run-itemb ]
@@ -623,6 +625,7 @@ Available special keys:
        mupad-run-time-start mupad-run-comp-begin mupad-run-prompt
        mupad-run-save-except mupad-run-debug
        mupad-run-last-session mupad-run-buffer-face
+       mupad-run-emacs-completion
 ; NT 04/11/2002 added for the debugger
        mupad-run-rawcommand
        mupad-run-debugger-file	mupad-run-debugger-line
@@ -902,12 +905,14 @@ Available special keys:
         ((eq brt 6)) ; change to TEXTWIDTH
         ((eq brt 7)) ; change to PRETTYPRINT
         ((eq brt 8)  ; online documentation
-          (condition-case err 
+          (condition-case err
            (apply mupad-help-method (list output-str))
            (error (message "%s" (error-message-string err))))
           (set-buffer brb))
-        ((eq brt 32) (mupad-run-output-completion output-str))
-        ((eq brt 33) (mupad-run-output-end-comp output-str))
+;        ((eq brt 32) (mupad-run-output-completion output-str))
+        ((eq brt 32) (mupad-run-emacs-completion output-str))
+;        ((eq brt 33) (mupad-run-output-end-comp output-str))
+        ((eq brt 33) (mupad-run-emacs-end-comp output-str))
 ; Début des modifications NT 04/11/2002 
         ((or (eq brt 34)            ; MPRCmdb_file_pos
 ;	     (eq brt 41)
@@ -955,7 +960,9 @@ Available special keys:
       (memq mupad-run-state '(wait-input wait-debugger-input)))
     (mupad-run-from-todo-to-output))
 ; raccourcissement de la chaîne à traiter à la fin de la boucle 
-  (setq mupad-run-output (substring mupad-run-output output-index))
+; (when (not in-completion)
+(setq mupad-run-output (substring mupad-run-output output-index))
+;  (setq in-completion nil))
 ; trop contraignant 
 ;  (when (equal brb brc) (recenter -4))
   (set-buffer brc)))
@@ -1080,9 +1087,9 @@ Available special keys:
             "Sorry, no completion available for `" 
             mupad-run-comp-begin "' !")))
        (t 
-         (setq br1 0) ; sur str
-         (setq br2 0) ; sur sortie
-         (setq br3 0) ; sur sortie
+         (setq br1 0) ; ptr sur str
+         (setq br2 0) ; ptr sur sortie
+         (setq br3 0) ; ptr sur sortie
          (while (< br1 (length str))
            (cond 
              ((/= (aref str br1) ?,) (setq br1 (1+ br1)))
@@ -1117,6 +1124,59 @@ Available special keys:
     (insert str)
     (save-excursion (goto-char mupad-run-comp-edit) (insert str))))
 ;; 
+;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+;; 
+(defun mupad-run-emacs-completion (str)
+  (if (not mupad-run-emacs-completion) 
+    (setq mupad-run-emacs-completion str) 
+    (setq mupad-run-emacs-completion (concat mupad-run-emacs-completion str))))
+;; 
+;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+;; 
+(defun mupad-run-emacs-end-comp (str)
+  (let (br) 
+    (setq mupad-run-state 'wait-input)
+    (if (= (point) (marker-position mupad-run-comp-edit))
+       (insert str)
+       (save-excursion (goto-char mupad-run-comp-edit) (insert str)))
+    (setq mupad-run-comp-begin (concat mupad-run-comp-begin str))
+    (cond
+      ((string= "" mupad-run-emacs-completion)
+        (message "Complete identifier"))
+      ((string= "\010\007" mupad-run-emacs-completion) 
+        (message 
+          (concat 
+            "Sorry, no completion available for `" 
+            mupad-run-comp-begin "' !")))
+      (mupad-run-emacs-completion ; éliminer le cas de completion vide
+        (mupad-run-completion-br)
+        (delete-region (point) (- (point) (length mupad-run-comp-begin)))
+        (if (= (point) (marker-position mupad-run-comp-edit))
+          (insert br)
+          (save-excursion (goto-char mupad-run-comp-edit) (insert br))))
+      (t (message "Ne doit pas se produire")))
+    (setq mupad-run-emacs-completion nil)))
+;; 
+;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+;; 
+(defun mupad-run-completion-br ()
+  (with-output-to-temp-buffer "*Completions*"
+    (display-completion-list 
+      (split-string mupad-run-emacs-completion ", ")))
+; completing-read "prompt" "liste" 
+;   nil pour un usage normal de la liste ou du tableau des completions
+;   nil pour permettre une sortie prématurée 
+;   chaine de début de saisie
+;   variable ou liste de l'historique possible
+;   sortie par défaut
+    (setq br 
+      (condition-case nil
+        (completing-read "? " 
+          (mapcar (lambda (x) (list x)) 
+            (split-string mupad-run-emacs-completion ", "))
+          nil nil mupad-run-comp-begin nil mupad-run-comp-begin)
+        (quit mupad-run-comp-begin)))
+  (delete-windows-on "*Completions*"))
 ;; 
 ;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 ;;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
