@@ -605,7 +605,7 @@ mupadword is a continuous chain of \\([a-zA-Z_0-9]\\|::\\). Returns point."
     (if (and (eq (char-syntax (preceding-char)) ? )
 	     (or (eobp) (eq (char-syntax (char-after)) ?w)))
         (point) ; Don't move !!!!
-      (print "On est la")
+      ;(print "On est la")
       (if (save-excursion
 	    (when (re-search-backward
 		   "\\([^a-zA-Z0-9_:]\\|[^:]:\\|\\^:\\|\\^\\)\\(\\(\\w\\|::\\)+\\)" nil t)
