@@ -304,10 +304,10 @@ The variable MY-BUFFER-NAME is one of
 ;;----------------------------------------------------------------------------------
 
 (defconst mupad-max-nb-wind-conf 20
- "Maximal number of saved window configurations.")
+ "Maximal number of saved window configurations (<= 254).")
 
 (defvar mupad-registers-list nil
-"List of registers [0-mupad-max-nb-wind-conf] where window-configurations
+"List of registers [0 - mupad-max-nb-wind-conf] where window-configurations
 are stored. See `mupad-store-wind-conf' and `mupad-restore-wind-conf'.")
 
 (defun mupad-info-wind-conf nil
@@ -320,7 +320,7 @@ are stored. See `mupad-store-wind-conf' and `mupad-restore-wind-conf'.")
   "Restore previously stored window configuration."
  (if (not (equal mupad-registers-list nil))
       (progn
-        (jump-to-register (car mupad-registers-list))
+        (set-window-configuration (car (get-register (car mupad-registers-list))))
         (setq mupad-registers-list (cdr mupad-registers-list)))))
 
 (defun mupad-skim-list (alist abound)
@@ -330,7 +330,7 @@ else replaces ALIST by the same list minus its last element."
       (set alist (nreverse (cdr (nreverse (eval alist)))))))
 
 (defun mupad-store-wind-conf nil
-  "Adds a the current window configuration to the pile. If the pile
+  "Add the current window configuration to the pile. If the pile
 has more than  mupad-max-nb-wind-conf items [numbered
 (0,1,...,(1- mupad-max-nb-wind-conf))] then the first item is lost."
   (mupad-skim-list 'mupad-registers-list mupad-max-nb-wind-conf)
@@ -342,7 +342,7 @@ has more than  mupad-max-nb-wind-conf items [numbered
        (setq mupad-registers-list (cons next mupad-registers-list))))
 
 (defun mupad-restore-wind-conf (&optional arg)
-  "Restores the previous window-configuration, killing the *MuPAD Help* buffer
+  "Restore previous window-configuration, killing the *MuPAD Help* buffer
 if it was and is no more displayed. When called with prefix ^U, just now
 does nothing !"
   (interactive "P")
