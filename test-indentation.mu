@@ -3,7 +3,7 @@ category bla
   category tric;
   axiom tric;
   axiom bla;
-
+  
   bla := 1;
 begin
 end_category:
@@ -23,7 +23,7 @@ domain bla
   inherits zut;
   axiom bli;
   category ble;
-
+  
   bla :=proc()
 	begin
 	  1+x;
@@ -48,19 +48,19 @@ end_domain:
 
 category bla;
   category ble;
-
+  
   truc := 1;
 end;
 
 category ble
   axiom bla;
   category bla;
-
+  
   bla :=
   proc()
   begin
   end_proc:
-
+  
 begin
 end_category
 
