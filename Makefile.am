@@ -12,7 +12,7 @@ nobase_dist_lisp_LISP = \
 	mupad-bus.el mupad.el mupad-help.el mupad-xemacs.el \
 	mupad-cpl.el mupad-fontification.el mupad-run.el\
 	sli-tools.el \
-	site-start.d/mupacs.el mupad.el-info mupad-run.el-info
+	mupad.el-info mupad-run.el-info
 # Don't byte-compile site-start.d/mupacs.el and mupad.el-info:
 ELCFILES = \
 	mupad-bus.elc mupad.elc mupad-help.elc mupad-xemacs.elc \
@@ -23,15 +23,13 @@ EXTRA_DIST = $(PKG_DOC) config/mupad.m4 config/mupad.am config/cvs.am config/sou
 DISTCLEANFILES = $(PKG_RPM_NAME).info $(PKG_RPM_NAME).spec -r packages/rpm site-start.d/mupacs.el
 
 #MAINTAINERCLEANFILES = $(shell cat packages/.cvsignore)
+MAINTAINERCLEANFILES = site-start.d/mupacs.el.in
 
+KNOWN_EMACS_SITE_START_DIRECTORIES = /etc/emacs/site-start.d /usr/share/emacs/site-lisp/site-start.d ${lispdir}/site-start.d /usr/local/share/emacs/site-lisp/site-start.d
 
-KNOWN_EMACS_SITE_START_DIRECTORIES = /etc/emacs/site-start.d /usr/share/emacs/site-lisp/site-start.d
-
-site-start.d/mupacs.el: FORCE
+install-data-local:
 	@echo Finalizing the variable substitution in site-start.d/mupacs.el;
 	@sed site-start.d/mupacs.el.in -e 's,$${datadir},${datadir},' > site-start.d/mupacs.el
-
-install-data-local: site-start.d/mupacs.el
 	@found=no;							\
 	for dir in $(KNOWN_EMACS_SITE_START_DIRECTORIES); do		\
 	  if test -d $$dir; then					\
