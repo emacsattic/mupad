@@ -1,0 +1,330 @@
+Le mode mupad-run d'emacs : utiliser mupad dans emacs.
+par Olivier Ramare, Nicolas Thiery et François Maltey.
+
+Version 2.00
+Dernière modification : le 17 Octobre 2002
+
+I. Présentation
+---------------
+
+L'utilisation de mupad dans emacs rentre dans un projet plus ambitieux
+de réunir les principaux outils d'aide à la programmation de mupad
+dans emacs.
+
+Ce projet comporte plusieurs parties :
+ - l'une est prévue pour éditer confortablement du code mupad,
+ - une autre pour lancer le programme mupad dans une fenêtre d'emacs,
+ - et la dernière intègre des facilités d'utilisation du débogueur.
+
+L'utilisateur peut au choix utiliser indépendamment chaque partie, ou
+au contraire les utiliser ensemble.  Ainsi un étudiant n'aura pas la
+même approche qu'un développeur, mais les auteurs espèrent que les uns
+et les autres trouveront un outil agréable et sans bogues.
+
+Ces programmes sont des logiciels libres distribués sans aucune
+garantie de la part des auteurs ; ils se contentent de les utiliser
+lors de leurs calculs avec mupad et de s'en satisfaire.  Plutôt que de
+répondre personnellement aux questions, les auteurs préféraient
+utiliser la liste de diffusion francophone de mupad mupad@aful.org
+pour échanger des avis et des conseils relatifs à cet environnement
+d'emacs.
+
+Précisons que ces programmes sont de version 2... Un premier mode
+mupad.el a été écrit par OR il y a quelques années, il s'inspirait
+d'ailleurs d'un mode pour maple et NT avait déjà intégré à ce mode un
+débogueur.  Guidé par les conseils d'OR, FM a tiré profit de la
+nouvelle façon dont mupad, depuis la version 2.5, peut gérer les
+entrées/sorties pour obtenir une interface qui guide l'utilisateur
+lorsqu'il utilise mupad jusqu'à lui faire oublier qu'il utilise emacs.
+
+Le fichier mupad.el-info contient d'autres renseignements.
+
+II. Ce que fait mupad-run
+-------------------------
+II.a. Lancemenent de mupad
+--------------------------
+
+Le fichier mupad-run.el permet de lancer une session mupad dans une
+fenètre emacs.  les commandes d'accès à l'aide en ligne sont
+regroupées dans le fichier mupad-help.el.  Ces deux fichiers utilisent
+des fonctions communes à tout ce projet regroupées dans le fichier
+mupad-bus.el.
+
+L'utilisation dans emacs de l'interpréteur de commandes de mupad ne
+fait appel à aucun autre fichier que ces trois là.
+
+La ligne suivante dans le fichier d'initialisation ~/.emacs permet de
+charger automatiquement le fichier mupad-run.el et ceux dont il dépend
+lors du lancement de mupad par la commande mupad-run.
+
+(autoload 'mupad-run      "mupad-run.el" "To start a MuPAD session" t)
+
+Commencer une session mupad dans emacs se fait donc par la commande
+« M-x mupad-run » ; elle lance la fonction emacs (mupad-run).  Par
+défaut le tampon contenant mupad est de nom *MuPAD*
+
+
+Une session de mupad est normalement terminée par «M-x mupad-end» ou
+C-ck.  Recommencer une nouvelle session de mupad peut se faire par
+«M-x mupad-reset» ou C-c0. la précédente est terminée et les calculs
+faits sont perdus sauf si une sauvegarde est faite.
+
+Dans tous les cas il est possible d'éditer d'autres fichiers en même
+temps dans emacs.
+
+II.b. Utiliser mupad
+--------------------
+
+Les commandes de mupad doivent être tapées à la fin du tampon d'emacs,
+la partie supérieure du tampon correspond aux résultats déjà calculés
+par mupad et ne peut être modifiée.  Elles sont transmises à mupad par
+la touche [return].  Un saisie sur plusieurs lignes est possible en
+passant à la ligne par la saisie de [C-return].  Mupad attend la
+validation d'une commande lorsque la dernière ligne affichée est celle
+de l'invite : ">>" par défaut.
+
+Si une ou plusieurs commandes sont validées avant que mupad n'est
+terminé un calcul, celles-ci sont visualisées dans une zone
+intermédiaire affichée en turquoise par défaut.
+
+À tout moment un calcul de mupad peut être interrompu par la commande
+C-cC-c saisie au clavier.
+
+Lorsque mupad attend une commande il est possible d'obtenir la
+complétion d'une fonction ou d'une variable de mupad grâce à la touche
+[tab] saisie à la suite du début du mot recherché.  Cette
+fonctionnalité est impossible si mupad effectue un calcul.
+
+MuPAD interprète comme un commentaire les données saisies après les deux
+caractères //.  En outre emacs considère que toute ligne commençant
+par ///--- sépare des instructions.  Pour emacs, ces lignes séparent
+donc des blocs d'instructions, et l'évaluation est effectuée bloc par bloc.
+
+Ces deux séries de commandes sont équivalentes, mais emacs ne les envoie pas
+de la même façon à mupad.
+
+// nombre premier suivant 10^200
+nextprime (10^200) ;
+// nombre premier précédent 10^200
+numlib::prevprime (10^200)
+
+///--- nombre premier suivant 10^200
+nextprime (10^200) 
+///--- nombre premier précédent 10^200
+numlib::prevprime (10^200)
+
+II.c. Aide en ligne
+-------------------
+
+La consultation de l'aide en ligne est possible par une commande mupad
+de la forme « ? sin » ou « help ("sin") » ; une autre possibilité
+consiste à saisir [f5] ou C-ch correspondant à la fonction d'emacs
+mupad-help-emacs-search.  Le choix d'une page parmi toutes celles
+disponnibles est enfin possible par la saisie de [f6] ou C-ci.  Dans
+le premier pas la consultation de l'aide en ligne est une commande
+comme une autre de mupad, dans les autres cas emacs recherche et
+visualise le fichier correspondant indépendamment du fait que mupad
+attend une saisie ou calcule.
+
+La gestion par mupad de l'aide en ligne change entre la version 2.5 et
+les suivantes, non encore distribuées.
+
+L'option -R sur la ligne de commande est valable pour la version 2.5
+de mupad et les suivantes ; l'option -E sera aussi proposée dans les
+versions suivantes, Si les deux sont possibles l'auteur la conseille à
+la place de l'option -R.  Ces options sur la ligne de commande sont
+configurées dans la variable mupad-run-pgm-opt.  Cette variable, comme
+les suivantes, peut être mise à jour par le menu
+MuPAD/Environnement/Customize ou par une affectation à cette variable
+de la liste des options dans le fichier ~/.emacs.  
+
+  (setq mupad-run-pgm-opt '("-R" "-U" "EMACS"))
+
+L'autre variable d'emacs à configurer de la même manière est
+mupad-help-method.  Sa valeur doit être 'mupad-help-from-toc-to-buffer
+si l'option -R est employée, et 'mupad-help-from-file-to-buffer pour
+l'option -E.
+
+Enfin la variable mupad-help-tree doit avoir pour valeur la chaîne de
+caractères décrivant le répertoire où sont placés les fichiers
+d'aide ; pour l'auteur sa valeur est "/usr/local/mupad/share/doc/".
+Elles peut aussi bien être configurées par setq dans le fichier ~/.emacs
+que par la commande customize
+
+Dans tous les cas la consultation de l'aide en ligne ouvre une
+nouvelle fenêtre ; la sortie de l'aide en ligne est obtenue par la
+saisie de q ou Q.
+
+Faire [return] sur le signe >> dans l'aide en ligne recopie dans le
+tampon *MuPAD* la commande de l'exemple, pour la modifier, l'évaluer,
+etc.  La commande [return] sur un mot-clef de mupad -- en surbrillance
+ou non -- recherche la fiche d'aide correspondante et l'affiche ;
+cette manipulation est aussi possible avec le bouton du milieu de la
+souris.
+
+Le déplacement d'exemples en exemples dans l'aide en ligne est
+possible par [C-left] et [C-right].
+
+Les fonctions correspondants à l'aide en ligne sont regroupées dans 
+le fichier mupad-help.el. 
+
+II.d. Autres commandes 
+----------------------
+
+En plus des commandes classiques de mouvement d'emacs [C-left] et
+[C-right] déplacent le curseur de blocs en blocs : commandes mupad,
+résultats, etc.
+
+La recopie C-y d'une région de texte dans le tampon *MuPAD* 
+supprime les signes d'invite et les couleurs attachées au texte. 
+Ainsi une commande extraite par M-W et recopiée dans la zone édition peut 
+directement etre exécuter.
+
+La saisie de [return] dans le corps d'une commande précédente de
+mupad, affichée dans la zone en grisée, la recopie à la fin de la zone
+d'édition.
+
+Les commandes [C-delete] et [C-insertion] cachent ou visualisent de
+nouveaux des résultats intermédiaires de mupad. Un pavé bleu apparaît 
+à la suite pour indiquer qu'un résultat a été cachée. 
+
+L'historique des commandes précédentes est accessible par [C-up] et [C-down].
+
+II.e. Insertion de commentaires
+-------------------------------
+
+La saisie de [return] dans une zone de résultat ou un signe d'invite
+insère un commentaire ; ceux-ci peuvent être modifiés à tout moment.
+
+
+II.f. Appel systeme et plot
+---------------------------
+
+Une fois bien configuré la commande plot affiche le graphe et il est possible
+de continuer la saisie. 
+
+Par défaut emacs attend la fin d'une commande système pour rendre la main
+(la commande system de mupad) sauf pour les programmes énumérés dans la liste
+associée à la variable mupad-run-system-exception. 
+
+La variable du système gérant les différentes possibilités est
+mupad-run-trace-system. Sa valeur peut être 
+   0 et emacs n'affiche ni les commandes envoyées au système ni les résultats
+   1 et emacs affiche les commandes sans les résultats 
+   2 et emacs affiche les résultats sans les commandes et bloque la saisie
+   3 et emacs affiche les commandes et les résultats, et bloque la saisie
+Sa valeur par défaut est 3, configurée dans le fichier mupad-run.el
+
+La valeur de mupad-run-system-exception est alors '("vcam") pour ne pas 
+bloquer emacs lors du tracé de courbes. vcam est le nom de l'utilitaire
+qu'emacs appelle lorsqu'il trace un graphe.
+
+La configuration des commandes plot est décrite dans le III.
+
+II.g. Sauvegarde d'une session
+------------------------------
+
+Les commandes C-cC-w et M-x mupad-run-save sauvegardent uniquement les
+commandes et les commentaires d'une session de mupad.  Il suffit ensuite 
+de réinsérer ce fichier dans le tampon par la commande usuelle C-Xi 
+pour l'évaluer de nouveau.
+
+La commande classique C-xC-w permet de sauvegarder l'ensemble de la
+session, sauf les couleurs.
+
+II.h. Ccommandes emacs à retenir 
+--------------------------------
+
+Les commandes suivantes d'emacs sont générales et sont bien pratiques 
+lors de l'utilisation de mupad et la consultation de l'aide en ligne :
+
+Le changement de tampon dans une fenêtre d'emacs est obtenue par C-xb[tab].
+Un écran constitué d'une  un ou deux fenêtres obtenu grâce à C-x1 et C-x2.
+Le passage d'une fenêtre à l'autre est fait par la saisie de C-xo
+La saisie de C-g interrompt une commande d'emacs déjà lancée.
+L'annulation des dernières modifications dans un tampon est obtenue  par C-_
+
+III. Installation et configuration
+----------------------------------
+
+Fichiers concernés : 
+  mupad-run.el, ~/.emacs, ~/.mupad/userinit.mu, ascii.toc, ascii.tar /tmp
+
+Par exemple recopier le fichier mupad-run.el dans /usr/local/share/emacs
+ou d'en n'importe quel répertoire contenu dans la variable load-path 
+d'emacs. 
+La valeur de cette variable s'obtient sous emacs par C-hv load-path[return].
+
+Ajouter dans le fichier ~/.emacs de configuration 
+(autoload 'mupad-run "mupad-run.el" "To start a MuPAD session" t)
+
+Ensuite modifier éventuellement les variables suivantes du fichier 
+mupad-run.el. 
+Pour cela utiliser le menu MuPAD/environnement/customize,
+modifier le fichier mupad-run.el ou affecter par setq la variable 
+dans ~/.emacs.
+
+(setq mupad-run-pgm "mupad")  ;; comment lancer mupad : par la commande mupad
+
+(setq mupad-run-opt '("-R" "-U" "EMACS"))
+;; option de la ligne de commande d'emacs 
+;;   -E pour la version 3
+;;   -R pour la version 2.5 - mais accès à l'aide en ligne modifié
+;; -U permet de tester dans userinit.mu si mupad a été lancé par emacs 
+
+Et dans le fichier mupad-help.el
+(setq mupad-help-tree "/usr/local/src/MuPAD/share/doc/")
+
+Ensuite lancer mupad par mupad-run.
+
+Comment mupad -R et mupad -E gèrent les graphiques ?
+----------------------------------------------------
+
+Sur certaines version de mupad (mais l'auteur n'est pas sûr que ce soit
+toujours le cas) mupad -E et mupad -R lancent le programme vcam pour 
+visualiser un graphe ;  ceci demande de configurer mupad pour savoir
+dans quel fichier il place le graphe à tracer, fichier qui sera lu par
+vcam.
+
+Les lignes suivantes placées dans ~/.mupad/userinit.mu modifient comme
+il faut la commande plot.  Celle-ci sauvegarde le graphe dans
+/tmp/muplot.nnnn puis lance vcam "/tmp/muplot.nnnn".
+
+Ces lignes sont certainement à adapter suivant les versions de mupad.
+Une meilleure compréhension des difficultés consiste d'abord à obtenir 
+le fichier d'un graphe : dès fois save.mp, muplot.alea... suivant 
+les versions de mupad, de lancer dans une fenètre xterm vcam cefichier
+pour finir par l'automatisation de ces manipulations.
+
+La première ligne ci-dessous n'est prise en compte que si mupad est lancé
+avec l'option -U EMACS pour ne pas interférer avec mupad lancé dans une
+fenètre xterm.
+
+if Pref::userOptions() = "EMACS"  
+  then
+    proc()
+      local oldPlot, oldProtectState ;
+      option escape ;
+    begin
+      oldProtectState := protect (plot, ProtectLevelNone) ;
+      plot::Scene::defaultOptions2d [PlotDevice] :=
+        ["/tmp/muplot." . getpid(), Binary] ;
+      plot::Scene::defaultOptions3d [PlotDevice] :=
+        ["/tmp/muplot." . getpid(), Binary] ;
+      protect (plot, oldProtectState) ;
+      oldProtectState := protect (stdlib, ProtectLevelNone) ;
+      oldPlot := stdlib::plot ;
+      stdlib::plot := 
+        proc () 
+        begin
+          oldPlot (args()) ; 
+          system ("vcam /tmp/muplot." . getpid()) ;
+        end_proc ;
+      protect (stdlib, oldProtectState) ;
+    end_proc() :
+end_if:
+
+--------------------------------------------------------------------
+Version 2.00
+Dernière modification : le 17 Octobre 2002
+
