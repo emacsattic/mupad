@@ -1929,8 +1929,8 @@ Available special keys:
          (setq brt 
            (not 
              (string= str (substring brs 0 (min (length str) (length brs)))))))
-;      (ptr-to-tail mupad-run-hist-commands))
-       (ptr-to-head mupad-run-hist-commands))
+      (ptr-to-tail mupad-run-hist-commands))
+;       (ptr-to-head mupad-run-hist-commands))
 ;    (when brt (aset mupad-run-hist-commands 2 br))
 ; renvoie nil si le début de la chaîne n'est pas trouvé, la chaine sinon
     (and (not brt) brs)))
@@ -1996,7 +1996,8 @@ Available special keys:
   (when (>= (point) (marker-position mupad-run-edit))
     (let 
       ( (br (buffer-substring mupad-run-edit (point-max))) 
-        (brs (buffer-substring mupad-run-edit (point))) (brn (point))
+        (brs (buffer-substring mupad-run-edit (point)))
+	(brn (point))
         br1 br2 br3)
       (setq br2 (aref mupad-run-hist-commands 2))
       (setq br1 (mupad-run-get-previous-command brs))
