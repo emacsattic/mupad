@@ -779,7 +779,6 @@ no args, if that value is non-nil."
   
   (run-hooks 'mupad-mode-hook) ;; fontification is done there
   (mupad-add-imenu-index)
-  (mupad-help-init)
   (mupad-init-menu-bar))
 
 (defun mupad-toggle nil
