@@ -304,36 +304,6 @@ commands export/unexport. This variable is used only by font-lock.")
    mupad-fontification-keywords-3)
   "Gaudy level of fontification for mupad-mode.")
 
-
-(defconst mupad-shell-fontification-keywords-1
-  (purecopy
-   (list
-    (list 'mupad-find-def '(0 (if mupad-function-defp 'mupad-function-name 'mupad-global-var)))
-    ;; A fancy logo:
-    '("\\`[^\n]*\n[^\n]*\n   \\(\\*----\\*\\)"  (1 shade1 t t))
-    '("\\`[^\n]*\n[^\n]*\n[^\n]*\n  \\(/|   /|\\)"  (1 shade5 t t))
-    '("\\`[^\n]*\n[^\n]*\n[^\n]*\n[^\n]*\n \\(\\*----\\*\\) \\(|\\)" (1 shade2 t t) (2 shade5 t t))
-    '("\\`[^\n]*\n[^\n]*\n[^\n]*\n[^\n]*\n[^\n]*\n \\(|\\) \\(\\*--\\)\\(|\\)\\(-\\*\\)" (1 shade5 t t) (2 shade3 t t) (3 shade5 t t) (4 shade3 t t))
-    '("\\`[^\n]*\n[^\n]*\n[^\n]*\n[^\n]*\n[^\n]*\n[^\n]*\n \\(|/   |/\\)"  (1 shade5 t t))
-    '("\\`[^\n]*\n[^\n]*\n[^\n]*\n[^\n]*\n[^\n]*\n[^\n]*\n[^\n]*\n \\(\\*----\\*\\)" (1 shade4 t t))
-    (list 'mupad-find-input '(1 (if mupad-last-inputp 'mupad-last-prompt 'mupad-prompt) t t)
-          '(2 (if mupad-last-inputp 'mupad-last-input 'mupad-input) append t)
-          '(3 'mupad-output t t))
-    ))
-  "Subdued level of fontification in mupad-shell-mode.")
-
-(defconst mupad-shell-fontification-keywords-2
-  (append
-   mupad-shell-fontification-keywords-1
-   mupad-fontification-keywords-2)
-  "Medium level of fontification in mupad-shell-mode.")
-
-(defconst mupad-shell-fontification-keywords-3
-  (append
-   mupad-shell-fontification-keywords-2
-   mupad-fontification-keywords-3)
-  "Gaudy level of fontification in mupad-shell-mode.")
-
 (defconst mupad-color-scheme-default-alist
   '(('mupad-comment font-lock-comment-face
      "Face used in MuPAD to fontify comments.
@@ -391,23 +361,12 @@ Default is `font-lock-builtin-face'.")))
 (defun mupad-first-use-color-scheme nil
   (mupad-set-color-scheme 'dummy mupad-color-scheme 'defface))
 
-(defun mupad-init-font-lock-faces nil
-  "Define mupad-faces."
-    ;; faces for the logo:
-    (mapcar (lambda (acons) (make-face (car acons))
-                            (set-face-foreground (car acons) (cdr acons))
-                            (set-face-bold-p (car acons) t))
-             '((shade1 . "red") (shade2 . "yellow3") (shade3 . "blue")
-               (shade4 . "green3") (shade5 . "cyan3")))
-    ;; then:
-    (mupad-first-use-color-scheme))
-
 (defun mupad-fontification-common-init nil
   (when (setq mupad-can-fontify
               (and mupad-fontify
                    (eq window-system 'x) (x-display-color-p)))
     (require 'font-lock)
-    (mupad-init-font-lock-faces)
+    (mupad-first-use-color-scheme)
     (make-local-variable 'font-lock-comment-face)
     (setq font-lock-comment-face '(eval mupad-comment))
     (make-local-variable 'font-lock-string-face)
