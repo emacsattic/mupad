@@ -1301,111 +1301,6 @@ unique completion can be done."
       (start-process-shell-command "Manual" "*Messages*" mupad-manual-command)
     (error (princ "Problem with the manual: ")(princ err) nil)))
 
-;;--------------------------
-;; Part XI  : The Debugger.
-;;--------------------------
-
-(defun gud-mdx-massage-args (file args)
-  (append (list "-g" "-P" "e") args))   ; -g:    MuPAD in debug mode
-                                        ; -P -e: MuPAD does not echo user input
-; I am not sure that this -P options exists in old MuPAD versions
-
-(defun gud-mdx-marker-filter (string)
-  ;; MuPAD <= 1.4 debugger:
-  (when (string-match
-         "\\(Stop\\|Procedure <[^>]*>\\) at line <\\([0-9]+\\)>\\s +in file <\\(\\S +\\)>."
-         string)
-    (setq gud-last-frame
-          (cons
-           (substring string (match-beginning 3) (match-end 3))
-           (string-to-int
-            (substring string (match-beginning 2) (match-end 2))))))
-  ;; MuPAD 2.0 debugger. Thanks Ralph for the compatibility with gdb!:
-  (when (string-match "^\\([0-9]+\\)\\s +in \\(\\S +\\)" string)
-    (setq gud-last-frame
-          (cons
-           (substring string (match-beginning 2) (match-end 2))
-           (string-to-int
-            (substring string (match-beginning 1) (match-end 1))))))
-  string)
-
-(defun gud-mdx-find-file (f) (find-file-noselect f))
-
-;;;###autoload
-(defun mdx (command-line)
-  "Run mdx on program FILE in buffer *gud-FILE*.
-The directory containing FILE becomes the initial working directory
-and source-file directory for your debugger."
-  (interactive
-   (list (read-from-minibuffer "Run mdx (like this): "
-	   (if (consp gud-mdx-history)
-	       (car gud-mdx-history)
-	       (concat mupad-command " "   ; mupad-args " " should be added.
-                       (mupad-possible-file-name)))
-	       nil nil '(gud-mdx-history . 1))))
-  (when (fboundp 'gud-overload-functions)
-    (gud-overload-functions '((gud-massage-args . gud-mdx-massage-args)
-                              (gud-marker-filter . gud-mdx-marker-filter)
-                              (gud-find-file . gud-mdx-find-file)
-                              )))
-  (gud-common-init command-line 'gud-mdx-massage-args 'gud-mdx-marker-filter
-                   'gud-mdx-find-file)
-
-  (gud-def gud-break  "S %f %l"   "\C-b" "Set breakpoint at current line.")
-  (gud-def gud-remove "d %l"      "\C-d" "Remove breakpoint at current line")
-  (gud-def gud-step   "s"         "\C-s" "Step one source line with display.")
-  (gud-def gud-next   "n"         "\C-n" "Step one line (skip functions).")
-  (gud-def gud-cont   "c"         "\C-r" "Continue with display.")
-  (gud-def gud-finish "f"         "\C-f" "Finish executing current function.")
-  (gud-def gud-up     "u %p"      "<"    "Up N stack frames (numeric arg).")
-  (gud-def gud-down   "d %p"      ">"    "Down N stack frames (numeric arg).")
-  (gud-def gud-print  "p %e"      "\C-p" "Evaluate perl expression at point.")
-  ;; actions added from mupad.el to gud.el:
-  (mupad-fontification-common-init)
-  (set (make-variable-buffer-local 'mupad-prompt-regexp)
-       (setq comint-prompt-regexp "^\\(mdx\\((\\S )\\)?>\\|>>\\) "))
-  (set (make-variable-buffer-local 'mupad-unbreakable-prompt-regexp)
-       comint-prompt-regexp)
-  (setq mupad-safe-place-regexp mupad-prompt-regexp
-        mupad-noft-safe 2)
-  (set (make-local-variable 'font-lock-defaults)
-       '((mupad-shell-fontification-keywords-1
-          ;mupad-shell-fontification-keywords-2
-          ;mupad-shell-fontification-keywords-3
-          ) nil nil nil mupad-get-safe-place))
-  (mupad-force-update-fontification) (font-lock-fontify-buffer)
-  (or
-   (member "^/tmp/debug" revert-without-query)
-   (setq revert-without-query (cons "^/tmp/debug" revert-without-query)))
-  ;; actions added from mupad.el to comint.el:
-  (define-key comint-mode-map "\C-i" (function mupad-complete))
-  (define-key comint-mode-map "\M-i" (function mupad-complete))
-
-  (run-hooks 'mupad-mdx-mode-hook))
-
-(defmacro mdx-help ()
-  (` (if mupad-tutorial-requiredp
-     (let ((wind (selected-window)))
-       ;; We either create another window, either switch to another window
-       ;; if there are already at least two of them.
-       (mupad-bus-window-manager "*MuPAD Help*" 'mupad-beginning-temp)
-       (insert
-         " To start mdx:                          M-x mdx\n"
-         " To get internal help of the debugger:  'h ENTER' in the buffer\n"
-         " To get help on gud:                    M-h m\n")
-       (select-window wind)))))
-
-(defun mupad-mdx nil
-  (interactive)
-  (mdx-help)
-  (mdx (read-from-minibuffer "Run mdx (like this): "
-	   (if (consp gud-mdx-history)
-	       (car gud-mdx-history)
-	       (concat mupad-command " " ;; mupad-args " " should be added.
-                       (mupad-possible-file-name)))
-	       nil nil
-	       '(gud-mdx-history . 1))))
-
 ;;---------------------------
 ;; Part XII  : Writing Tools
 ;;---------------------------
@@ -1567,7 +1462,6 @@ and source-file directory for your debugger."
 	 ["Help on ..." mupad-help-emacs-ask :key-sequence nil :help "Text help on a mupad object"])
         mupad-menu-separator
         
-        (list ["Debug..." mupad-mdx :active t :key-sequence nil])
         ;(mupad-build-color-cpl-menu)
         ;"Environment" sub-menu is added here.
         mupad-menu-separator
