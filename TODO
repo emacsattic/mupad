@@ -1,3 +1,6 @@
+On error, use the "debugger pointer" to show where the error occured.
+
+------------------------------------------------------------------------------
 Turn /tmp/debug* to read-only in the debugger
 
 ------------------------------------------------------------------------------
