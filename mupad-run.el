@@ -224,7 +224,12 @@ initialization file) that MuPAD is currently running under emacs."
   :set 'mupad-run-set-system-trace
   :group 'mupad-run)
 
-(defvar mupad-run-system-exception '("vcam"))
+(defcustom mupad-run-system-exception '("vcam")
+  "Programs listed here will be executed in background when called
+by system. Otherwise emacs will be blocked until the program has finished.
+This list typically includes the external MuPAD graphics viewer vcam."
+  :type '(repeat string)
+  :group 'mupad-run)
 ;; les programmes appelés par mupad dont le nom est dans la liste 
 ;; mupad-run-system-exception sont exécutés en tâche de fond si la 
 ;; saisie de mupad est bloquée, et le contraire sinon.
@@ -716,9 +721,40 @@ rereadable by MuPAD."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 (defun mupad-run-mode ()
-  "Major mode version `mupad-run-mode-version' for running Mupad code.
-\\<mupad-run-mode-map>
-The main work is to run mupad in an emacs buffer.
+  "Major mode for running MuPAD inside an emacs buffer.
+
+For customization, see M-x customize-group mupad-run .
+
+See also http://mupacs.sourceforge.net/ for extra documentation
+
+Some help from MuPAD is needed for viewing graphics. Please insert the
+following lines in your MuPAD initialization file ~/.mupad/userinit.mu :
+
+///////////////////////////////////////////////////////////////////////////
+// Customization when running inside an emacs buffer with mupacs
+if has({text2expr(Pref::userOptions())}, hold(EMACS)) then
+    // Patch stdlib::plot to call the external MuPAD graphics viewer vcam
+    proc()
+	local oldProtectState ;
+    begin
+	oldProtectState := protect(stdlib, ProtectLevelNone) ;
+	stdlib::oldPlot := stdlib::plot:
+	stdlib::plot :=
+	proc()
+	    local tmpfile;
+	begin
+	    // Comment this out to get rid of the message
+	    tmpfile := \"/tmp/muplot\" . getpid();
+	    fprint(Unquoted, 0, \"Calling vcam \" . tmpfile);
+	    stdlib::oldPlot(PlotDevice=[tmpfile, Binary], args());
+	    // You may need to edit this to suit your MuPAD installation
+	    // See also the emacs variable mupad-run-system-exception
+	    system(\"vcam \".tmpfile);
+	end_proc;
+	protect(stdlib, oldProtectState);
+    end_proc();
+end_if:
+///////////////////////////////////////////////////////////////////////////
 
 Available special keys:
 \\{mupad-run-mode-map}"
@@ -2661,8 +2697,11 @@ Available special keys:
       "---------------------"
       ["Manual" mupad-start-manual :active t :key-sequence nil
         :help "Open the hytex manual"]
-      ["Info on this mode" mupad-run-show-mupad-info :active t 
-        :key-sequence nil]
+      ["Info about mupad-run" describe-mode
+       :active t]
+      ["Info about mupad-run (en Français)" mupad-run-show-mupad-info
+       :active t
+       :key-sequence nil]
       "---------------------"
       ["help around cursor" mupad-help-emacs-search :active t]
       ["help on ..."        mupad-help-emacs-ask :active t 
