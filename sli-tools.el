@@ -2071,7 +2071,7 @@ Or on line after if AFTERP is t."
           (old-buff-modp (buffer-modified-p)))
       (when sli-verbose
 	(princ "\n") (princ (list "(sli-insert-indent) indent for: " (point))))
-	(princ "\n") (princ (list "(sli-insert-indent) buffer-modifiedp: " old-buff-modp))
+      ;;(princ "\n") (princ (list "(sli-insert-indent) buffer-modifiedp: " old-buff-modp))
       (save-excursion
         (setq move-p (re-search-backward "[^ \t]" (line-beginning-position) t))
         (beginning-of-line)
