@@ -388,5 +388,10 @@ Available special keys:
     (mupad-help-init-file-to-offset)
     (mupad-help-init-toc-to-item)))
 
-(add-hook 'mupad-run-mode-hook 'mupad-help-init)
-(add-hook 'mupad-mode-hook 'mupad-help-init)
+;; On utilise custom-add-option plutôt que add-hook pour une meilleure
+;; compatibilité avec custom.
+;; Bug corrigé: la customisation de mupad-run-mode-hook de l'utilisateur
+;; dans le .emacs était écrasée.
+;; (add-hook 'mupad-mode-hook 'mupad-help-init)
+(custom-add-option 'mupad-run-mode-hook 'mupad-help-init)
+(custom-add-option 'mupad-mode-hook 'mupad-help-init)
