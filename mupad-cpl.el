@@ -72,16 +72,22 @@
 ;; Not mupad-types-list, not mupad-libraries, not options, not keywords
 ))
 
-(defconst mupad-keywords-list ;; Do *not* add spaces for font-lock to work.  
+(defconst mupad-keywords-list ;; Do *not* add spaces for font-lock to work.
+;; use also  indexval(stdlib, "SYSTEM_CONSTANTS") ;
+;; use also  indexval(stdlib, "LIBRARY_CONSTANTS") ;
 '("and" "axiom" "category" "begin" "break" "case" "div" "do"
 "downto" "E" "elif" "else" "end_case" "end_for" "end_if" "end_proc"
 "end_repeat" "end_while" "FAIL" "FALSE" "for" "from" "fun" "func" "I"
 "if" "%if" "in" "intersect" "local" "minus" "mod" "name" "next" "NIL"
 "not" "of" "option" "or" "otherwise" "proc" "quit" "repeat" "step"
 "then" "to" "TRUE" "union" "until" "UNKNOWN" "while" "domain"
-"end_domain" ))
+"end_domain" "PI" "EULER" "CATALAN" "MSDOS" "EMPTY" "OPTIMAL" "Global"
+"UNBOUNDED" "infinity" "undefined" "toBeDefined")
+
+   complexInfinity))
 
 (defconst mupad-options-list ;; obtained via stdlib::OPTIONS 
+;; or indexval(stdlib, "OPTIONS") ;
 '( "GC"
 "NC" "GL" "PF" "GT" "X11" "On" "Up" "CDF" "RK4" "PDF" "QRD" "SVD"
 "CK45" "CK54" "Gif" "All" "Bin" "Off" "Mem" "Log" "Lin" "Rem" "Any"
