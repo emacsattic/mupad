@@ -6,7 +6,7 @@ General information
 ===================
 
 Name		: mupacs
-Version		: 3.2.1
+Version		: 3.2.2
 Summary		: mupacs -- a MuPAD mode for emacs
 License		: GPL
 Vendor:		: Nicolas M. Thiéry <nthiery@users.sourceforge.net>
@@ -41,8 +41,11 @@ Using the lastest version of MuPAD (currently 2.5.2) is recommended.
 With MuPAD 2.0.0 some features won't work properly (debugger). With
 older version, most features won't work.
 
-All the code is in Emacs lisp, and should be portable. However, we
-have only tested it under UNIX, with MuPAD light. Please report any
+The code itself is written in Emacs lisp, and should be
+portable. However, we have only tested it under UNIX (including MacOS
+X), and with MuPAD light. The interaction with MuPAD in mupad-run uses
+the so-called raw protocol which is probably not implemented in MuPAD
+light for Windows; so, this part won't work. Please report any
 positive or negative experience with other systems, or older versions
 of emacs.
 

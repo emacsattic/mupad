@@ -37,6 +37,47 @@ home page, in French</a></h2>
 	In any cases, prefer this version to any previous ones.
 </dl>
 
+<h2><a name="">Features</a></h2>
+
+If you want to do more than computing single statements with MuPAD,
+e.g. writing whole programs for it, then mupacs may well be for
+you. It is a plugin for notorious text editor emacs, and makes writing
+MuPAD programs more comfortable. It provides a major-mode for editing
+mupad code (mupad-mode), and allows for running mupad in an emacs
+buffer with full access to the documentation and with debugger
+interaction. Here is a feature summary:
+
+<ul>
+<li>Automatic indentation;
+<li>Electric braces, universal closing of constructs (via "C-c C-e"),
+    and ready-made shapes (like while-, for- or if- constructs);
+<li>Commenting / excluding areas;
+
+<li>Syntax highlighting: comments (starting by "//", or enclosed in
+    "#"--"#" or "/*"--"*/"), strings, keywords (all operators, even
+    starting by "&", punctuation, words from the list
+    mupad-keywords-list), primitive-names (like "hold", or "transpose"
+    of "linalg::transpose"), options, domain names (like
+    "Dom::Integer" or "groebner"); types (all starting with "DOM_"),
+    userinfo strings (starting with "userinfo("), global variables and
+    functions (including user defined ones).
+
+<!--  (3) Removed feature: rewriting of MuPAD scripts.!-->
+
+<li>Getting help in several forms: asking for a command name, or
+    starting an external graphical manual.
+
+<li>Automatic completion of all the standard command names of
+    MuPAD. Like for the help-mechanism, this uses a mupad-process at
+    the beginning. See the corresponding section below.
+</ul>
+
+<h2><a name="screenshots">Screen shots</a></h2>
+
+<ul><li><a href="screenshot-mupad.png">MuPAD code editing</a>
+    <li><a href="screenshot-mupad-run.png">Running MuPAD in a buffer</a>
+    <li><a href="screenshot-debugger.png">A debugging session</a>
+</ul>
 
 <h2><a name="doc">Documentation</a></h2>
 
@@ -46,8 +87,12 @@ home page, in French</a></h2>
     <li><a href="AUTHORS">Authors</a> and <a href="THANKS">thanks</a>.
     <li><a href="QuickInstall">Quick installation procedure</a> and
         <a href="INSTALL">generic installation instructions</a>.
-    <li><a href="TODO">TODO: future plans for MuPAD Combinat</a>
+    <li><a href="TODO">TODO: future plans for mupacs</a>
+    <li><a href="FAQ">Frequently Asked Questions</a>
     <li><a href="BUGS">Known bugs</a>
+    <li><a href="mupad.el-info">Information on using the editing mode</a>
+    <li><a href="mupad-run.el-info">Information on running mupad in a
+        buffer (in French!)</a>
 </ul>
 
 <h2><a name="links">Links</a></h2>
@@ -59,6 +104,10 @@ home page, in French</a></h2>
     MuPAD mode for emacs used for the French agregation</a>
     <li><a href="http://vim.sourceforge.net/scripts/script.php?script_id=723"
         >mupad.vim : a VIM syntax file for MuPAD</a>
+    <li><a href="ftp://vh213601.truman.edu/pub/EMuPAD/">E-MuPAD</a> by
+        Jay Belanger: mupad-mode for editing latex documents with
+        interactive mupad environments, as well as for running mupad
+        in an emacs buffer.
 </ul>
 
 <a href="http://sourceforge.net"> <img
