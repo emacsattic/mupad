@@ -32,7 +32,7 @@ point) research; check the web page of Sciface for details:
 
 	http://www.sciface.com
 
-Using the lastest version of MuPAD (currently 2.5.2) is recommended.
+Using the lastest version of MuPAD (currently 2.5.3) is recommended.
 With MuPAD 2.0.0 some features won't work properly (debugger). With
 older version, most features won't work.
 
@@ -75,7 +75,7 @@ The web page (see General Information above) provides access to
 mailing-lists as well as to a bug tracking system. Please use them
 for bug reports, suggestions, flames and other comments. Any
 contribution will be warmly welcomed. If you don't have web access,
-feel free to contact directly the authors (see the file 'AUTHORS').
+feel free to send an email to mupacs-users@lists.sf.net
 
 Please include the following information in any bug report:
  - Some information about your system:
