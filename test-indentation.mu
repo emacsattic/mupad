@@ -9,8 +9,8 @@ begin
 end_category:
 
 category bla;
-    axiom ble;
-    axiom ble;
+  axiom ble;
+  axiom ble;
 begin
 end_category:
 
