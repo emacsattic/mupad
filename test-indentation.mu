@@ -128,6 +128,18 @@ domain bla
   bla := 1;
 end;
 
+domain ble
+  /**
+    Bug: the indentation after the line x := proc() begin end is incorrect
+  **/
+  bla :=
+  proc()
+  begin
+    x := proc() begin end:
+    makeUnknownsG2 := 1;
+    end_proc;
+end_domain:
+
 // Local Variables:
 // mode: mupad
 // mupad-domain-indent: 2
