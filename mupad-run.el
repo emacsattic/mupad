@@ -129,7 +129,7 @@
   '(mupad-run-edit mupad-run-todo mupad-run-comp-edit mupad-run-last-prompt
     mupad-run-itema mupad-run-itemb mupad-run-last-type
     mupad-run-output mupad-run-state mupad-run-time-start 
-    mupad-run-hist-commands mupad-run-hist-index 
+    mupad-run-hist-commands mupad-run-hist-index mupad-run-question-before-kill
     mupad-run-save-buffer mupad-run-comp-begin mupad-run-prompt)))
 ;;
 (defvar mupad-run-process nil)
@@ -371,7 +371,8 @@ Available special keys:
         mupad-run-last-prompt mupad-run-hist-commands 
         mupad-run-hist-index mupad-run-output mupad-run-state 
         mupad-run-itema mupad-run-itemb mupad-run-last-type 
-        mupad-run-time-start mupad-run-comp-begin mupad-run-prompt))
+        mupad-run-time-start mupad-run-comp-begin mupad-run-prompt
+        mupad-run-question-before-kill))
     (setq mupad-run-edit (make-marker))
     (set-marker mupad-run-edit (point))
     (setq mupad-run-todo (make-marker))
@@ -413,6 +414,7 @@ Available special keys:
 ; configuration du mode majeur et évaluation du hook
     (setq major-mode 'mupad-run-mode) 
     (setq mode-name "MuPAD-run")
+    (setq mupad-run-question-before-kill t)
     (run-hooks 'mupad-run-mode-hook)))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -423,7 +425,7 @@ Available special keys:
   (let ((bfl (buffer-list)))
     (save-excursion
       (while bfl
-      (set-buffer (pop bfl))
+      (set-buffer (car bfl))
       (when (eq major-mode 'mupad-run-mode)
 ; kill-process est superflu car il attaché au tampon
         (kill-buffer (current-buffer))
@@ -435,18 +437,26 @@ Available special keys:
 ;;
 (defun mupad-run-reset () 
   (interactive) 
-  (let ((br (buffer-name (current-buffer))))
+  (let 
+    ( (br (buffer-name (current-buffer))) (brc mupad-run-hist-commands) 
+      (bri mupad-run-hist-index) br1 (mupad-run-question-before-kill nil))
     (when (processp mupad-run-process)
+      (setq br1 (mupad-run-save-br))
       (setq mupad-run-process nil)
       (kill-buffer br)
       (switch-to-buffer (set-buffer (get-buffer-create br)))
-      (mupad-run-mode))))
+      (mupad-run-mode)
+      (setq mupad-run-hist-index bri)
+      (setq mupad-run-hist-commands brc)
+      (insert-buffer br1)
+      (kill-buffer br1)
+      (goto-char (point-max))
+      (sleep-for 0.2)
+      (recenter -1))))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
-(defun mupad-run-save ()
-   "Saves the MuPAD commands"
-  (interactive)
+(defun mupad-run-save-br ()
   (let (brn br br1 br2 (inhibit-read-only t) (brb (current-buffer))
         brp1 brp2 brp3)
     (setq brp1 (marker-position mupad-run-todo))
@@ -489,21 +499,32 @@ Available special keys:
         ((eq br1 'mupad-run-face-last-input) 
             (goto-char br2))
         (t (goto-char br2))))
-   (set-text-properties (point-min) (point-max) nil)
-   (unwind-protect (save-buffer) (kill-buffer brn))))
+  (set-text-properties (point-min) (point-max) nil)
+  (when (and (> (point) 1)(not (eq (char-before (point)) ?\n))) (insert "\n"))
+  brn))
+
+(defun mupad-run-save ()
+   "Saves the MuPAD commands"
+  (interactive)
+  (let ((brb (current-buffer)) (brn (mupad-run-save-br)))
+    (set-buffer brn)
+    (unwind-protect (save-buffer) (kill-buffer brn))))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 (defun mupad-run-before-kill () 
-  (when (eq major-mode 'mupad-run-mode)
+  (when (eq major-mode 'mupad-run-mode) 
     (switch-to-buffer (current-buffer))
-    (unless (yes-or-no-p "Mupad-run buffer not saved. Kill anyway ? ")
+    (if 
+      (and 
+        mupad-run-question-before-kill
+        (yes-or-no-p "This mupad-run buffer will be killed, save it ? "))
       (mupad-run-save))
     (if 
-	(and 
-	 (processp mupad-run-process) 
-	 (eq (process-status mupad-run-process) 'run))
-	(kill-process mupad-run-process))
+      (and 
+        (processp mupad-run-process) 
+        (eq (process-status mupad-run-process) 'run))
+      (kill-process mupad-run-process))
     (setq mupad-run-process nil)
     (sleep-for 0.1))
   t)
@@ -1595,9 +1616,7 @@ Available special keys:
           (processp mupad-run-process)
           :help 
 "Set the textwidth of the mupad process to the actual width of your window"]
-        ["PrettyPrint switch" mupad-bus-prettyprint-switch :active (processp mupad-run-process)
-         :help "Toggle the value of PRETTYPRINT"]
-	"--------------------"
+        "--------------------"
         ["Customize" mupad-run-customize-group :active t 
           :key-sequence nil])))))
 
