@@ -2017,13 +2017,22 @@ if PT is within a multiline-comment."
 			the-indent)))))
 
 (defsubst sli-on-same-linep (pt1 pt2)
+  ;(princ "\n") (princ (list "(sli-on-same-linep)" pt1 pt2 ?\n
+  ;                          (string-to-list (buffer-substring-no-properties pt1 pt2))))
   (if (member ?\n (string-to-list (buffer-substring-no-properties pt1 pt2)))
       nil t))
 
 (defun sli-tell-indent-within-long-comment (afterp pos-beg-comment)
+  (when sli-verbose
+    (princ "\n")
+    (princ (list "(sli-tell-indent-within-long-comment) getting in with afterp = " afterp
+                 " and pos-beg-comment = "pos-beg-comment)))
   ;; AFTERP like in sli-tell-indent.
   ;; If pos-beg-comment and (point) are on the same line, do nothing:
   (when (and (not afterp) (sli-on-same-linep pos-beg-comment (point)))
+    (when sli-verbose
+      (princ "\n")
+      (princ "((sli-tell-indent-within-long-comment) On same line as beginning of comment : no indent.)"))
     (throw 'indent 0))
   (let*((pos-first-char (save-excursion
                           (goto-char (+ pos-beg-comment (length block-comment-start)))
@@ -2035,12 +2044,13 @@ if PT is within a multiline-comment."
                            (goto-char (+ pos-beg-comment (length block-comment-start)))
                            (search-forward block-comment-end nil t)))
         (end (line-end-position))
-        (special-last-linep (= pos-end-comment
-                               (save-excursion
-                                 (beginning-of-line);(princ (point))(princ " ")
-                                 (skip-syntax-forward "-" end);(princ (point))(princ " ")
-                                 (skip-syntax-forward "^-" end);(princ (point))(princ " ")
-                                 (point)))))
+        (special-last-linep (and pos-end-comment
+                                 (= pos-end-comment
+                                    (save-excursion
+                                      (beginning-of-line);(princ (point))(princ " ")
+                                      (skip-syntax-forward "-" end);(princ (point))(princ " ")
+                                      (skip-syntax-forward "^-" end);(princ (point))(princ " ")
+                                      (point))))))
   
   ;; check whether heredity should apply:
   ;(princ (count-lines pos-beg-comment (point)))
@@ -2053,14 +2063,14 @@ if PT is within a multiline-comment."
   ;; Else align on the start :
   (when sli-verbose
     (princ "\n")
-    (princ (list "(sli-within-long-comment) align on first line?"
+    (princ (list "(sli-tell-indent-within-long-comment) align on first line?"
                  (and on-same-linep (not special-last-linep)))))
   (if (and on-same-linep (not special-last-linep))
       (throw 'indent (sli-point-to-indent pos-first-char))
     ;; Special treatment of last line of comment:
     (when sli-verbose
       (princ "\n")
-      (princ (list "(sli-within-long-comment) last line?" special-last-linep)))
+      (princ (list "(sli-tell-indent-within-long-comment) last line?" special-last-linep)))
     (if special-last-linep
         ;; only one word on this line ending with block-comment-end.
         ;; For instance "**/"

@@ -26,6 +26,11 @@
 
 (defvar mupad-fontification-version "3.00")
 
+(defvar mupad-fontification-verbose nil
+  "Set it to t to get messages in emacs telling you what is currently
+being done by mupacs. Only some messages are implemented and of course,
+mainly for debugging purposes.")
+
 (defgroup mupad-font-lock nil
 "MuPAD customization subgroup concerning colors and completion"
 :group 'mupad :prefix "mupad-")
@@ -368,6 +373,8 @@ Default is `font-lock-builtin-face'.")))
   ;; Note: Comments are fontify syntactically, thus BEFORE.
   ;; and since there is no overriding of fontification, we do not have
   ;; to worry about the definitions we find to be within a comment.
+  (when mupad-fontification-verbose
+    (princ "\n") (princ (list "(mupad-find-def)")))
   (if (re-search-forward "^\\([a-zA-Z_]\\(\\w\\|::\\)*\\)[ \t\n]*:=" limit 0)
       (let ((beg (match-beginning 1)) (end (match-end 1)))
 	;; decide whether it is a proc/fun/func def :
@@ -381,41 +388,76 @@ Default is `font-lock-builtin-face'.")))
   ;; contain lots of words.
   (unless level (setq level 0))
   ;; when in mupad-run-mode, skip
+  (when mupad-fontification-verbose
+    (princ "\n")
+    (princ (list "(mupad-regexp-parser) Getting in")))
   (when (eq major-mode 'mupad-run-mode)
     (goto-char (min limit (max (point) (marker-position mupad-run-edit)))));beginning-of-painted-zone))))
   (let ((has-been-foundp nil) (st (point)) (case-fold-search nil))
+    ;(princ "\n") (princ (list limit (save-excursion (re-search-forward my-regexp limit 0))))
     (while (if (setq has-been-foundp
                      (re-search-forward my-regexp limit 0)) ;;<<-- modified !!!!
                (progn
                  (goto-char (match-beginning level))
-                 (mupad-skip-comments st limit))))
+                 (when mupad-fontification-verbose
+                   (princ "\n")
+                   (princ (list "(mupad-regexp-parser) Found something. A comment ?"))(sit-for 2))
+                 (not (null (mupad-skip-comments st limit))))))
     (if has-been-foundp
-        (progn (set-match-data (list (match-beginning level) (goto-char (match-end level)))) t)
-        ;; End of parsing:
-        nil)))
+        (progn 
+          (set-match-data (list (match-beginning level) (goto-char (match-end level))))
+          (when mupad-fontification-verbose
+            (princ "\n")
+            (princ (list "(mupad-regexp-parser) Found stuff from "
+                         (match-beginning level) " to " (match-end level))))
+          t)
+      ;; End of parsing:
+      (when mupad-fontification-verbose
+        (princ "\n")
+        (princ (list "(mupad-regexp-parser) Nothing found. Exiting with nil value.")))
+      nil)))
 
 (defun mupad-find-options (limit)
-   (mupad-regexp-parser mupad-option-regexp limit 1))
+  (when mupad-fontification-verbose
+    (princ "\n") (princ (list "(mupad-find-options)")))
+  (mupad-regexp-parser mupad-option-regexp limit 1))
 
 (defun mupad-find-types (limit)
-   (mupad-regexp-parser mupad-type-regexp limit 1))
+  (when mupad-fontification-verbose
+    (princ "\n") (princ (list "(mupad-find-types)")))
+  (mupad-regexp-parser mupad-type-regexp limit 1))
 
 (defun mupad-find-keywords (limit)
-   (mupad-regexp-parser mupad-keyword-regexp limit 1))
+  (when mupad-fontification-verbose
+    (princ "\n") (princ (list "(mupad-find-keywords)")))
+  (mupad-regexp-parser mupad-keyword-regexp limit 1))
 
 (defun mupad-find-ops (limit)
-   (mupad-regexp-parser "\\([]\\[\\.^+\\-*/,<>:=@$;()]\\|\\<&\\w*\\>\\)+" limit 0))
+  ;; The following regexp matches :
+  ;; either ] [ . ^ + * / , < > : = @ $ ; ( ) - (beware: it is the range operator in elisp !)
+  ;; either a-beginning-of-a-word followed by & followed by word-constituents 
+  ;;                              followed by a-end-of-a-word
+  (when mupad-fontification-verbose
+    (princ "\n") (princ (list "(mupad-find-ops)")))
+;  (mupad-regexp-parser "\\([/]\\)+" limit 0))
+  (mupad-regexp-parser "\\([]\\.^+*/,<>:=@$;()\\[-]\\|\\<&\\w*\\>\\)+" limit 0))
 
 (defun mupad-find-simple-primitive-name (limit)
+  (when mupad-fontification-verbose
+    (princ "\n") (princ (list "(mupad-find-simple-primitive-name)")))
   (mupad-regexp-parser mupad-primitive-regexp-simple limit 1))
 
 (defun mupad-find-simple-loaded-primitive-name (limit)
+  (when mupad-fontification-verbose
+    (princ "\n") (princ (list "(mupad-find-simple-loaded-primitive-name)")))
   (unless (null mupad-primitive-regexp-simple-from-libraries)
     (mupad-regexp-parser mupad-primitive-regexp-simple-from-libraries limit 1)))
 
 (defun mupad-find-composed-primitive-name (limit)
   ;; The time saving idea is that few contruct of the shape lib::fn
   ;; will be used.
+  (when mupad-fontification-verbose
+    (princ "\n") (princ (list "(mupad-find-composed-primitive-name)")))
   (let ((fn-has-been-foundp nil)
         (st (if (eq major-mode 'mupad-run-mode)
                 (min limit (max (point) (marker-position mupad-run-edit)))
@@ -438,6 +480,8 @@ Default is `font-lock-builtin-face'.")))
  
 (defun mupad-find-user-fn (limit)
   "A fontification parser."
+  (when mupad-fontification-verbose
+    (princ "\n") (princ (list "(mupad-find-user-fn)")))
   (let ((case-fold-search nil))
     (if (and (not (string= mupad-fn-names-regexp ""))
              mupad-fontify-function-names)
@@ -446,6 +490,8 @@ Default is `font-lock-builtin-face'.")))
        
 (defun mupad-find-user-global-var (limit)
   "A fontification parser."
+  (when mupad-fontification-verbose
+    (princ "\n") (princ (list "(mupad-find-user-global-var)")))
   (let ((case-fold-search nil))
   (if (and (not (string= mupad-global-var-regexp ""))
            mupad-fontify-global-var)

@@ -53,6 +53,11 @@
 ;;----------------------------------------------------
 ;; USER DEPENDENT VARIABLES AND CONSTANTS:
 
+(defvar mupad-verbose nil
+  "Set it to t to get messages in emacs telling you what is currently
+being done by mupacs. Only some messages are implemented and of course,
+mainly for debugging purposes.")
+
 (defgroup mupad nil
 "Major mode for editing mupad scripts"
 :group 'languages :prefix "mupad-")
@@ -475,7 +480,7 @@ Functions enter this regexp once they have been added to completion.")
 ;; a line indicates that we are neither in a definition, neither in a commented area,
 ;; and that mupad.el should not worry about what is on top.
 (defvar mupad-safe-place-regexp ;;"\\(^\\)[a-zA-Z]\\([a-zA-Z0-9_]\\|::\\)*[ \t\n]*:="
-                                "\\(^\\)\\(//--+\\|/\\*-+-\\*/\\)$"
+                                "\\(^\\)\\(//--+\\|/\*-+-\*/\\)$"
 "Marker used to tell emacs this point is outside a commented area or a sexp.")
 (defvar mupad-noft-safe 1 "Number of times `mupad-safe-place-regexp' should appear.")
 (defvar mupad-string-opened 0)
@@ -623,8 +628,11 @@ by a carriage return in mupad-mode."
            (not (zerop (mod howmany 2)))))))
 
 (defun mupad-within-comment (&optional starting-point)
-" t if point is within a commented area, nil otherwise.
+  " t if point is within a commented area, nil otherwise.
 The comment starts at the first character of the comment sequence."
+  (when mupad-verbose
+    (princ "\n")
+    (princ (list "(mupad-within-comment)")))
   (save-match-data
    (or (mupad-within-emacs-comment starting-point)
        (and mupad-hash-comment
@@ -640,13 +648,22 @@ Answers nil if no comment has been skipped."
           (when limit
             (narrow-to-region (or starting-point (point-min)) limit))
           (let ((has-been-used nil) (incomment nil))
+            (when mupad-verbose
+              (princ "\n")
+              (princ (list "(mupad-skip-comments) Getting in at " starting-point)))
             ;; Looking for empty stuff or comment start:
+            ;(princ "\n") (princ (looking-at "/[/\*]")) (sit-for 2)
             (while (and (not (eobp))
-                        (or (looking-at "[ \t\n]+\\(#\\|/[/\\*]\\)?\\|#\\|/[/\\*]")
+                        (or (looking-at "[ \t\n]+\\(#\\|/[/\*]\\)?\\|#\\|/[/\*]")
                             (setq incomment (mupad-within-comment starting-point))))
+              (when mupad-verbose
+                (princ "\n")
+                (if incomment
+                    (princ (list "(mupad-skip-comments) In comment."))
+                  (princ (list "(mupad-skip-comments) Found beginning of comment."))))
               (setq has-been-used t)
               (if incomment
-                  (re-search-forward "\n\\|\\'\\|\\*/\\|#" limit t)
+                  (re-search-forward "\n\\|\\'\\|\*/\\|#" limit t)
                 ;; We are outside comments:
                 (skip-chars-forward " \t\n" limit)
                 ;; A comment may start next door:
