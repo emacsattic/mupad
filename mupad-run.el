@@ -158,7 +158,7 @@ should be present."
   :group 'mupad-run)
 
 (defun mupad-run-debug-message (item str)
-  (if (memq item mupad-run-debug-level) (message str)))
+  (if (memq item mupad-run-debug-level) (message "%s" str)))
 
 (defun mupad-run-error (str) (ding) (message str))
 
@@ -945,7 +945,7 @@ Available special keys:
 ;;
 (defun mupad-run-filter (proc str)
   (mupad-run-debug-message 'filter
-			   (concat "MuPAD-run-filter: " str))
+			   (concat "mupad-run-filter: " str))
   (let
     ((output-index 0) output-type output-str brt (inhibit-read-only t)
      (brc (current-buffer)) (brb (process-buffer proc)))
@@ -964,8 +964,8 @@ Available special keys:
       (cond
         ((or (eq brt 2)   ; output
 	     (eq brt 61)) ; NT: debugger output MPRCmdb_output
-          (mupad-run-print output-str 
-            'mupad-run-face-result 
+          (mupad-run-print output-str
+            'mupad-run-face-result
             (marker-position mupad-run-todo) brt nil))
         ((eq brt 13) ; prompt 
            (setq mupad-run-prompt output-str)
@@ -986,10 +986,14 @@ Available special keys:
 	   ;; previous undo information.
 	   (setq buffer-undo-list nil)
 	   )
+	((eq brt 35)      ; display variable MPRCmdb_disp_list
+          (mupad-run-print (concat output-str "\n")
+            'mupad-run-face-result
+            (marker-position mupad-run-todo) brt nil))
         ((or (eq brt 9)   ; error message
 	     (eq brt 63)) ; NT: debugger error message
-          (mupad-run-print output-str 
-              'mupad-run-face-error 
+          (mupad-run-print output-str
+              'mupad-run-face-error
               (marker-position mupad-run-todo) brt nil)
           (when (marker-position mupad-run-last-prompt)
             (put-text-property mupad-run-last-prompt 
@@ -1632,8 +1636,7 @@ Available special keys:
 ; assertion: there is no space or semicolon at the end of args
         (cond
 ; MPRCmdb_disp_list         35 // f -> k : request display list
-; MPRCmdb_disp_list_begin   36 // begin tag
-; MPRCmdb_disp_list_end     37 // end tag
+;	  when should the frontend request this display list ?
 ; set/unset display variables:
           ((string= command "D") (list 38 args)) ; MPRCmdb_disp_set
 	  ((string= command "U") (list 39 args)) ; MPRCmdb_disp_clear
@@ -1689,6 +1692,7 @@ Available special keys:
         ((string= command "f") (list 65))      ; MPRCmdb_finish
 	((string= command "w") (list 66))      ; MPRCmdb_where
 	((string= command "P") (list 67 args)) ; MPRCmdb_pprint
+		;; Why doesn't P work ?
 ; MPRCmdb_stop_at 68 (deprecated?)
 	((string= command "g") (list 69 args)) ; MPRCmdb_goto_proc
 ; non standard shortcut in the mupad text debugger:
