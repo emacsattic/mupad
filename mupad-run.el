@@ -242,6 +242,13 @@ This list typically includes the external MuPAD graphics viewer vcam."
 4 - mupad-run-mode possible on all buffers"
   :type 'integer
   :group 'mupad-run)
+
+(defcustom mupad-run-buffer-distinct-colorisation t
+  "If t, the mupad buffers *MuPAD*, *MuPAD*<2>, and *MuPAD*<3> use
+distinct faces (and in particular text colors) to tell them apart."
+  :type 'boolean
+  :group 'mupad-run)
+
 ;; 
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -732,7 +739,9 @@ following lines in your MuPAD initialization file ~/.mupad/userinit.mu :
 ///////////////////////////////////////////////////////////////////////////
 // Customization when running inside an emacs buffer with mupacs
 if has({text2expr(Pref::userOptions())}, hold(EMACS)) then
-    // Patch stdlib::plot to call the external MuPAD graphics viewer vcam
+    if package(\"javaview\", Quiet) = FAIL then
+    // With MuPAD < 3.1.1, patch stdlib::plot to call the external 
+    // MuPAD graphics viewer vcam
     proc()
 	local oldProtectState ;
     begin
@@ -752,6 +761,7 @@ if has({text2expr(Pref::userOptions())}, hold(EMACS)) then
 	end_proc;
 	protect(stdlib, oldProtectState);
     end_proc();
+    end_if:
 end_if:
 ///////////////////////////////////////////////////////////////////////////
 
@@ -809,10 +819,11 @@ Available special keys:
        mupad-run-debugger-file	mupad-run-debugger-line
        gud-comint-buffer gud-find-file))
 ; construction de la couleur de fond
-    (when (string= (buffer-name) "*MuPAD*<2>")
-      (setq mupad-run-buffer-face "-2"))
-    (when (string= (buffer-name) "*MuPAD*<3>")
-      (setq mupad-run-buffer-face "-3"))
+    (when mupad-run-buffer-distinct-colorisation
+      (when (string= (buffer-name) "*MuPAD*<2>")
+	(setq mupad-run-buffer-face "-2"))
+      (when (string= (buffer-name) "*MuPAD*<3>")
+	(setq mupad-run-buffer-face "-3")))
   (run-hooks 'mupad-run-mode-hook-before)
   (setq mupad-run-edit (make-marker))
   (set-marker mupad-run-edit (point))
