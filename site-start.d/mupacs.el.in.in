@@ -27,3 +27,23 @@
 
 ;mupad-el-info ?
 ;detect xemacs, and load ... ?
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Definition of missing functions in "old" versions of emacs
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; emacs <= 20.7 ?
+(if (not (symbolp 'mapc))
+    (defun mapc (FUNCTION SEQUENCE)
+      "Apply FUNCTION to each element of SEQUENCE for side effects only.
+Unlike `mapcar', don't accumulate the results.  Return SEQUENCE.
+SEQUENCE may be a list, a vector, a bool-vector, or a string.
+Slow lisp emulation provided by mupacs for emacsen that miss it as builtin."
+      (mapcar FUNCTION SEQUENCE) SEQUENCE))
+
+;; emacs <= 20.7 ?
+(if (not (symbolp 'bound-and-true-p))
+    (defmacro bound-and-true-p (var)
+  "Return the value of symbol VAR if it is bound, else nil.
+Provided by mupacs for emacsen that miss it."
+  `(and (boundp (quote ,var)) ,var)))
