@@ -111,7 +111,6 @@ EMACS = @EMACS@
 F77 = @F77@
 GCJ = @GCJ@
 GCJFLAGS = @GCJFLAGS@
-INCLUDE = @INCLUDE@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 LATEX = @LATEX@
 LIBTOOL = @LIBTOOL@
@@ -123,8 +122,11 @@ MUPAD_ARCH = @MUPAD_ARCH@
 MUPAD_LATEX_ENV = @MUPAD_LATEX_ENV@
 MUPAD_LIBS = @MUPAD_LIBS@
 MUPAD_MMG = @MUPAD_MMG@
+MUPAD_MMG_CFLAGS = @MUPAD_MMG_CFLAGS@
+MUPAD_MMG_LDFLAGS = @MUPAD_MMG_LDFLAGS@
 MUPAD_SYSINFO = @MUPAD_SYSINFO@
 MUPAD_VERSION = @MUPAD_VERSION@
+MUPADbindir = @MUPADbindir@
 MUPADdir = @MUPADdir@
 MUPADlocalmdmdir = @MUPADlocalmdmdir@
 MUPADpkgdir = @MUPADpkgdir@
@@ -171,7 +173,7 @@ nobase_dist_lisp_LISP = \
 	mupad-bus.el mupad.el mupad-help.el mupad-xemacs.el \
 	mupad-cpl.el mupad-fontification.el mupad-run.el\
 	sli-tools.el \
-	site-start.d/mupacs.el mupad.el-info
+	site-start.d/mupacs.el mupad.el-info mupad-run.el-info
 
 # Don't byte-compile site-start.d/mupacs.el and mupad.el-info:
 ELCFILES = \

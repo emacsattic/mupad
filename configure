@@ -1885,82 +1885,98 @@ Please check the installation of MuPAD or override with
 	# MUPAD_VERSION
 	echo "$as_me:$LINENO: checking for MuPAD version" >&5
 echo $ECHO_N "checking for MuPAD version... $ECHO_C" >&6
-if test "${MUPAD_VERSION+set}" = set; then
+if test "${mupad_cv_mupad_version+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-
-	  MUPAD_VERSION=`echo 'fprint(Unquoted,0,(v:=version();"".op(v,1).".".op(v,2).".".op(v,3))):quit' | $MUPAD -n -P pe -S`
-	case "$MUPAD_VERSION" in
-	  ?.?.?) ;;
-	  *) { { echo "$as_me:$LINENO: error: Not found.
+  if test "${MUPAD_VERSION+set}" = set; then
+	     mupad_cv_mupad_version=$MUPAD_VERSION
+           else
+	     mupad_cv_mupad_version=`echo 'fprint(Unquoted,0,(v:=version();"".op(v,1).".".op(v,2).".".op(v,3))):quit' | $MUPAD -n -P pe -S`
+	   fi
+	   case $mupad_cv_mupad_version in
+	     ?.?.?) ;;
+	     *) { { echo "$as_me:$LINENO: error: Not found.
 Please check the installation of MuPAD or override with
 ./configure MUPAD_VERSION=2.4.2" >&5
 echo "$as_me: error: Not found.
 Please check the installation of MuPAD or override with
 ./configure MUPAD_VERSION=2.4.2" >&2;}
-   { (exit 1); exit 1; }; }
-	esac
+   { (exit 1); exit 1; }; };;
+	   esac
+
 fi
-echo "$as_me:$LINENO: result: $MUPAD_VERSION" >&5
-echo "${ECHO_T}$MUPAD_VERSION" >&6
+echo "$as_me:$LINENO: result: $mupad_cv_mupad_version" >&5
+echo "${ECHO_T}$mupad_cv_mupad_version" >&6
+	MUPAD_VERSION=$mupad_cv_mupad_version
+
 
 	# MUPADdir
 	echo "$as_me:$LINENO: checking for MuPAD root directory" >&5
 echo $ECHO_N "checking for MuPAD root directory... $ECHO_C" >&6
-if test "${MUPADdir+set}" = set; then
+if test "${mupad_cv_mupaddir+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-
-	  case "$MUPAD_VERSION" in
-	    1.?.?)
-		MUPADdir=`echo 'fprint(Unquoted,0,LIB_PATH):quit' | $MUPAD -n -P pe -S | sed 's/\/share\/lib\(\/lib.tar.lib\)\?\/*$//'`;;
-	    2.0.?)
-		MUPADdir=`echo 'fprint(Unquoted,0,op(LIBPATH,nops(LIBPATH))):quit' | $MUPAD -n -P pe -S | sed 's/\/share\/lib\(\/lib.tar.lib\)\?\/*$//'`;;
-	    *.?.?)
-		MUPADdir=`$MUPAD -r`;;
-	    *)
-	  esac;
-	  test -d "$MUPADdir" || { { echo "$as_me:$LINENO: error: Not found.
+  if test "${MUPADdir+set}" = set; then
+	     mupad_cv_mupaddir=$MUPADdir
+           else
+	     case $MUPAD_VERSION in
+	       1.?.?)
+		 mupad_cv_mupaddir=`echo 'fprint(Unquoted,0,LIB_PATH):quit' | $MUPAD -n -P pe -S | sed 's/\/share\/lib\(\/lib.tar.lib\)\?\/*$//'`;;
+	       2.0.?)
+		 mupad_cv_mupaddir=`echo 'fprint(Unquoted,0,op(LIBPATH,nops(LIBPATH))):quit' | $MUPAD -n -P pe -S | sed 's/\/share\/lib\(\/lib.tar.lib\)\?\/*$//'`;;
+	       *.?.?)
+		 mupad_cv_mupaddir=`$MUPAD -r`;;
+	       *);;
+	     esac;
+	   fi
+	   test -d "$mupad_cv_mupaddir" || { { echo "$as_me:$LINENO: error: Not found.
 Please check the installation of MuPAD or override with
 ./configure MUPADdir=<MuPAD_ROOT_PATH>" >&5
 echo "$as_me: error: Not found.
 Please check the installation of MuPAD or override with
 ./configure MUPADdir=<MuPAD_ROOT_PATH>" >&2;}
    { (exit 1); exit 1; }; }
-fi
-echo "$as_me:$LINENO: result: $MUPADdir" >&5
-echo "${ECHO_T}$MUPADdir" >&6;
 
+fi
+echo "$as_me:$LINENO: result: $mupad_cv_mupaddir" >&5
+echo "${ECHO_T}$mupad_cv_mupaddir" >&6;
+	MUPADdir=$mupad_cv_mupaddir
 
 
 	# MUPADbindir
 	echo "$as_me:$LINENO: checking for MuPAD bin directory" >&5
 echo $ECHO_N "checking for MuPAD bin directory... $ECHO_C" >&6
-if test "${MUPADbindir+set}" = set; then
+if test "${mupad_cv_mupadbindir+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  test -n "$MUPADbindir" || MUPADbindir=$MUPADdir/share/bin
-	  test -d "$MUPADbindir" || { { echo "$as_me:$LINENO: error: Not found.
+  mupad_cv_mupadbindir=${MUPADbindir="$MUPADdir/share/bin"}
+	   test -d "$mupad_cv_mupadbindir" ||\
+	     { { echo "$as_me:$LINENO: error: Not found.
 Please check the installation of MuPAD or override with
 ./configure MUPADbindir=<MuPAD_ROOT_PATH/share/bin>" >&5
 echo "$as_me: error: Not found.
 Please check the installation of MuPAD or override with
 ./configure MUPADbindir=<MuPAD_ROOT_PATH/share/bin>" >&2;}
    { (exit 1); exit 1; }; }
+
 fi
-echo "$as_me:$LINENO: result: $MUPADbindir" >&5
-echo "${ECHO_T}$MUPADbindir" >&6
+echo "$as_me:$LINENO: result: $mupad_cv_mupadbindir" >&5
+echo "${ECHO_T}$mupad_cv_mupadbindir" >&6
+	MUPADbindir=$mupad_cv_mupadbindir
+
 
 	# MUPADpkgdir
 	echo "$as_me:$LINENO: checking for MuPAD package installation directory" >&5
 echo $ECHO_N "checking for MuPAD package installation directory... $ECHO_C" >&6
-if test "${MUPADpkgdir+set}" = set; then
+if test "${mupad_cv_mupadpkgdir+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  test -n "$MUPADpkgdir" || MUPADpkgdir=$MUPADdir/packages/$PACKAGE_NAME
+  mupad_cv_mupadpkgdir=${MUPADpkgdir="$MUPADdir/packages/$PACKAGE_NAME"}
+
 fi
-echo "$as_me:$LINENO: result: $MUPADpkgdir" >&5
-echo "${ECHO_T}$MUPADpkgdir" >&6
+echo "$as_me:$LINENO: result: $mupad_cv_mupadpkgdir" >&5
+echo "${ECHO_T}$mupad_cv_mupadpkgdir" >&6
+	MUPADpkgdir=$mupad_cv_mupadpkgdir
 
 
 
@@ -2636,7 +2652,6 @@ if test -n "\$CONFIG_FILES"; then
   # Protect against being on the right side of a sed subst in config.status.
   sed 's/,@/@@/; s/@,/@@/; s/,;t t\$/@;t t/; /@;t t\$/s/[\\\\&,]/\\\\&/g;
    s/@@/,@/; s/@@/@,/; s/@;t t\$/,;t t/' >\$tmp/subs.sed <<\\CEOF
-s,@MUPAD_LIBS@,$MUPAD_LIBS,;t t
 s,@SHELL@,$SHELL,;t t
 s,@PATH_SEPARATOR@,$PATH_SEPARATOR,;t t
 s,@PACKAGE_NAME@,$PACKAGE_NAME,;t t
@@ -2713,8 +2728,9 @@ s,@PKG_PACKAGER@,$PKG_PACKAGER,;t t
 s,@PKG_DOC@,$PKG_DOC,;t t
 s,@LN_S@,$LN_S,;t t
 s,@MUPAD@,$MUPAD,;t t
-s,@MUPADdir@,$MUPADdir,;t t
 s,@MUPAD_VERSION@,$MUPAD_VERSION,;t t
+s,@MUPADdir@,$MUPADdir,;t t
+s,@MUPADbindir@,$MUPADbindir,;t t
 s,@MUPADpkgdir@,$MUPADpkgdir,;t t
 s,@EMACS@,$EMACS,;t t
 s,@lispdir@,$lispdir,;t t
