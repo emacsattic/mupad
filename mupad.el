@@ -40,6 +40,9 @@
 ;;        Paul Zimmermann (Paul.Zimmermann@loria.fr)
 ;; have brought this version to life.
 
+;; BUG:
+;; // category induces indent on next line.
+
 (provide 'mupad)
 ;(require 'mupad-xemacs)
 ;;----------------------------------------------------
@@ -424,13 +427,7 @@ Functions enter this regexp once they have been added to completion.")
 (defconst mupad-menu-separator (list "--------------"))
 ;; 100% internal. It is used for the menu-bar.
 
-(require 'mupad-fontification)
-(require 'mupad-cpl)
-(require 'mupad-help)
-
-(require 'mupad-run)
-(require 'mupad-bus)
-;;--------------------------------------
+;;--------------------------------------
 ;; Part II  : Keymaps and syntax tables.
 ;;--------------------------------------
 
@@ -1263,6 +1260,7 @@ unique completion can be done."
   (if (eq last-command 'mupad-tab)
       (progn
 	(mupad-complete)
+        (message "Direct access to completion via M-i")
 	(setq this-command 'mupad-even-tab))
     (sli-electric-tab)))
 

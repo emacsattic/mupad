@@ -58,10 +58,6 @@ Faces used are mupad-global-var in definitions and mupad-user-def otherwise."
   "\\<\\([a-zA-Z_]\\(::\\|\\w\\)*\\)[ \t\n]*:=[ \t\n]*\\(proc\\)[ \t\n]*("
   "regexp that matches the beginning of a procedure.")
 
-(defvar mupad-run-beginning-of-painted-zone
-  "marker indicating the beginning of the area where keywords, options and all should be painted."
-  (list 'eval 'mupad-run-edit))
-
 (defvar mupad-function-defp nil
 "Used for fontification. While parsing definitions,
 a t value means we are looking at a function definition, while
@@ -665,7 +661,21 @@ things are fontified."
   (mupad-force-update-fontification)    ;(print "After font-lock")
   )
 
+(defadvice lazy-lock-fontify-region (around mupad-run-font-lock)
+  (if (eq major-mode 'mupad-run-mode)
+      (save-restriction
+        (unwind-protect
+            (progn
+              (narrow-to-region (marker-position mupad-run-edit) (point-max))
+              ad-do-it)
+          (widen)))
+    ad-do-it))
+
 (add-hook 'mupad-mode-hook 'mupad-fontification-on)
+
+;(add-hook 'mupad-run-mode-hook
+;         '(lambda nil (ad-activate 'lazy-lock-fontify-region)))
 ;(add-hook 'mupad-run-mode-hook 'mupad-run-fontification-on)
+
 
 ;-------------------------end !!
