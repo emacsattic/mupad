@@ -2,11 +2,21 @@
 ;; $Id$
 ;; @configure_input@
 ;; Site emacs initialization file for mupacs
+;; This file is created in two passes:
+;;  - First pass: mupacs.el.in.in-> mupacs.el.in:
+;;    Standard configure substitution
+;;  - Second pass: mupacs.el.in -> mupacs.el:
+;;    This second pass occurs at installation time (see
+;;    install-data-local in the top Makefile.am) to take into account
+;;    possible changes to $(prefix). This second pass ensures that
+;;    the shell variables are fully substituted.
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (setq mupad-directory "@MUPADdir@")
 (setq mupad-el-info "@lispdir@/mupad.el-info")
 (setq mupad-run-info "@lispdir@/mupad-run.el-info")
+(setq load-path (append load-path (list "@lispdir@")))
 
 (autoload 'mupad-mode "mupad.el" "MuPAD editing mode" t)
 (autoload 'mupad-help-mode "mupad-run.el" "MuPAD help mode" t)
