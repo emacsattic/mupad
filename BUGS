@@ -1,3 +1,7 @@
+(fixed: 2003/10/27)
+sli-show-sexp caused spurious debugging output.
+
+------------------------------------------------------------------------------
 (fixed: 3.2.1 2003/09/28)
 mupad-run was broken when mupad-run-recenter-behaviour is set to nil.
 On starting of mupad-run, and after each input line, the following
