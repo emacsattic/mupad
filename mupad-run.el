@@ -344,62 +344,31 @@ should be present."
 
 (when (and (not mupad-run-mode-map) (not xemacsp))
   (let ((map (make-sparse-keymap)))
-    (define-key map [C-return] (function mupad-run-creturn))
-    (define-key map [C-up] (function mupad-run-previous-history))
-    (define-key map [C-down] (function mupad-run-next-history))
-    (define-key map [C-prior] (function mupad-run-previous-history-search))
-    (define-key map [C-next] (function mupad-run-next-history-search))
-    (define-key map [C-left] (function mupad-run-left))
-    (define-key map [C-right] (function mupad-run-right))
-    (define-key map [C-delete] (function mupad-run-hide))
-    (define-key map [C-insert] (function mupad-run-show))
-    (define-key map "\r" (function mupad-run-return))
-    (define-key map "\C-d" (function mupad-run-suppression))
-    (define-key map [delete] (function mupad-run-suppression))
-    (define-key map [backspace] (function mupad-run-backspace))
-    (define-key map "\C-i" (function mupad-run-tab))
-    (define-key map "\C-c\C-c" (function mupad-run-break))
-    (define-key map "\C-c\C-s" (function mupad-run-save))
-    (define-key map "\C-c\C-w" (function mupad-run-save))
-    (define-key map "\C-ck" (function mupad-run-end))
-    (define-key map "\C-c0" (function mupad-run-reset))
-    (define-key map "\C-c1" (function mupad-run-insert-last-session))
-    (define-key map [f5] (function mupad-help-emacs-search))
-    (define-key map "\C-c\C-h" (function mupad-help-emacs-search))
-    (define-key map [f6] (function mupad-help-emacs-ask))
-    (define-key map "\C-c\C-i" (function mupad-help-emacs-ask))
-    (define-key map "\C-y" (function mupad-run-yank))
-    (define-key map [mouse-2] (function mupad-run-yank-at-click))
-    (setq mupad-run-mode-map map)))
-
-(when (and (not mupad-run-mode-map) xemacsp)
-  (let ((map (make-sparse-keymap)))
     (define-key map [(control return)] (function mupad-run-creturn))
     (define-key map [(control up)] (function mupad-run-previous-history))
     (define-key map [(control down)] (function mupad-run-next-history))
-    (define-key map [(control prior)] 
-      (function mupad-run-previous-history-search))
+    (define-key map [(control prior)] (function mupad-run-previous-history-search))
     (define-key map [(control next)] (function mupad-run-next-history-search))
     (define-key map [(control left)] (function mupad-run-left))
     (define-key map [(control right)] (function mupad-run-right))
     (define-key map [(control delete)] (function mupad-run-hide))
     (define-key map [(control insert)] (function mupad-run-show))
     (define-key map "\r" (function mupad-run-return))
-    (define-key map "\C-d" (function mupad-run-suppression))
-    (define-key map [delete] (function mupad-run-suppression))
+    (define-key map [(control ?d)] (function mupad-run-suppression))
+    (define-key map [delete]       (function mupad-run-suppression))
     (define-key map [backspace] (function mupad-run-backspace))
-    (define-key map "\C-i" (function mupad-run-tab))
-    (define-key map "\C-c\C-c" (function mupad-run-break))
-    (define-key map "\C-c\C-s" (function mupad-run-save))
-    (define-key map "\C-c\C-w" (function mupad-run-save))
-    (define-key map "\C-ck" (function mupad-run-end))
-    (define-key map "\C-c0" (function mupad-run-reset))
-    (define-key map "\C-c1" (function mupad-run-insert-last-session))
+    (define-key map [(control ?i)] (function mupad-run-tab))
+    (define-key map [(control ?c) (control ?c)] (function mupad-run-break))
+    (define-key map [(control ?c) (control ?s)] (function mupad-run-save))
+    (define-key map [(control ?c) (control ?w)] (function mupad-run-save))
+    (define-key map [(control ?c) ?k]  (function mupad-run-end))
+    (define-key map [(control ?c) ?0]  (function mupad-run-reset))
+    (define-key map [(control ?c) ?1]  (function mupad-run-insert-last-session))
     (define-key map [f5] (function mupad-help-emacs-search))
-    (define-key map "\C-c\C-h" (function mupad-help-emacs-search))
+    (define-key map [(control ?c) (control ?h)] (function mupad-help-emacs-search))
     (define-key map [f6] (function mupad-help-emacs-ask))
-    (define-key map "\C-c\C-i" (function mupad-help-emacs-ask))
-    (define-key map "\C-y" (function mupad-run-yank))
+    (define-key map [(control ?c) (control ?i)] (function mupad-help-emacs-ask))
+    (define-key map [(control ?y)] (function mupad-run-yank))
     (define-key map [mouse-2] (function mupad-run-yank-at-click))
     (setq mupad-run-mode-map map)))
 
@@ -419,33 +388,20 @@ should be present."
   "See `mupad-run-arrow-behaviour'"
   (setq mupad-run-arrow-behaviour val)
   (cond 
-    ((and (string= val "Usual") xemacsp)
+    ((string= val "Usual")
       (define-key mupad-run-mode-map [(control up)] 
         (function mupad-run-previous-history))
       (define-key mupad-run-mode-map [(control down)] 
         (function mupad-run-next-history))
       (define-key mupad-run-mode-map [(up)] (function previous-line))
       (define-key mupad-run-mode-map [(down)] (function next-line)))
-    ((string= val "Usual") ; for GNU-emacs
-      (define-key mupad-run-mode-map [C-up] 
-        (function mupad-run-previous-history))
-      (define-key mupad-run-mode-map [C-down] 
-        (function mupad-run-next-history))
-      (define-key mupad-run-mode-map [up] (function previous-line))
-      (define-key mupad-run-mode-map [down] (function next-line)))
-    (xemacsp ; for bash-style
+    (t ; for bash-style
       (define-key mupad-run-mode-map [(up)] 
         (function mupad-run-previous-history))
       (define-key mupad-run-mode-map [(down)] 
         (function mupad-run-next-history))
       (define-key mupad-run-mode-map [(control up)] (function previous-line))
-      (define-key mupad-run-mode-map [(control down)] (function next-line)))
-    (t ; bash-style and GNU-emacs
-      (define-key mupad-run-mode-map [up] 
-        (function mupad-run-previous-history))
-      (define-key mupad-run-mode-map [down] (function mupad-run-next-history))
-      (define-key mupad-run-mode-map [C-up] (function previous-line))
-      (define-key mupad-run-mode-map [C-down] (function next-line)))))
+      (define-key mupad-run-mode-map [(control down)] (function next-line)))))
 
 (defcustom mupad-run-arrow-behaviour
   "Usual"

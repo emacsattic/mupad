@@ -34,6 +34,10 @@
 Used to set `mupad-help-file-name-tar' and `mupad-help-file-name-toc'."
 :type 'string :group 'mupad-run)
 
+(defcustom mupad-help-mode-hook nil
+"Hook corresponding to help in mupad(-run)-mode."
+:type 'hook :group 'mupad)
+
 (defvar mupad-help-file-name-tar      (concat mupad-help-tree "ascii.tar"))
 (defvar mupad-help-file-name-indextty "ascii/.mupadhelpindextty")
 (defvar mupad-help-file-name-toc      (concat mupad-help-tree "ascii.toc"))

@@ -565,26 +565,27 @@ things are fontified."
      (when (eq major-mode 'mupad-mode)
        (easy-menu-change '("MuPAD") "Colors" (mupad-color-cpl-menu) nil))))
 
-(add-hook 'mupad-mode-hook
-  '(lambda nil
-       (make-variable-buffer-local 'mupad-function-defp) ; not really required
-       (make-variable-buffer-local 'mupad-hash-parity)   ; not really required
-       (define-key mupad-mode-map   "\C-l" (function mupad-force-update-fontification))
-       (set (make-local-variable 'font-lock-defaults)
-	    '((mupad-script-fontification-keywords-1
-	       mupad-script-fontification-keywords-2
-	       mupad-script-fontification-keywords-3)
-	      nil nil nil mupad-get-safe-place))
-       (setq mupad-safe-place-regexp "^\\(//--+\\|/\\*-+-\\*/\\)$")
-       (or (not mupad-hash-comment)
-	   (set (make-local-variable 'font-lock-syntactic-keywords)
-		'(((lambda (limit) (if (search-forward "#" limit t) t
-				     (setq mupad-hash-parity nil)))
-		   0 (cons (if (setq mupad-hash-parity (not mupad-hash-parity))
-			       11 12) ?#)))))
-       (mupad-fontification-common-init)
-       (mupad-turn-on-lazy-font-lock) ;(print "Before font-lock")
-       (mupad-force-update-fontification)    ;(print "After font-lock")
-       ))
+(defun mupad-fontification-on nil
+  (make-variable-buffer-local 'mupad-function-defp) ; not really required
+  (make-variable-buffer-local 'mupad-hash-parity)   ; not really required
+  (define-key mupad-mode-map  [(control ?l)] (function mupad-force-update-fontification))
+  (set (make-local-variable 'font-lock-defaults)
+       '((mupad-script-fontification-keywords-1
+          mupad-script-fontification-keywords-2
+          mupad-script-fontification-keywords-3)
+         nil nil nil mupad-get-safe-place))
+  (setq mupad-safe-place-regexp "^\\(//--+\\|/\\*-+-\\*/\\)$")
+  (or (not mupad-hash-comment)
+      (set (make-local-variable 'font-lock-syntactic-keywords)
+           '(((lambda (limit) (if (search-forward "#" limit t) t
+                                (setq mupad-hash-parity nil)))
+              0 (cons (if (setq mupad-hash-parity (not mupad-hash-parity))
+                          11 12) ?#)))))
+  (mupad-fontification-common-init)
+  (mupad-turn-on-lazy-font-lock) ;(print "Before font-lock")
+  (mupad-force-update-fontification)    ;(print "After font-lock")
+  )
+
+(add-hook 'mupad-mode-hook 'mupad-fontification-on)
 
 ;-------------------------end !!

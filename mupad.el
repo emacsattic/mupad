@@ -33,7 +33,7 @@
 ;; DONE
 ;;   
 (provide 'mupad)
-
+;(require 'mupad-xemacs)
 ;;----------------------------------------------------
 ;; Part I   : Variables and Constants, except Keymaps.
 ;;----------------------------------------------------
@@ -117,7 +117,7 @@ See `mupad-describe-this-proc' and `mupad-user-mail-address'."
 :type 'boolean :group 'mupad-miscellana)
 
 (defcustom mupad-user-mail-address
-  (concat user-login-name "@" system-name)
+  user-mail-address
   "What it says it is. See `mupad-javadoc-stylep'."
   :type 'string :group 'mupad-miscellana)
 
@@ -357,8 +357,9 @@ after 'end_proc' and so on. See `sli-more-maidp'."
   (setq byte-optimize t)
   (mupad-setup))
 
-(defvar mupad-mode-hook nil)
-(defvar mupad-mdx-mode-hook nil)
+(defcustom mupad-mode-hook nil
+"Hook when entering mupad-mode"
+:group 'mupad :type 'hook)
 
 (defvar MuPAD-menu-map nil
 "Keymap used for the menu-bar item MuPAD in mupad-mode")
@@ -414,16 +415,6 @@ Functions enter this regexp once they have been added to completion.")
 (defconst mupad-menu-separator (list "--------------"))
 ;; 100% internal. It is used for the menu-bar.
 
-(defvar gud-mdx-history nil "History of argument lists passed to mdx.")
-
-;; There's no guarantee that Emacs will hand the filter the entire
-;; marker at once; it could be broken up across several strings.  We
-;; might even receive a big chunk with several markers in it.  If we
-;; receive a chunk of text which looks like it might contain the
-;; beginning of a marker, we save it here between calls to the
-;; filter.
-(defvar gud-mdx-marker-acc "")
-
 (require 'mupad-fontification)
 (require 'mupad-cpl)
 (require 'mupad-help)
@@ -462,7 +453,7 @@ by a carriage return in mupad-mode."
   (define-key map "("        'mupad-electric-open-brace)
   (define-key map "["        'mupad-electric-open-brace)
   (define-key map "{"        'mupad-electric-open-brace)
-  (define-key map [(meta ?i)]          'mupad-complete)
+  (define-key map [(meta ?i)]          'mupad-mycomplete)
   (define-key map [(meta control ?i)]  'mupad-complete) ; taken by linux !!
   (define-key map "\d"     'backward-delete-char-untabify)
   (define-key map [(meta ?*)]                 'mupad-star-comment)
@@ -515,7 +506,7 @@ by a carriage return in mupad-mode."
 ;; It is usually 'minibuffer-complete-word, but C-i does that.
 
 ;; To remove temp-files even if we quit a bit violently:
-(add-hook 'kill-emacs-hook (function mupad-clear-temp-files))
+(custom-add-option 'kill-emacs-hook (function mupad-clear-temp-files))
 
 (defsubst safe-delete-file (afile)
   (if (file-exists-p afile) (delete-file afile)))
@@ -926,20 +917,21 @@ If not found, point is left at start of last line in buffer."
     (beginning-of-line)
     (while (and (not (looking-at mupad-proc-def-start))
                 (not (looking-at "[ \t]*proc[ \t]*("))
-                (not (looking-at "[ \t]*local ")))
+                (not (looking-at "[ \t]*local "))
+                (not (bobp)))
       (forward-line -1))
     (let ((first-time (not (looking-at "[ \t]*local ")))
           (st (point)))
-      (if first-time
-        (progn
-          (end-of-line)
-          (sli-electric-terminate-line (point))
-          (insert "local ;")
-          (setq first-time t))
-        (search-forward ";"))
-      (forward-char -1)
-      (if first-time (insert newvar)
-          (insert ", " newvar))
+      (cond
+       ((bobp) (message "I didn't find where to insert this variable"))
+       (first-time
+        (end-of-line)
+        (sli-electric-terminate-line (point))
+        (insert "local " newvar ";"))
+       (t
+        (search-forward ";")
+        (forward-char -1)
+        (insert ", " newvar)))
       (mupad-force-update-fontification)))))
 
 (defun mupad-proc ()
@@ -1216,12 +1208,24 @@ unique completion can be done."
               )) )) ; To check it, use "to" "beg" be" "gen"
     (error (princ "An error occured in mupad-complete: ")(princ err) nil)))
 
+(defun mupad-mycomplete nil
+  (interactive)
+  (cond
+   ((save-excursion
+      (and (> (point) (+ (point-min) 6))
+           (progn
+             (goto-char (- (point) 6))
+             (looking-at "read(\""))))
+    (insert (read-file-name "File name: ")))
+   (unless mupad-electric-p (insert "\""))
+   (t (mupad-complete))))
+
 (defun mupad-tab nil
   "First indent on odd number of hits, complete on even numbers ..."
   (interactive)
   (if (eq last-command 'mupad-tab)
       (progn
-	(mupad-complete)
+	(mupad-mycomplete)
 	(setq this-command 'mupad-even-tab))
     (sli-electric-tab)))
 
@@ -1234,7 +1238,7 @@ unique completion can be done."
     (mapcar 'mupad-add-symbol mupad-options-list)
     (mapcar 'mupad-add-symbol mupad-libraries-list)
     (mupad-add-symbol "stdlib") ; The only library with no methods attached
-                               ; in mupad-libraries-completion-alist
+                                ; in mupad-libraries-completion-alist
     (mapcar 'mupad-add-symbol mupad-keywords-list)
     (mapcar (lambda (x)
               (let ((dom (cdr (assoc x mupad-libraries-completion-alist))))
