@@ -24,17 +24,17 @@ domain bla
   axiom bli;
   category ble;
 
-    bla :=proc()
-          begin
-            1+x;
-            if
-               bla then
-              bli;
-            else
-              truc;
-            end_if;
-          end_proc;
-
+  bla :=proc()
+	begin
+	  1+x;
+	  if
+	     bla then
+	    bli;
+	  else
+	    truc;
+	  end_if;
+	end_proc;
+  
   ble := 1;
 begin
 end_domain:
