@@ -295,13 +295,14 @@ Available special keys:
       (beginning-of-line) 
       (while (< (point) (- (point-max) 4))
         (delete-char 4) (setq br (- br 4)) (next-line 1))
-       (delete-char 1)
-       (setq br2 (point))
-       (while (memq (char-before br2) '(?\n ?\t ?\ )) (setq br2 (1- br2)))
-       (when (not (memq (char-before br2) '(?\: ?\;)))
-         (goto-char br2) (insert " ;"))))
+      (delete-char 1)
+      (setq br2 (point))
+      (while (memq (char-before br2) '(?\n ?\t ?\ )) (setq br2 (1- br2)))
+      (when (not (memq (char-before br2) '(?\: ?\;)))
+        (goto-char br2) (insert " ;"))
+      (goto-char (point-max))))
 
-;----------------------------------------------------------------------------------------
+;-------------------------------------------------------------------------
 (defun mupad-help-completion (question)
   (save-excursion
     (let* 
