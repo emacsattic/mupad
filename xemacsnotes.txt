@@ -1,0 +1,25 @@
+So we are trying to adapt mupad.el to xemacs, but it will not be so easy.
+
+
+(1) First some packages are required that do not seem to be automatically
+loaded by xemacs. Here they are:
+
+gud.el:
+http://cvs.xemacs.org/viewcvs.cgi/XEmacs/packages/ xemacs-packages/debug/ 
+
+comint.el:
+http://cvs.xemacs.org/viewcvs.cgi/XEmacs/xemacs-19/lisp/comint/    
+
+ring.el regexp-opt.el imenu.el:
+http://cvs.xemacs.org/viewcvs.cgi/XEmacs/packages/xemacs-packages/xemacs-base/
+
+cc-mode cc-bytecomp.el cc-defs.el cc-menus.el cc-vars.el cc-langs.el
+cc-styles.el cc-align.el cc-cmds.el cc-compat.el cc-engine.el cc-guess.el
+cc-lobotomy.el cc-make.el cc-mode-19.el:
+http://cvs.xemacs.org/viewcvs.cgi/XEmacs/packages/xemacs-packages/cc-mode/
+
+Beware ! always go to the Download button ! Else you'll only get the html page !
+
+(2) menu bar is ... lost somehow ?
+
+(3) mupad-run is stuck.
