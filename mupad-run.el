@@ -192,8 +192,8 @@ should be present."
 	(t
 	 ;; Conservative recentering. Francois: check this part!
 	 (if (> (count-lines (window-start) (point)) ; "the cursor-line on the screen"
-		(- (1- (window-height)) mupad-run-recenter-bottom-margin)))
-	 (recenter (- mupad-run-recenter-bottom-margin)))))
+		(- (1- (window-height)) mupad-run-recenter-bottom-margin))
+	     (recenter (- mupad-run-recenter-bottom-margin))))))
 
 (defun mupad-run-set-system-trace (sym val)
   (set sym val)
