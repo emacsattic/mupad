@@ -1162,8 +1162,10 @@ Answer is nil otherwise."
        ((sli-member word sli-head-keys)
         ;; its end should be below or it is the key we seek. Erase this closed part.
         (setq end-lst (sli-get-ends-from-head word))
+        ;(princ "\n") (princ (list "(sli-reduce-skel): end-lst is " end-lst))
         (while (and skel (not (sli-member (car skel) end-lst)))
           (setq skel (cdr skel)))
+        ;(princ "\n") (princ (list "(sli-reduce-skel): last skel is " skel))
         (if (null skel) (list word) (cdr skel))) ; the answer.
        ((sli-member word sli-strong-keys)
         ;; its end should be below or it is the key we seek.
@@ -1229,7 +1231,7 @@ Supports imbedded comments. Answer nil if not found."
                 (sli-prop-renew (match-beginning 0) (match-end 0) '(sli-type block-comment-start))
                 (setq level-comment1 (1- level-comment1))
                 (when (and (< level-comment1 0)
-                           (equal '(block-comment-start) whatwewant))
+                           (equal (list block-comment-start) whatwewant))
                            ; in case the string we look for is a block-comment-start
                            ;(princ (list "Found !" (point)))
                   (setq ans (if givekey (cons word (point)) (point))
@@ -1806,8 +1808,8 @@ if PT is within a multiline-comment."
              (if nomrelation sli-all-keys-nomrelations-noseparators-regexp sli-all-keys-regexp)))
       (while (and (not foundp) (not (bobp)))
         (if (sli-anchored-posix-search-backward aregexp nil 1)
-          (progn;(princ "\n") 
-        	;(princ (list "(sli-get-first-non-end-key). word = " (match-string-no-properties 0) (point)))
+          (progn ;(princ "\n") 
+        	 ;(princ (list "(sli-get-first-non-end-key). word = " (match-string-no-properties 0) (point)))
             (cond
              ((string= (setq word (match-string-no-properties 0)) "\"")
               (if (= (preceding-char) ?\\)
@@ -1817,14 +1819,16 @@ if PT is within a multiline-comment."
              ;; Out of strings:
              ((string= word block-comment-end)
               (setq start (point))
+              ;(princ "\n") (princ (list "(sli-get-first-non-end-key) In block-comment."))
               (unless (sli-in-one-line-comment)
                 (if (setq beg (sli-find-matching-key
                                start (list block-comment-start) (list block-comment-start) t))
                     (progn 
+                      (goto-char (cdr beg))
                       (sli-prop-renew start (+ start (length word))
                                       (list 'sli-type 'block-comment-end 'sli-ancestor (cdr beg)))
                       (sli-prop-renew2
-                       beg (list 'sli-type 'block-comment-start 'sli-reverse-ancestor start)))
+                        beg (list 'sli-type 'block-comment-start 'sli-reverse-ancestor start)))
                   (setq level-comment1 (1+ level-comment1))
                   (goto-char  (point-min)))))
              ((string= word block-comment-start)
@@ -1871,7 +1875,7 @@ if PT is within a multiline-comment."
                 (when sli-verbose (princ "\n((sli-get-first-non-end-key) ... and is indeed one !)"))
                 (sli-prop-renew (point) (+ (point) (length word)) '(sli-type head))
                 (setq foundp t)))
-             ((sli-member word sli-special-head-keys)(princ " lyo ")
+             ((sli-member word sli-special-head-keys);(princ " lyo ")
               (unless (or (sli-separator-directly-afterp pt word)
                           (sli-in-one-line-comment))
                 (setq foundp t)))
@@ -1975,7 +1979,7 @@ Or on line after if AFTERP is t."
             (setq appui head))))
       (when sli-verbose
 	(princ "\n((sli-tell-indent) indentation of this line and not in comment)")
-	(princ "\n") (princ (list "                  Resting on: " (car appui))))
+	(princ "\n") (princ (list "                  Resting on: " (car appui) (cdr appui))))
       (throw 'indent (if (null appui) 0
                        (+ (sli-get-shift (car appui) (car first-stuff))
                           (sli-indent-at (cdr appui))))))
