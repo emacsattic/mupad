@@ -58,7 +58,10 @@
 
 (defun mupad-bus-switch-to-mupad nil
   (mupad-bus-window-manager "*MuPAD*" 'mupad-beginning)
-  (unless mupad-run-process (mupad-run-mode)))
+  ; in case of a new process, start mode and adapt textwidth
+    (unless mupad-run-process
+      (mupad-run-mode)
+      (mupad-bus-adapt-textwidth)))
 
 (defun mupad-bus-start nil
   (interactive)
