@@ -1,3 +1,10 @@
+Overview of changes in mupacs 3.2.2:
+====================================
+
+Fixes of two anoying bugs (see BUGS file)
+Setup sane defaults for some variables
+Partial reorganisation of the documentation
+
 Overview of changes in mupacs 3.2.1:
 ====================================
 
