@@ -356,13 +356,6 @@ after 'end_proc' and so on. See `sli-more-maidp'."
   (concat mupad-temp-directory (make-temp-name "mupad-"))
   "Temporary file name used for text being sent as input to emacs.")
 
-
-(defvar mupad-textwidth (1- (window-width)))
-
-(defvar mupad-complete-expression nil
-"t if expression to be send to MuPAD is complete. Else see
-`mupad-qualify-incomplete-expression'. See also `mupad-copy-input'.")
-
 (defvar mupad-create-completions-donep nil "t if `mupad-completion-array' is already created.")
 (defvar mupad-completion-array (make-vector 5003 0) ;3776 symbols in MuPAD 2.0
 "Obarray used for completion.")  ;; A prime number as a length is a good thing !
@@ -457,6 +450,7 @@ by a carriage return in mupad-mode."
   (define-key map "["        'mupad-electric-open-brace)
   (define-key map "{"        'mupad-electric-open-brace)
   (define-key map "\M-i"     'mupad-complete)
+  (define-key map "\M-\C-i"  'mupad-complete) ; taken by linux !!
   (define-key map "\177"     'backward-delete-char-untabify)
   (define-key map "\M-*"     'mupad-star-comment)
   (define-key map "\C-c\C-c" 'comment-region)
@@ -1226,6 +1220,8 @@ unique completion can be done."
     (mapcar 'mupad-add-symbol mupad-types-list)
     (mapcar 'mupad-add-symbol mupad-options-list)
     (mapcar 'mupad-add-symbol mupad-libraries-list)
+    (mupad-add-symbol "stdlib") ; The only library with no methods attached
+                               ; in mupad-libraries-completion-alist
     (mapcar 'mupad-add-symbol mupad-keywords-list)
     (mapcar (lambda (x)
               (let ((dom (cdr (assoc x mupad-libraries-completion-alist))))
