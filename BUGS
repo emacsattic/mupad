@@ -1,4 +1,15 @@
+(fixed: 3.2.1 2003/09/28)
+mupad-run was broken when mupad-run-recenter-behaviour is set to nil.
+On starting of mupad-run, and after each input line, the following
+error message was issued:
+error in process-filter: cond: Wrong number of arguments: #<subr if>, 1
+
 ------------------------------------------------------------------------------
+(fixed: 3.2.1 2003/09/28)
+@lisp_dir@ is not substituted correctly in mupacs.el:
+(setq mupad-el-info "${datadir}/emacs/site-lisp/mupad.el-info")
+------------------------------------------------------------------------------
+(fixed: 2003/05)
 mupad-run-mode got confused if undo was called enough times to revert
 the insertion of the last mupad output (the markers mupad-run-todo and
 such probably became incoherent).
