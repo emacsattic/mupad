@@ -56,7 +56,6 @@
 (require 'mupad-bus)
 (require 'mupad-help)
 (require 'mupad) ; for mupad-start-manual
-(require 'gud)
 (require 'advice)
 ;(require 'mupad-xemacs)
 ;; Another stuff for xemacs:
@@ -816,8 +815,7 @@ Available special keys:
        mupad-run-completion-prefix mupad-run-completion-completions
 ; NT 04/11/2002 added for the debugger
        mupad-run-rawcommand
-       mupad-run-debugger-file	mupad-run-debugger-line
-       gud-comint-buffer gud-find-file))
+       mupad-run-debugger-file	mupad-run-debugger-line))
 ; construction de la couleur de fond
     (when mupad-run-buffer-distinct-colorisation
       (when (string= (buffer-name) "*MuPAD*<2>")
@@ -863,15 +861,10 @@ Available special keys:
 ;   nil or a list (message-type message) like (1 "x+1")
   (setq mupad-run-rawcommand nil)
 ; the file position in the debugger: nil or a string
+; used for setting breakpoints
   (setq mupad-run-debugger-file nil)
 ; the file position in the debugger: nil or an int
   (setq mupad-run-debugger-line nil)
-; two variables to trick gud into thinking that this buffer is a
-; normal gud-buffer so that we can use gud-display-line
-  (setq gud-comint-buffer (current-buffer))
-  ; definition duplicated from gud-gdb-find-file which seems
-  ; not to be defined in emacs from CVS (NT, CCR, 2004/10/04)
-  (setq gud-find-file '(lambda (f) (find-file-noselect f 'nowarn)))
 
   (run-hooks 'mupad-run-mode-hook))
 ;;
@@ -1071,9 +1064,7 @@ Available special keys:
 ; traiter les différents types de données renvoyées par mupad
       (cond
         ((eq brt 2)   ; output
-          (mupad-run-print output-str
-            'mupad-run-face-result
-            (marker-position mupad-run-todo) brt nil))
+          (mupad-run-print-result output-str brt))
         ((eq brt 61) ; NT: debugger output MPRCmdb_output
 	 ;; Workaround: with MuPAD < 3.1.1 and the -E option, the file
 	 ;; line information is output via MPRCmdb_output (61) instead
@@ -1087,43 +1078,16 @@ Available special keys:
 	     (setq output-str (replace-match "" t t output-str 2))
 	     (mupad-run-debugger-display-line file line)))
 	 ;; Same treatment as for normal output (2) above
-	 (mupad-run-print output-str
-			  'mupad-run-face-result
-			  (marker-position mupad-run-todo) brt nil))
+          (mupad-run-print-result output-str brt))
         ((eq brt 13) ; prompt 
-           (setq mupad-run-prompt output-str)
-           (set-marker mupad-run-last-prompt (1- mupad-run-todo))
-           (mupad-run-print (concat output-str "\n")
-             'mupad-run-face-prompt 
-             (marker-position mupad-run-todo) brt nil)
-           (set-marker mupad-run-last-prompt (1+ mupad-run-last-prompt))
+	   (mupad-run-print-prompt output-str brt)
            (setq mupad-run-state 'wait-input)
-	   ;; Conservatively reset the undo list to make sure that the
-	   ;; user will not revert inadvertently the insertion of the
-	   ;; prompt, as this would invalidate the marker positions
-	   ;;
-	   ;; Warning: the user will loose undo information if he is
-	   ;; editing a command when the prompt is inserted; I don't
-	   ;; know if/how one can disable selectively the undoing of
-	   ;; the insertion of the prompt without disabling all the
-	   ;; previous undo information.
-	   (setq buffer-undo-list nil)
 	   )
 	((eq brt 35)      ; display variable MPRCmdb_disp_list
-	 (mupad-run-print (concat output-str "\n")
-			  'mupad-run-face-result
-			  (marker-position mupad-run-todo) brt nil))
+	 (mupad-run-print-result (concat output-str "\n")) brt)
         ((or (eq brt 9)   ; error message
 	     (eq brt 63)) ; NT: debugger error message
-          (mupad-run-print output-str
-              'mupad-run-face-error
-              (marker-position mupad-run-todo) brt nil)
-          (when (marker-position mupad-run-last-prompt)
-            (put-text-property mupad-run-last-prompt 
-              (1+ mupad-run-last-prompt) 
-              'to-insert "///--- Erreur dans ce bloc\n")
-            (put-text-property (1- mupad-run-todo) mupad-run-todo  
-                'to-insert "///--- Fin du bloc avec une erreur\n")))
+	 (mupad-run-print-error output-str brt))
         ((eq brt 3) (mupad-run-call-system output-str)) ; system-call
         ((eq brt 6)) ; change to TEXTWIDTH
         ((eq brt 7)) ; change to PRETTYPRINT
@@ -1159,15 +1123,11 @@ Available special keys:
 			      (concat "\006" (string 35) "\007\n"))
 	 (setq mupad-run-state 'wait-display-list)
 	 )
-	((eq brt 62) ; prompt
+	((eq brt 62) ; debugger prompt
 	 ; kernel has stopped and waits for the next debugger command
 	 (if (equal mupad-run-state 'wait-display-list)
 	     (setq mupad-run-state 'wait-prompt)
-	   (setq mupad-run-prompt output-str)
-	   (set-marker mupad-run-last-prompt (1- mupad-run-todo))
-	   (mupad-run-print (concat output-str "\n")
-			    'mupad-run-face-prompt (marker-position mupad-run-todo) brt nil)
-	   (set-marker mupad-run-last-prompt (1+ mupad-run-last-prompt))
+	   (mupad-run-print-prompt output-str brt)
 	   (setq mupad-run-state 'wait-debugger-input)))
 ; We ignore all begin and end tags, and a few others
 	((memq brt '(36	             ; MPRCmdb_disp_list_begin
@@ -1282,7 +1242,50 @@ Available special keys:
 ;  (process-send-string mupad-run-process "\006\001\n\007"))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;
+;; Printing callbacks for mupad-run-filter
+;; FIXME: Can we get rid of the 'type' argument?
+;; FIXME: rename as mupad-run-print-callback-... ?
+
+(defun mupad-run-print-result (string type)
+  (mupad-run-print string
+		   'mupad-run-face-result
+		   (marker-position mupad-run-todo) type nil))
+
+(defun mupad-run-print-prompt (string type)
+  (setq mupad-run-prompt output-str)
+  (set-marker mupad-run-last-prompt (1- mupad-run-todo))
+  (mupad-run-print (concat output-str "\n")
+		   'mupad-run-face-prompt
+		   (marker-position mupad-run-todo) type nil)
+  (set-marker mupad-run-last-prompt (1+ mupad-run-last-prompt))
+  ;; Conservatively reset the undo list to make sure that the
+  ;; user will not revert inadvertently the insertion of the
+  ;; prompt, as this would invalidate the marker positions
+  ;;
+  ;; Warning: the user will loose undo information if he is
+  ;; editing a command when the prompt is inserted; I don't
+  ;; know if/how one can disable selectively the undoing of
+  ;; the insertion of the prompt without disabling all the
+  ;; previous undo information.
+  (setq buffer-undo-list nil)
+  )
+
+(defun mupad-run-print-error (string type)
+  (mupad-run-print string
+		   'mupad-run-face-error
+		   (marker-position mupad-run-todo) type nil)
+  (when (marker-position mupad-run-last-prompt)
+    (put-text-property mupad-run-last-prompt 
+		       (1+ mupad-run-last-prompt) 
+		       'to-insert "///--- Erreur dans ce bloc\n")
+    (put-text-property (1- mupad-run-todo) mupad-run-todo  
+		       'to-insert "///--- Fin du bloc avec une erreur\n"))
+  (if (string-match "^Error:.*\\[file \\(\\S-+\\), line \\([0-9]+\\), col \\([0-9]+\\)\\];$" string)
+      (let ((file (match-string 1 output-str))
+	    (line (string-to-number (match-string 2 output-str)))
+	    (col  (string-to-number (match-string 3 output-str))))
+	(mupad-run-display-line file line col)))
+  )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Automatic completion
@@ -1436,8 +1439,7 @@ Available special keys:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun mupad-run-debugger-display-line (file line)
-  "Displays the file/line the debugger is running on in a separate buffer"
-  (setq gud-comint-buffer (current-buffer))
+  "Displays the file/line/col the debugger is running on in a separate buffer"
   (cond
    ((string-match "^\\(.*\\.tar\\)#\\(.*\\)$" file)
     ;; Special treatment for tar files:
@@ -1463,12 +1465,58 @@ Available special keys:
       ;; (message "Set buffer read only")
       (setq buffer-read-only t)
       )))
-  ;; (message "Calling gud")
-  (gud-display-line file line)
+  ;; (message "Displaying line")
+  (mupad-run-display-line file line)
   ;; (message "Setting file")
   (setq mupad-run-debugger-file file)
   (setq mupad-run-debugger-line line)
   )
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Low level routines to display a file/line/col in another buffer
+;; This is essentially duplicated from gud, with just a few small modifications.
+;; Yeah, that's bad, but:
+;;  - This makes us fully independent on gud; no more tweaking to let
+;;    gud think that this is a normal gud buffer; no more version
+;;    incompatibilities
+;;  - Allow for minor adaptations (displaying the column)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Taken from gud-gdb-find-file of emacs 21.3
+;; It seems not to be defined in emacs from CVS (NT, CCR, 2004/10/04)
+(defun mupad-run-find-file (f) (find-file-noselect f 'nowarn))
+
+;; Adapted from gud-diplay-line of emacs 21.3
+(defun mupad-run-display-line (true-file line &optional col)
+  (let* ((last-nonmenu-event t)  ; Prevent use of dialog box for questions.
+         (buffer
+          (save-excursion
+            ;(or (eq (current-buffer) gud-comint-buffer)
+            ;    (set-buffer gud-comint-buffer))
+            (mupad-run-find-file true-file)))
+         (window (and buffer (or (get-buffer-window buffer)
+                                 (display-buffer buffer))))
+         (pos))
+    (if buffer
+        (progn
+          (save-excursion
+            (set-buffer buffer)
+            (save-restriction
+              (widen)
+              (goto-line line)
+	      (save-excursion
+		(when col (move-to-column col))
+		(setq pos (point)))
+              (setq overlay-arrow-string "=>")
+              (or overlay-arrow-position
+                  (setq overlay-arrow-position (make-marker)))
+              (set-marker overlay-arrow-position (point) (current-buffer)))
+            (cond ((or (< pos (point-min)) (> pos (point-max)))
+                   (widen)
+                   (goto-char pos))))
+          (set-window-point window pos)))))
+
+
 ;; 
 ;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 ;;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
