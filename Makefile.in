@@ -180,7 +180,7 @@ ELCFILES = \
 	sli-tools.elc
 
 
-EXTRA_DIST = $(PKG_DOC) config/mupad.m4 config/mupad.am config/cvs.am config/sourceforge.am config/packages.m4 config/packages.am config/packages.spec.in config/packages.info.in site-start.d/mupacs.el.in .cvsignore
+EXTRA_DIST = $(PKG_DOC) config/mupad.m4 config/mupad.am config/cvs.am config/sourceforge.am config/packages.m4 config/packages.am config/packages.spec.in config/packages.info.in site-start.d/mupacs.el.in .cvsignore bootstrap
 DISTCLEANFILES = $(PKG_RPM_NAME).info $(PKG_RPM_NAME).spec -r packages/rpm
 
 H_VERSION = $(shell echo $(VERSION) | sed 's/\./-/g')
@@ -206,7 +206,7 @@ DIST_COMMON = README $(nobase_dist_lisp_LISP) AUTHORS COPYING ChangeLog \
 	aclocal.m4 config/config.guess config/config.sub config/depcomp \
 	config/elisp-comp config/install-sh config/ltmain.sh \
 	config/missing config/mkinstalldirs configure configure.ac \
-	index.html.in ltmain.sh
+	index.html.in
 all: all-am
 
 .SUFFIXES:
@@ -427,7 +427,7 @@ info: info-am
 
 info-am:
 
-install-data-am: install-nobase_dist_lispLISP
+install-data-am: install-data-local install-nobase_dist_lispLISP
 
 install-exec-am:
 
@@ -446,19 +446,32 @@ mostlyclean: mostlyclean-am
 
 mostlyclean-am: mostlyclean-generic mostlyclean-libtool
 
-uninstall-am: uninstall-info-am uninstall-nobase_dist_lispLISP
+uninstall-am: uninstall-info-am uninstall-local \
+	uninstall-nobase_dist_lispLISP
 
 .PHONY: all all-am check check-am clean clean-generic clean-libtool \
 	clean-lisp dist dist-all dist-gzip distcheck distclean \
 	distclean-generic distclean-libtool distcleancheck distdir dvi \
 	dvi-am info info-am install install-am install-data \
-	install-data-am install-exec install-exec-am install-info \
-	install-info-am install-man install-nobase_dist_lispLISP \
-	install-strip installcheck installcheck-am installdirs \
-	maintainer-clean maintainer-clean-generic mostlyclean \
-	mostlyclean-generic mostlyclean-libtool uninstall uninstall-am \
-	uninstall-info-am uninstall-nobase_dist_lispLISP
+	install-data-am install-data-local install-exec install-exec-am \
+	install-info install-info-am install-man \
+	install-nobase_dist_lispLISP install-strip installcheck \
+	installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-generic \
+	mostlyclean-libtool uninstall uninstall-am uninstall-info-am \
+	uninstall-local uninstall-nobase_dist_lispLISP
 
+
+#MAINTAINERCLEANFILES = $(shell cat packages/.cvsignore)
+
+install-data-local:
+	if test -d $(DESTDIR)/etc/emacs/site-start.d; then	\
+	  $(INSTALL_DATA) $(srcdir)/site-start.d/mupacs.el	\
+            $(DESTDIR)/etc/emacs/site-start.d;			\
+	fi
+
+uninstall-local:
+	    rm -f $(DESTDIR)/etc/emacs/site-start.d/mupacs.el
 
 packages/rpm/SPECS/$(PKG_RPM_NAME).spec: $(PKG_RPM_NAME).spec
 	rm -f $@
@@ -508,8 +521,6 @@ SFcvsroot: $(SFPACKAGE)-cvsroot.tar.gz
 %-cvsroot.tar.gz: FORCE
 	-mv $@ $@.old
 	wget http://cvs.sourceforge.net/cvstarballs/$@
-
-#MAINTAINERCLEANFILES = $(shell cat packages/.cvsignore)
 
 ##############################################################################
 # Extra compilation rules
