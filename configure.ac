@@ -33,12 +33,12 @@ Features:\
    and debugger interaction.\
 ])dnl
 PKG_INIT_GROUP(		[Applications/Engineering])dnl
-PKG_INIT_LICENSE(	[LGPL])dnl
+PKG_INIT_LICENSE(	[GPL])dnl
 PKG_INIT_SOURCE(	[http://download.sourceforge.net/mupacs/])dnl
 PKG_INIT_URL(		[http://mupacs.sourceforge.net/])dnl
 PKG_INIT_VENDOR(	[Nicolas M. Thiéry <nthiery@users.sourceforge.net>])dnl
 PKG_INIT_PACKAGER(	[Nicolas M. Thiéry <nthiery@users.sourceforge.net>])dnl
-PKG_INIT_DOC(		README index.html INSTALL QuickInstall NEWS AUTHORS THANKS TODO BUGS ChangeLog COPYING.LIB)dnl
+PKG_INIT_DOC(		README index.html INSTALL QuickInstall NEWS AUTHORS THANKS TODO BUGS ChangeLog)dnl
 PKG_INIT_BUILD_ARCHS(	noarch)dnl
 
 ##############################################################################

@@ -1,0 +1,54 @@
+<!-- @configure_input@ !-->
+<!DOCTYPE HTML PUBLIC
+  "-//W3C//DTD HTML 4.0 Transitional//EN"
+  "http://www.w3.org/TR/REC-html40/loose.dtd">
+
+<html lang="en">
+<head>
+<title>@PACKAGE@</title>
+
+<meta name="keywords" content="MuPAD, emacs, debugger"
+lang="en">
+
+</head>
+
+<body>
+<h1>@PKG_SHORTDESCRIPTION@</h1>
+
+<a
+href="http://www-gat.univ-lille1.fr/~ramare/ServeurPerso/MuPADCombined/PageMuPAD.html">@PACKAGE@</a> is an open-source MuPAD mode for the text editor emacs.
+
+<h2><a href="http://sourceforge.net/projects/mupacs/">
+    MuPACS project page on sourceforge for download, bug reports, CVS access</a></h2>
+
+
+<h2><a
+href="http://www-gat.univ-lille1.fr/~ramare/ServeurPerso/MuPADCombined/PageMuPAD.html">MuPACS
+home page, in French</a></h2>
+
+<h2><a name="doc">Documentation</a></h2>
+
+<ul>
+    <li><a href="README">README</a>.
+    <li><a href="NEWS">NEWS</a> and complete <a href="ChangeLog">change log</a>.
+    <li><a href="AUTHORS">Authors</a> and <a href="THANKS">thanks</a>.
+    <li><a href="QuickInstall">Quick installation procedure</a> and
+        <a href="INSTALL">generic installation instructions</a>.
+    <li><a href="TODO">TODO: future plans for MuPAD Combinat</a>
+    <li><a href="BUGS">Known bugs</a>
+</ul>
+
+<a href="http://sourceforge.net"> <img
+src="http://sourceforge.net/sflogo.php?group_id=73292&type=1"
+width="88" height="31" border="0" align=right alt="sourceforge logo">
+</a>
+
+We would like to thank <a href="http://sourceforge.net">Source
+Forge</a> who is hosting this project, and providing us with all those
+neat services.
+
+<hr>
+Contact: <a href="mailto:mupad@aful.org">mupad@aful.org</a>.
+
+</body>
+</html>
