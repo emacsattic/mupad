@@ -8,7 +8,7 @@ MAINTAINER: Olivier Ramare <ramare@agat.univ-lille1.fr>
 INSTALLED:  27.03.1998
 
 VERSION:       2.0
-Last Modified: 16-Dec-2001 by Olivier Ramare.
+Last Modified: 14-Oct-2002 by Olivier Ramare.
 REQUIRES: sli-tools > 0.92
 
 Purpose of this package
@@ -30,9 +30,12 @@ help of Henning von Bargen, Jürgen Billing, Michel Quercia, Nicolas Thiery,
 Winfried Trümper, Olivier Ramare and Paul Zimmermann. It now also
 incorporates a good deal of pari.el as well as genuinely mupad-specific
 functions.
+  This version steams more precisely from the work of Francois Maltey
+(mupad-run/mupad-help), Nicolas Thiery (debugger) and Olivier Ramare
+(mupad.el).
 
-Made for MuPAD 1.4.2, supports some features of MuPAD 2.5 but not all
-of them, see in particular the section concerning comments. 
+It supports most features of MuPAD 2.5 but not all of them, see in particular
+the section concerning comments. 
 
 A Rapid Installation
 --------------------
@@ -40,12 +43,22 @@ A Rapid Installation
 We describe rapidly how to set this package in use so that you may follow
 the description of this file through some examples.
 
-(1)  The four files 'mupad.el', 'sli-tools.el', 'mupad.el-info' and 'mupad-cpl.el'
+(1)  The nine files
+     'mupad.el'                --> main file to edit mupad scripts
+     'mupad.el-info'           --> this file
+     'mupad-cpl.el'            --> file of special words of MuPAD 2.5
+     'mupad-fontification.el'  --> colors for mupad scripts.
+     'mupad-bus.el'            --> link between mupad.el and mupad-run.el
+     'mupad-help.el'           --> online help
+     'mupad-run.el'            --> main file to run a MuPAD session
+     'sli-tools.el'            --> an indentation engine used by mupad.el
+     'mupad-run.alire'         --> the info file of mupad-run.el and mupad-help.el.
 have to be copied in a directory, where "emacs" is  aware of it (ask your
 sys-admin for that); an appreciate place could  be /usr/local/lib/emacs/site-lisp/
 or /etc/site-lisp/. Version of sli-tools should be higher than 0.92.
-If you have recovered a file named 'mupad-cpl-1-4-2.el', copy it to
-'mupad-cpl.el' or even better, make the latter a symbolic link to the former.
+there is some independance in the files above and the two main ones are
+'mupad.el' and 'mupad-run.el'. This later is described more fully in
+'mupad-run.alire' so we shall concentrate on 'mupad.el'
 
 (2)  After that, you should add some lines in one of the files  ~/.emacs
 (personal configuration) or /usr/lib/emacs/site-lisp/site-start.el
@@ -73,7 +86,6 @@ and vcam) should be set as follows:
            ;; Which manual:
            (setq mupad-manual-command "/usr/local/MuPAD/share/bin/manual")
                ;; the default is file /bin/manual in mupad-directory.
-           ;; Which vcam:
            )))
 ----- 8< ----- cut here ----- 8< -----
 
@@ -120,27 +132,15 @@ mupad-process. Here is a summary of what these modes do:
         User defined things (function names and/or global variables
                              whenever they are used).
   (3) Removed feature: rewriting of MuPAD scripts.
-  (5) Fontifying a running session of MuPAD.
-      Several structures are recognised and coloured. They are:
-        Prompts (the two of them ">>" and "&>").
-        Inputs. Well, in fact, it hasn't been put in practice...
-  (6) Getting help in several forms:
-        Asking for a command name (can be a user's definition provided
-          such a definition has been fed to the MuPAD process). For
-          simplicity of maintenance, this help goes through MuPAD, and
-          thus will not be available if it is not possible to start a
-          MuPAD process.
-        Starting a graphical manual, HyTEX or html.
+  (4) Getting help in several forms:
+        Asking for a command name.
+        Starting a graphical manual.
         Reading this file.
-        Scanning inputs and outputs and trying to mend what is wrong.
-          At this moment, it starts Vcam when MuPAD answers it cannot do
-          it itself, extends the completion system whenever an export
-          command is found and takes care of inserted eLisp commands.
-  (7) Completion mecanism:
+  (5) Completion mecanism:
         All the standard command names of MuPAD can be used for completion.
         Like for the help-mechanism, this one goes through a mupad-process
         at the beginning. See the corresponding section below.
-  (9) Starting the debugger.
+  (6) Starting the debugger.
 
 
 Usage
@@ -181,9 +181,9 @@ C-c F   mupad-fun-to-proc     Converts a fun definition into a (()->(...)).
                               Point should be after the fun definition.
                               Such a construct is compatible with MuPAD 2.0
                               while fun's are not recognized any more.
-C-c C-c comment-region        Comments out a whole marked region.
+C-c C-c comment-region        Comments out a marked region.
 C-u C-c C-c
-        C-u comment-region    Uncomments a whole marked region.
+        C-u comment-region    Uncomments a marked region.
 M-o     mupad-restore-wind-conf
                               Emacs will quite often split your window to
                               present some help. When you want to get rid
@@ -192,10 +192,12 @@ M-o     mupad-restore-wind-conf
                               You may have to repeat the operation once
                               or twice (at most ... 19 times !).
 M-i     mupad-complete        Emacs will try to complete the word under the
-                              cursor and display all possible completions
+C-iC-i                        cursor and display all possible completions
                               if more than one are possible that do not have
                               any common kernel. Otherwise this common part
                               is inserted.
+                              Alternatively pressing twice TAB yields the same
+                              result.
 C-i/TAB sli-electric-tab      Indents current line.
 
 The two keys RET and M-RET are special.
@@ -227,17 +229,11 @@ mupad-auto-indent and mupad-electric-p:
 ##  HOOKS     ##
 ################
 
-There are five hooks that the user can set, and which are
-  mupad-mode-hook             : common to both modes.
-     mupad-script-mode-hook   : special for scripts.
-  mupad-input-filter-hook     : to interpret some eLisp commands in a
-                                 mupad-script.
+There are two hooks that the user can set, and which are
+  mupad-mode-hook             
   mupad-mdx-mode-hook         : to specify behaviour of the mdx-debugger.
 
-For the time being, users should only use mupad-mode-hook and forget
-about mupad-script-mode-hook and mupad-shell-mode-hook. We shall describe
-the other two hooks in the section relative to eLisp programs for one and
-in the section devoted to mdx for the other.
+We shall describe the second hook in the section devoted to mdx for the other.
 
 First note that many of these variables takes boolean values, which in
 eLisp are denoted by t (for true) and nil (for false). Secondly, as far
@@ -258,20 +254,7 @@ Here is a general pattern for mupad-mode-hook:
                ;; if you want to see the html doc via netscape.
                ;; Modify the path suitably.
            )))
-These are the four system variables. Everything else is local and
-should be left to the user. Here is the list of additionnal variables
-the user can use to tune his/her own session:
-  mupad-electric-p
-  mupad-auto-indent                 mupad-tab-always-indent
-  mupad-no-closed-braces            mupad-no-fontify
-  mupad-fontify-function-names      mupad-fontify-global-var
-  mupad-no-hash-comment             
-  mupad-shell-historyp              mupad-save-sessionp
-  mupad-javadoc-stylep              mupad-user-mail-address
-  mupad-temp-directory
-  mupad-indent-level                mupad-case-indent
-  mupad-el-info
-And of course, colors are also customizable.
+
 
 #################
 # CUSTOMISATION #
@@ -364,14 +347,8 @@ says that we 'fontify' a buffer when we apply selected the faces to it,
 or that we 'hilight' stuff.
 
 The present version of mupad.el uses font-lock and no more hilit19, which
-results in a number of changes. First lazy-lock-mode is turned on in
-mupad-mode only if the buffer is less than 500 lines long
-(***except if global-font-lock-mode is t which it often is !!***)
-and fontification goes through M-l. If you want automatic fontification, you
-can use the menu-bar item [MuPAD/Colors Completion/Automatic] to start
-lazy-lock-mode. However in mupad-shell-mode, font-lock is turned on
-automatically (such buffers are usually not very large and fontification
-there is quite simple).
+results in a number of changes. We use lazy-font-lock and fontification goes
+through M-l or C-l.
 
 Troubles may occur with "}". A "}" followed by a newline indicates the
 end of a function definition (starting with a "}"). Spaces ot tab-characters
@@ -398,7 +375,7 @@ file.
   An actual face (font shape + color) is associated to all patterns belonging
 to a group. See the variable x-colors of for valid color names.
 
-  For global variables to recognised as global variables, the syntax should
+  For global variables to be recognised as global variables, the syntax should
 be as follows:
 
 my_variable := 33:
@@ -537,7 +514,7 @@ account when the buffer is re-fontified.
 
 You can finally add your own function names (resp. global variables names)
 to the completion array: this is done via customisation, in the subgroup
-mupaf-font-lock. The words thus added will then be fontified whenever they
+mupad-font-lock. The words thus added will then be fontified whenever they
 are used with the face `mupad-user-def', except at definition point. This face
 is the same for functions and variables. To avoid this fontification,
 set the variables mupad-fontify-function-names (resp. mupad-fontify-global-var)
@@ -561,7 +538,7 @@ Just leave it alone, and you'll soon see what happens.
 ########################################################################
 
 
-Last Modified: 16-Dec-2001 by Olivier Ramare.
+Last Modified: 14-Oct-2002 by Olivier Ramare.
 VERSION:       2.0
 
 ;; mupad.el-info ends here
