@@ -689,6 +689,7 @@ Available special keys:
 (defun mupad-run-end () 
   "Kill the first buffer in mupad-run-mode"
   (interactive)
+  (mupad-run-delete-windows "*MuPAD Completions*")
   (let ((bfl (buffer-list)) (inhibit-read-only t))
     (save-excursion
       (while bfl
@@ -727,6 +728,7 @@ Available special keys:
 (defun mupad-run-insert-last-session ()
   "Insert the last MuPAD session"
   (interactive)
+  (mupad-run-delete-windows "*MuPAD Completions*")
   (when mupad-run-last-session  
     (goto-char (point-max))
     (unless (eq (char-before (point)) ?\n) (insert "\n"))
@@ -905,12 +907,12 @@ Available special keys:
            (apply mupad-help-method (list output-str))
            (error (message "%s" (error-message-string err))))
           (set-buffer brb))
-         ((eq brt 32) (mupad-run-output-completion output-str))
+;         ((eq brt 32) (mupad-run-output-completion output-str))
 ;         ((eq brt 32) (mupad-run-emacs-partial-comp output-str))
-;         ((eq brt 32) (mupad-run-emacs-completion output-str))
-        ((eq brt 33) (mupad-run-output-end-comp output-str))
+         ((eq brt 32) (mupad-run-emacs-completion output-str))
+;         ((eq brt 33) (mupad-run-output-end-comp output-str))
 ;         ((eq brt 33) (mupad-run-emacs-end-part-comp output-str))
-;         ((eq brt 33) (mupad-run-emacs-end-comp output-str))
+         ((eq brt 33) (mupad-run-emacs-end-comp output-str))
 ; Début des modifications NT 04/11/2002 
         ((or (eq brt 34)            ; MPRCmdb_file_pos
 ;	     (eq brt 41)
@@ -1176,11 +1178,15 @@ Available special keys:
             (split-string mupad-run-emacs-completion ", "))
           nil nil mupad-run-comp-begin nil mupad-run-comp-begin)
         (quit mupad-run-comp-begin)))
-  (delete-windows-on "*Completions*"))
+  (mupad-run-delete-windows "*Completions*"))
 ;; 
 ;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 ;; 
-(defun mupad-run-emacs--completion (str) (mupad-run-partial-comp (str)))
+;(defun mupad-run-comp-br ()
+;; 
+;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+;; 
+(defun mupad-run-emacs-completion (str) (mupad-run-emacs-partial-comp str))
 ;; 
 ;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 ;; 
@@ -1202,18 +1208,23 @@ Available special keys:
     (setq mupad-run-comp-begin (concat mupad-run-comp-begin str))
     (cond
       ((string= "" mupad-run-emacs-completion)
-        (message "Complete identifier"))
+        (message "Complete identifier")
+        (mupad-run-delete-windows "*MuPAD Completions*"))
       ((string= "\010\007" mupad-run-emacs-completion) 
+        (mupad-run-delete-windows "*MuPAD Completions*")
         (message 
           (concat 
             "Sorry, no completion available for `" 
             mupad-run-comp-begin "' !")))
       (mupad-run-emacs-completion ; éliminer le cas de completion vide
-        (mupad-run-part-comp-br)
-        (delete-region (point) (- (point) (length mupad-run-comp-begin)))
-        (if (= (point) (marker-position mupad-run-comp-edit))
-          (insert br)
-          (save-excursion (goto-char mupad-run-comp-edit) (insert br))))
+; (message "ici1")
+   (with-output-to-temp-buffer "*MuPAD Completions*"
+     (display-completion-list (split-string mupad-run-emacs-completion ", "))))
+; (message "ici2"))
+;        (delete-region (point) (- (point) (length mupad-run-comp-begin)))
+;        (if (= (point) (marker-position mupad-run-comp-edit))
+;          (insert br)
+;          (save-excursion (goto-char mupad-run-comp-edit) (insert br))))
       (t (message "Ne doit pas se produire")))
     (setq mupad-run-emacs-completion nil)))
 ;; 
@@ -1576,6 +1587,7 @@ Available special keys:
 ;                
 (defun mupad-run-creturn ()
   (interactive)
+  (mupad-run-delete-windows "*MuPAD Completions*")
   (cond 
     ((>= (point) (marker-position mupad-run-edit)) (insert "\n"))
     ((or 
@@ -1593,6 +1605,7 @@ Available special keys:
 ;;
 (defun mupad-run-return ()
   (interactive)
+  (mupad-run-delete-windows "*MuPAD Completions*") 
   (cond 
     ((>= (point) (marker-position mupad-run-edit))
       (mupad-run-from-edit-to-todo)
@@ -1621,6 +1634,7 @@ Available special keys:
 (defun mupad-run-suppression () 
   ""
   (interactive)
+  (mupad-run-delete-windows "*MuPAD Completions*")
   (let ((br (point)) (inhibit-read-only t))
     (cond 
 ; caractère modifiable 
@@ -1671,6 +1685,7 @@ Available special keys:
 (defun mupad-run-backspace () 
   "" 
   (interactive) 
+  (mupad-run-delete-windows "*MuPAD Completions*")
   (when (and (> (point) 1) (/= (point) (marker-position mupad-run-edit)))
     (backward-char) (mupad-run-suppression)))
 ;;
@@ -1896,6 +1911,7 @@ Available special keys:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 (defun mupad-run-previous-history ()
+  (mupad-run-delete-windows "*MuPAD Completions*")
   (interactive)
   (when (>= (point) (marker-position mupad-run-edit))
     (let 
@@ -1920,6 +1936,7 @@ Available special keys:
 ;;
 (defun mupad-run-next-history-search ()
   (interactive)
+  (mupad-run-delete-windows "*MuPAD Completions*")
   (when (>= (point) (marker-position mupad-run-edit))
     (let 
       ( (br (buffer-substring mupad-run-edit (point-max))) 
@@ -1945,6 +1962,7 @@ Available special keys:
 ;;
 (defun mupad-run-next-history ()
   (interactive)
+  (mupad-run-delete-windows "*MuPAD Completions*")
   (when (>= (point) (marker-position mupad-run-edit))
     (let 
       ( (br (buffer-substring mupad-run-edit (point-max))) br1 br2 br3 
@@ -1976,6 +1994,7 @@ Available special keys:
 ;;
 (defun mupad-run-left () 
   (interactive)
+  (mupad-run-delete-windows "*MuPAD Completions*")
   (goto-char (or (previous-single-property-change (point) 'item) (point-min)))
   (beginning-of-line))
 ;;
@@ -1983,6 +2002,7 @@ Available special keys:
 ;;
 (defun mupad-run-right () 
   (interactive)
+  (mupad-run-delete-windows "*MuPAD Completions*")
   (end-of-line)
   (goto-char (or (next-single-property-change (point) 'item) (point-max))))
 ;;
@@ -1990,6 +2010,7 @@ Available special keys:
 ;;
 (defun mupad-run-hide () 
   (interactive)
+  (mupad-run-delete-windows "*MuPAD Completions*")
   (let (br bra brb (inhibit-read-only t))
     (cond 
       ((and mupad-run-last-prompt (>= (point) mupad-run-last-prompt)) 
@@ -2015,6 +2036,7 @@ Available special keys:
 ;;
 (defun mupad-run-show () 
   (interactive)
+  (mupad-run-delete-windows "*MuPAD Completions*")
   (let (br1 br2 (inhibit-read-only t))
     (when (not (eobp)) (forward-char 1) (mupad-run-left))
     (setq br1 (get-text-property (point) 'hide))
@@ -2410,6 +2432,9 @@ Available special keys:
       mupad-run-mode-map
       "Menu-bar item used under mupad-run-mode"
       (mupad-run-menu-bar))))
+
+(defun mupad-run-delete-windows (str)
+  (let ((br (get-buffer str))) (if br (delete-windows-on br))))
 ;;
 ;;
 ;;
