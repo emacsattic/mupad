@@ -9,6 +9,7 @@
 
 /**
  * 2003/09/01 Bug: the indentation of inherits and bla below is incorrect
+ * 2003/09/02 Fixed.
  **/
 domain HSGA
   category CatAlgebraWithBasis();
