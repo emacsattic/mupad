@@ -52,23 +52,16 @@ interaction. Here is a feature summary:
 <li>Electric braces, universal closing of constructs (via "C-c C-e"),
     and ready-made shapes (like while-, for- or if- constructs);
 <li>Commenting / excluding areas;
-<li>Syntax highlighting of
-    <ul>
-    <li>Comments (starting by "//", enclosed in "#"--"#", enclosed in
-                  "/*"--"*/");
-    <li>Strings;
-    <li>Keywords (all operators, even starting by "&", punctuation,
-                  words from the list mupad-keywords-list);
-    <li>Primitive-names (like "hold", the "transpose" of "linalg::transpose");
-    <li>Options;
-    <li>Domains (like "Dom::Integer" or "groebner");
-    <li>Types (all starting with "DOM_");
-    <li>Userinfo strings (starting with "userinfo(");
-    <li>Function names (definitions of user defined ones);
-    <li>Global variable names (definitions of user defined ones);
-    <li>User defined things (function names and/or global variables
-                             whenever they are used).
-    </ul>
+
+<li>Syntax highlighting: comments (starting by "//", or enclosed in
+    "#"--"#" or "/*"--"*/"), strings, keywords (all operators, even
+    starting by "&", punctuation, words from the list
+    mupad-keywords-list), primitive-names (like "hold", or "transpose"
+    of "linalg::transpose"), options, domain names (like
+    "Dom::Integer" or "groebner"); types (all starting with "DOM_"),
+    userinfo strings (starting with "userinfo("), global variables and
+    functions (including user defined ones).
+
 <!--  (3) Removed feature: rewriting of MuPAD scripts.!-->
 
 <li>Getting help in several forms: asking for a command name, or
@@ -79,7 +72,7 @@ interaction. Here is a feature summary:
     the beginning. See the corresponding section below.
 </ul>
 
-<b2><a name="screenshots">Screen shots</a></h2>
+<h2><a name="screenshots">Screen shots</a></h2>
 
 <ul><li><a href="screenshot-mupad.png">MuPAD code editing</a>
     <li><a href="screenshot-mupad-run.png">Running MuPAD in a buffer</a>
@@ -96,6 +89,9 @@ interaction. Here is a feature summary:
         <a href="INSTALL">generic installation instructions</a>.
     <li><a href="TODO">TODO: future plans for mupacs</a>
     <li><a href="BUGS">Known bugs</a>
+    <li><a href="mupad.el-info">Information on using the editing mode</a>
+    <li><a href="mupad-run.el-info">Information on running mupad in a
+        buffer (in French!)</a>
 </ul>
 
 <h2><a name="links">Links</a></h2>
