@@ -43,6 +43,11 @@
 ;;     and SPECIAL-HEADs can only be also HEADs.
 ;;     SOFTs, STRONGs or ENDs can be used in fifferent constructs.
 
+;;     SYNTACTICALLY speaking, chars used in these strings should be word-constituents,
+;;     symbols, open-parenthesis, close-parenthesis or generic-parenthesis.
+;;     If sli-case-fold is t, upper/lowercase letters are irrelevant *but*
+;;     sli-structures and all should use lowercase letters.
+
 ;;   INDENT OF THIS LINE:
 ;;     we look if the first word on this line is a fixed/strong/end/soft
 ;;        if yes --> fixed keys are easy
@@ -195,7 +200,15 @@ inside a 'domain' statement.
 
 Cdr's are to be evaled.
 
+If downcase/uppercase is relevant is controled by the variable `sli-case-fold'.
+If sli-case-fold is t, sli-structures should use lowercase letters.
+
 Technical note: the first element of this list *has to* contain a 'head'. ")
+
+(defvar sli-case-fold nil
+"The strings used as separators, relations, and all. Not yet used.
+If set to t, all keywords in sli-stryctures, sli-shift-alist ...
+should be in lowercase.")
 
 (defvar sli-escape-key-string ""
 "The strings used as separators, relations, and all. Not yet used.")
@@ -219,7 +232,10 @@ Elements of this list have format [head-key key].")
 (defvar sli-is-a-separatorp-fn 'sli-is-a-separatorp-default)
 
 (defun sli-is-a-separatorp-default (&optional pt)
-  (looking-at (regexp-opt sli-separators)))
+  (if sli-separators
+      (let ((case-fold-search sli-case-fold))
+        (looking-at (regexp-opt sli-separators)))
+    nil))
 
 (defun sli-is-a-separatorp (&optional pt)
   (funcall sli-is-a-separatorp-fn pt))
@@ -320,12 +336,11 @@ of keys that can occur before the first key.")
 "List of keys that may ask for a different following key according to context.
 They *should be* soft or strong keys.")
 
-(defvar sli-overlay-beg (make-overlay (point-min) (point-min)))
-(defvar sli-overlay-end (make-overlay (point-min) (point-min)))
-(overlay-put sli-overlay-beg 'face 'show-paren-match-face)
-(overlay-put sli-overlay-end 'face 'show-paren-match-face)
-(overlay-put sli-overlay-beg 'priority 0)
-(overlay-put sli-overlay-end 'priority 0)
+;; Only to shut up compiler. These two variables should be defined when the
+;; correct buffer is set ! Used by sli-show-sexp.
+(defvar sli-overlay-beg)
+(defvar sli-overlay-end)
+
 (defvar sli-prop-do-not-recompute-time 10
 "Time span in milliseconds under which it is not necessary to recompute
 text properties alloted by sli-tools.")
@@ -335,7 +350,8 @@ text properties alloted by sli-tools.")
 (mapcar 'make-variable-buffer-local
 '(sli-verbose sli-prop-verbose sli-handles-sexp sli-overlay-beg sli-overlay-end
 sli-prop-do-not-recompute-time sli-structures sli-shift-alist sli-separators
-sli-is-a-separatorp-fn sli-more-maidp sli-add-to-key-alist
+sli-is-a-separatorp-fn sli-how-to-read-keywords-fn
+sli-more-maidp sli-add-to-key-alist
 sli-math-relation-keys sli-max-keys-length sli-no-heredity-list sli-head-keys
 sli-special-head-keys sli-soft-keys sli-beacon-keys sli-relation-keys
 sli-keys-nomrelations sli-strong-keys sli-end-keys sli-keys sli-prop-used
@@ -914,42 +930,50 @@ If beg1 = beg2= ... = begN, we answer (beg1 end1 end2 ... endN)."
   ;; A full-key is a cons (STRING . PT) where PT is the
   ;; value of point at the beginning of STRING.
 
+(defsubst sli-keyword (el)
+  (if sli-case-fold (downcase el) el))
+
+(defsubst sli-member (el lst)
+  (if sli-case-fold (member (downcase el) lst) (member el lst)))
+
 (defsubst sli-following-key (key)
-  (cdr (assoc key sli-maid-alist)))
+  (cdr (assoc (sli-keyword key) sli-maid-alist)))
 
 (defun sli-indent-after (key &optional before-soft)
   ;; answer is an integer or a cons ('absolute . integer)
+  (setq key (sli-keyword key))
   (eval
    (cond
-    ((and before-soft (member key (append sli-head-keys sli-strong-keys)))
+    ((and before-soft (sli-member key (append sli-head-keys sli-strong-keys)))
      (cdr (assoc key sli-first-offset-alist)))
-    ((member key (append sli-head-keys sli-strong-keys))
+    ((sli-member key (append sli-head-keys sli-strong-keys))
      (cdr (assoc key sli-second-offset-alist)))
-    ((member key sli-relation-keys)
+    ((sli-member key sli-relation-keys)
      (cdr (assoc key sli-relation-offset-alist)))
-    ((member key sli-soft-keys)
+    ((sli-member key sli-soft-keys)
      (cdr (assoc key sli-second-offset-alist)))
-    ((member key sli-special-head-keys)
+    ((sli-member key sli-special-head-keys)
      (cdr (assoc key sli-second-offset-alist)))
     (t 0))))
 
 (defsubst sli-get-shift (beg end)
-  (or (eval (cdr (assoc (vector beg end) sli-shift-alist))) 0))
+  (or (eval (cdr (assoc (vector (sli-keyword beg) (sli-keyword end))
+                        sli-shift-alist))) 0))
 
 (defsubst sli-get-strongs-from-strong-or-head (strong)
-  (cdr (assoc strong sli-companion-strong-keys-alist)))
+  (cdr (assoc (sli-keyword strong) sli-companion-strong-keys-alist)))
 
 (defsubst sli-get-heads-from-end (end)
-  (cdr (assoc end sli-head-end-alist)))
+  (cdr (assoc (sli-keyword end) sli-head-end-alist)))
 
 (defsubst sli-get-heads-from-strong (strong)
-  (cdr (assoc strong sli-heads-strong-alist)))
+  (cdr (assoc (sli-keyword strong) sli-heads-strong-alist)))
 
 (defsubst sli-get-ends-from-head (head)
-  (cdr (assoc head sli-ends-head-alist)))
+  (cdr (assoc (sli-keyword head) sli-ends-head-alist)))
 
 (defsubst sli-get-head-and-strong-from-soft (soft)
-  (cdr (assoc soft sli-soft-alist)))
+  (cdr (assoc (sli-keyword soft) sli-soft-alist)))
 
 (defsubst sli-get-ends-from-strong (strong)
   (sli-flatten
@@ -957,16 +981,16 @@ If beg1 = beg2= ... = begN, we answer (beg1 end1 end2 ... endN)."
            (sli-get-heads-from-strong strong))))
 
 (defsubst sli-get-relevant (key)
-  (cdr (assoc key sli-relevant-alist)))
+  (cdr (assoc (sli-keyword key) sli-relevant-alist)))
 
 (defsubst sli-get-special-head-previous-keys (key)
-  (cdr (assoc key sli-special-head-previous-keys-alist)))
+  (cdr (assoc (sli-keyword key) sli-special-head-previous-keys-alist)))
 
 (defsubst sli-get-special-head-previous-heads (key)
-  (cdr (assoc key sli-special-head-heads-alist)))
+  (cdr (assoc (sli-keyword key) sli-special-head-heads-alist)))
 
 (defsubst sli-possible-ancestors (key)
-  (cdr (assoc key sli-ancestors-alist)))
+  (cdr (assoc (sli-keyword key) sli-ancestors-alist)))
 
 ;;;-------------------------------------------------------------------------------------------
 ;;; Some general primitives.
@@ -982,7 +1006,7 @@ If beg1 = beg2= ... = begN, we answer (beg1 end1 end2 ... endN)."
   (unless pt (setq pt (point)))
   (let ((only-spacep t))
     (mapcar (lambda (ch) (setq only-spacep
-                               (and only-spacep (= (char-syntax ch) ? ))))
+                               (and only-spacep (= (char-syntax ch) ?\ ))))
             (string-to-list
               (buffer-substring-no-properties (line-beginning-position) pt)))
     only-spacep))
@@ -1033,15 +1057,18 @@ nil if point is at beginning of line."
   (sli-point-to-indent (if (consp full-key) (car full-key) full-key)))
 
 (defsubst sli-in-one-line-comment nil
-  (re-search-backward (regexp-opt sli-comment-starts) (line-beginning-position) t))
+  (and sli-comment-starts ; if sli-comment-starts is nil, answer is nil
+      (re-search-backward (regexp-opt sli-comment-starts) (line-beginning-position) t)))
 
 (defsubst sli-get-safe-backward-place nil
   (save-excursion
+    (when (eobp) (forward-char -1))
     (if (re-search-backward sli-safe-place-regexp nil t)
         (match-end 1) (point-min))))
 
 (defsubst sli-get-safe-forward-place nil
   (save-excursion
+    (when (bobp) (forward-char 1))
     (if (re-search-forward sli-safe-place-regexp nil t)
         (match-beginning 1) (point-max))))
 
@@ -1052,19 +1079,20 @@ nil if point is at beginning of line."
 
 (defun sli-anchored-posix-search-backward (regexp lim &optional no-error)
 ;;; ??? DOES NOT SEEM TO WORK:  (posix-search-backward regexp lim no-error))
-  (and (re-search-backward regexp lim no-error)
-    (let*((end-pt (match-end 0))
-          (beg (- end-pt sli-max-keys-length)))
-      ;(princ "\n") (princ (list "Anchored posix. Candidate: " (match-beginning 0) (match-end 0)  " beg=" beg))
-      ;(princ (save-excursion (goto-char beg) (posix-search-forward regexp end-pt t)))
-      (while (save-excursion
-               (goto-char beg)
-               (posix-search-forward regexp end-pt t)
-               (< (match-end 0) end-pt))
-        ;(princ "\n") (princ (list "Inside anchored posix: " (match-beginning 0) " beg=" beg))
-        (setq beg (1+ beg)))
-      ;(princ "\n") (princ (list "Out of anchored posix: " (match-beginning 0) " beg=" beg))
-      (goto-char (match-beginning 0)))))
+  (let ((case-fold-search sli-case-fold))
+    (and (re-search-backward regexp lim no-error)
+         (let*((end-pt (match-end 0))
+               (beg (- end-pt sli-max-keys-length)))
+           ;;(princ "\n") (princ (list "Anchored posix. Candidate: " (match-beginning 0) (match-end 0)  " beg=" beg))
+           ;;(princ (save-excursion (goto-char beg) (posix-search-forward regexp end-pt t)))
+           (while (save-excursion
+                    (goto-char beg)
+                    (posix-search-forward regexp end-pt t)
+                    (< (match-end 0) end-pt))
+             ;;(princ "\n") (princ (list "Inside anchored posix: " (match-beginning 0) " beg=" beg))
+             (setq beg (1+ beg)))
+           ;;(princ "\n") (princ (list "Out of anchored posix: " (match-beginning 0) " beg=" beg))
+           (goto-char (match-beginning 0))))))
 
 ;;;---------------------------------------------------------------------------------
 ;;;  Handling text properties
@@ -1127,31 +1155,31 @@ Answer is nil otherwise."
          (found-strongp nil) (found-endp nil)
          (skel (if full (sli-reduce-skel (cdr skel) t) (cdr skel))))
      (cond
-       ((member word sli-end-keys) ; don't do a thing !
+       ((sli-member word sli-end-keys) ; don't do a thing !
         (append (list word) skel))
-       ((member word sli-head-keys)
+       ((sli-member word sli-head-keys)
         ;; its end should be below or it is the key we seek. Erase this closed part.
         (setq end-lst (sli-get-ends-from-head word))
-        (while (and skel (not (member (car skel) end-lst)))
+        (while (and skel (not (sli-member (car skel) end-lst)))
           (setq skel (cdr skel)))
         (if (null skel) (list word) (cdr skel))) ; the answer.
-       ((member word sli-strong-keys)
+       ((sli-member word sli-strong-keys)
         ;; its end should be below or it is the key we seek.
         (setq end-lst (sli-get-ends-from-strong word)
               strong-lst (sli-get-strongs-from-strong-or-head word))
         (mapcar (lambda (s)
-                  (setq found-endp (or found-endp (member s end-lst))
-                        found-strongp (or found-strongp (member s strong-lst))))
+                  (setq found-endp (or found-endp (sli-member s end-lst))
+                        found-strongp (or found-strongp (sli-member s strong-lst))))
                 skel)
         (cond
          (found-endp
-          (while (and skel (not (member (car skel) end-lst)))
+          (while (and skel (not (sli-member (car skel) end-lst)))
             (setq skel (cdr skel))))
          ;; So word is a strong key with no end below.
          (found-strongp
-          (while (and skel (not (member (car skel) strong-lst)))
+          (while (and skel (not (sli-member (car skel) strong-lst)))
             (setq skel (cdr skel)))
-          (when (and (cdr skel) (member (cadr skel) strong-lst))
+          (when (and (cdr skel) (sli-member (cadr skel) strong-lst))
             (setq skel (cdr skel)))))
         (append (list word) skel))))))
  
@@ -1169,14 +1197,14 @@ Supports imbedded comments. Answer nil if not found."
     ;(princ "\n") (princ (list "(sli-find-matching-key) getting in with " pt whatwewant relevant))
     (if (and (sli-prop-has-type (point))
              (get-text-property (point) 'sli-ancestor)
-             (member (sli-prop-word (get-text-property (point) 'sli-ancestor)) whatwewant))
+             (sli-member (sli-prop-word (get-text-property (point) 'sli-ancestor)) whatwewant))
         (sli-prop-full-key (get-text-property (point) 'sli-ancestor))
       (when (and (sli-prop-has-type (point))
                  (get-text-property (point) 'sli-ancestor))
         ;; but the ancestor is not the good one. Still go till there :
         (setq pt (get-text-property (point) 'sli-ancestor)))
       (let ((level-comment1 0) (skel '())
-            (foundp nil) (ans nil) (case-fold-search nil)
+            (foundp nil) (ans nil) (case-fold-search sli-case-fold)
             word start (in-stringp nil) ancestor
             (aregexp (sli-regexp-opt
                       (append relevant
@@ -1204,13 +1232,13 @@ Supports imbedded comments. Answer nil if not found."
                            ;(princ (list "Found !" (point)))
                   (setq ans (if givekey (cons word (point)) (point))
                         foundp t)))
-               ((member word sli-comment-starts)) ; within a one-line-comment
+               ((sli-member word sli-comment-starts)) ; within a one-line-comment
                ((> level-comment1 0)); within a multiline-comment
                ;; Out of imbedded comments. Now word is in RELEVANT.
-               ((not (member word relevant)) ; should not happen!!
+               ((not (sli-member word relevant)) ; should not happen!!
                 (setq foundp t ans nil))
                ((and forspecialhead
-                     (member word whatwewant)) 
+                     (sli-member word whatwewant)) 
                 ;; Avoid crossed recursivity of next point.
                 (setq foundp t ans (if givekey (cons word (point)) (point))))
                ((setq ancestor (sli-is-a-special-head (point) word))
@@ -1224,7 +1252,7 @@ Supports imbedded comments. Answer nil if not found."
                ((save-excursion (sli-in-one-line-comment)))
                (t (setq skel (sli-reduce-skel (append (list word) skel))
                         forspecialhead nil)
-                  (when (and (= 1 (length skel)) (member (car skel) whatwewant))
+                  (when (and (= 1 (length skel)) (sli-member (car skel) whatwewant))
                     (setq ans (if givekey (cons word (point)) (point))
                           foundp t)))) ; end of cond
             )) ; end of while
@@ -1233,15 +1261,14 @@ Supports imbedded comments. Answer nil if not found."
 
 (defsubst sli-special-head-headp (word)
   "Answer not nil if WORD is a special-head that can be a head."
-  (assoc word sli-special-head-heads-alist))
-   
+  (assoc (sli-keyword word) sli-special-head-heads-alist))
+
 (defun sli-is-a-special-head (pt word)
   "Answer nil if WORD located at PT is not a special-head.  WORD should not be
 in comment, and PT is before WORD.  If WORD is a special-head that can be a
 head, answer is nil if it acts like a head; else answer is
 (previousword . previouspt) where nextword is the one that showed that word
 was a special-head: it is thus a special-head or a head located before (word . pt). "
-;(defun sli-is-a-special-head (pt word)
   (save-match-data
     (cond 
      ((sli-special-head-headp word)
@@ -1261,9 +1288,8 @@ was a special-head: it is thus a special-head or a head located before (word . p
                                  (list 'sli-type 'special-head 'sli-ancestor (cdr appui)))
                (if appui (sli-prop-renew pt (+ pt (length word)) '(sli-type special-head))
                  (sli-prop-renew pt (+ pt (length word)) '(sli-type head))))
-             ;(princ " Yu ")
              appui))))
-     (t (member word sli-special-head-keys)))))
+     (t (sli-member word sli-special-head-keys)))))
   
 (defun sli-get-corresponding-key (pt whatwewant)
   ;; answer is (block-comment-start . point)
@@ -1276,14 +1302,14 @@ was a special-head: it is thus a special-head or a head located before (word . p
   (save-excursion
     (goto-char pt)
     (let ((level-comment1 0) (foundp nil) beg aux
-          word start (in-stringp nil) (case-fold-search nil)
+          word start (in-stringp nil) (case-fold-search sli-case-fold)
           (relevant (append whatwewant
                             sli-comment-starts
                             (list "\"" block-comment-start block-comment-end)))
           aregexp)
       (dolist (wd whatwewant)
-        (dolist (x (cdr (assoc wd sli-relevant-alist)))
-          (when (member x sli-end-keys) (add-to-list 'relevant x))))
+        (dolist (x (cdr (assoc (sli-keyword wd) sli-relevant-alist)))
+          (when (sli-member x sli-end-keys) (add-to-list 'relevant x))))
       (setq aregexp (sli-regexp-opt relevant))
       ;(princ "\n") (princ (list "(sli-get-corresponding-key) getting in " relevant))
       (while (and (not foundp) (not (bobp)))
@@ -1303,10 +1329,10 @@ was a special-head: it is thus a special-head or a head located before (word . p
              (if (= level-comment1 0)
                  (setq foundp t)
                (setq level-comment1 (1- level-comment1))))
-            ((member word sli-comment-starts)) ; within a one-line-comment
+            ((sli-member word sli-comment-starts)) ; within a one-line-comment
             ((> level-comment1 0)); within a multiline-comment
             ;; Out of imbedded comments:
-            ((member word sli-end-keys)
+            ((sli-member word sli-end-keys)
              (setq start (point))
              (unless (sli-in-one-line-comment)
                (if (setq beg (sli-find-matching-key
@@ -1317,7 +1343,7 @@ was a special-head: it is thus a special-head or a head located before (word . p
                                      (list 'sli-type 'end 'sli-ancestor (cdr beg)))
                      (sli-prop-renew2 beg (list 'sli-type 'head 'sli-reverse-ancestor start)))
                  (goto-char (point-min)))))
-            ((not (member word whatwewant)))
+            ((not (sli-member word whatwewant)))
             ((sli-special-head-headp word) ;; special heads that can be heads
 	     (when sli-verbose
 	       (princ "\n")
@@ -1334,12 +1360,12 @@ was a special-head: it is thus a special-head or a head located before (word . p
 	       ;; acts like a head:
 	       (when sli-verbose (princ "\n(                            ... and is indeed one !)"))
                (sli-prop-renew (point) (+ (point) (length word)) '(sli-type head))
-	       (setq foundp (member word whatwewant))))
-            ((member word sli-special-head-keys)
+	       (setq foundp (sli-member word whatwewant))))
+            ((sli-member word sli-special-head-keys)
              (unless (or (sli-separator-directly-afterp pt word)
                          (sli-in-one-line-comment))
                (setq foundp t)))
-            ((member word whatwewant)
+            ((sli-member word whatwewant)
              (setq start (point))
              (unless (sli-in-one-line-comment)
                      (setq foundp t)))
@@ -1361,10 +1387,10 @@ was a special-head: it is thus a special-head or a head located before (word . p
 (defsubst sli-get-head-from-ambiguous (pt key)
   (let (auxkey)
     (cond
-     ((member key sli-strong-keys)
+     ((sli-member key sli-strong-keys)
       (sli-get-key-for-strong pt key))
-     ((member key sli-soft-keys)
-      (unless (member (car (setq auxkey (sli-get-key-for-soft (point) key))) sli-head-keys)
+     ((sli-member key sli-soft-keys)
+      (unless (sli-member (car (setq auxkey (sli-get-key-for-soft (point) key))) sli-head-keys)
         (setq auxkey (sli-get-key-for-strong pt (car auxkey))))
       (if auxkey auxkey 'sli-fail))
      (t 'sli-fail))))
@@ -1378,7 +1404,8 @@ not keyword appear in between."
     ;(princ "\n") (princ (list "Getting in sli-separator-directly-afterp with " (point) end word))
     (let ((level-comment1 0) (level 0) (foundp nil)
            wd (in-stringp nil) (directlyp nil)
-           (separator (cdr (assoc word sli-special-head-alist))))
+           (separator (cdr (assoc (sli-keyword word) sli-special-head-alist)))
+           (case-fold-search sli-case-fold))
       (while (and (not foundp) (< (point) end))
         (when (re-search-forward sli-all-keys-regexp end 1)
           (cond
@@ -1392,7 +1419,7 @@ not keyword appear in between."
              (setq level-comment1 (1- level-comment1)))
             ((string= wd block-comment-start)
              (setq level-comment1 (1+ level-comment1)))
-            ((member wd sli-comment-starts) (forward-line 1)) ; within a one-line-comment
+            ((sli-member wd sli-comment-starts) (forward-line 1)) ; within a one-line-comment
             ((> level-comment1 0)); within a multiline-comment
             ;; Out of imbedded comments:
             ((and (string= wd separator) (sli-is-a-separatorp (1- (point))))
@@ -1406,14 +1433,41 @@ not keyword appear in between."
 ;;;--- beginning of forward/backward/scan-sexp/s
 ;;;----------------------------------------------------------------------------
  
-(defun sli-find-full-key-at-point nil
+(defsubst sli-move-a-bit-before nil
+  (let ((p (point))(case-fold-search sli-case-fold))
+    (save-restriction
+      (unwind-protect
+          (progn
+            (narrow-to-region
+             (progn (re-search-backward "\\s-" nil 1)
+                    (when (and (not (eobp))
+                               (not (member (char-syntax (char-after)) '(?w ?_ ?\( ?\) ?$))))  
+                      (forward-char 1)); at beob
+                    (point))
+             (progn (re-search-forward "\\s-" nil 1) 
+                    (when (and (not (bobp))
+                               (not (member (char-syntax (preceding-char)) '(?w ?_ ?\( ?\) ?$)))) 
+                      (forward-char -1)); at eob
+                    (point)))
+            (goto-char p)
+            (when (member (char-syntax (preceding-char)) '(?w ?_ ?\( ?\) ?$))
+              (skip-syntax-backward "w_()$"))
+            (while (and (<= (point) p);(princ (list "sli-move-a-bit-before" (point)))
+                        (posix-search-forward sli-all-keys-regexp nil t))); we have gone too far.
+            (sli-anchored-posix-search-backward sli-all-keys-regexp nil 1))
+      (widen)))
+    (if (> (point) p) (progn (goto-char p) nil) t)))
+
+(defun sli-skip-to-beginning-of-keyword nil
+  (sli-move-a-bit-before))
+
+(defun sli-find-full-key-at-point (&optional move)
   (save-excursion
-    (skip-syntax-backward "w_")
-    (if (posix-looking-at sli-all-keys-regexp)
-        (cons (match-string-no-properties 0) (point))
-      (let ((pt (point)))
-        (cons (buffer-substring-no-properties
-               pt (progn (skip-syntax-forward "w_") (point))) pt)))))
+    (if (or (sli-move-a-bit-before) move)
+        (progn
+          ;(princ "\n")(princ (list "sli-find-full-key-at-point"(match-string-no-properties 0) (point)))
+          (cons (match-string-no-properties 0) (point)))
+      nil)))
 
 (defun sli-backward-sexp (&optional arg)
   "A backward-sexp. If point is after an end or a strong,
@@ -1425,16 +1479,16 @@ Answer POINT of where to go"
         (progn
           (if (and arg (< arg 0))
               (sli-forward-sexp (- arg))
-            (let ((n (or arg 1)) first-stuff beg pt (modifiedp (buffer-modified-p)))
-              (while (> n 0) 
-                (skip-syntax-backward "w_")
-                (setq pt (point))
-                (setq first-stuff (sli-find-full-key-at-point))
-                (when sli-verbose
+            (let ((n (or arg 1)) first-stuff beg pt (modifiedp (buffer-modified-p))
+                  (case-fold-search sli-case-fold))
+              (while (> n 0)
+                (setq first-stuff (sli-find-full-key-at-point t))
+                (goto-char (setq pt (cdr first-stuff)))
+               (when sli-verbose
                   (princ "\n") (princ (list "(sli-backward-sexp) to be matched: " first-stuff)))
                 (if (or (null first-stuff)
                         (search-backward " " pt t)
-                        (not (member (car first-stuff) (append sli-end-keys sli-strong-keys))))
+                        (not (sli-member (car first-stuff) (append sli-end-keys sli-strong-keys))))
                     ;; The previous word is not an end or a strong:
                     (progn
                       (when sli-verbose
@@ -1444,10 +1498,10 @@ Answer POINT of where to go"
                   (cond
                    ((and (sli-prop-has-type (cdr first-stuff))
                          (get-text-property (cdr first-stuff) 'sli-ancestor)
-                         (member (sli-prop-word (get-text-property (cdr first-stuff) 'sli-ancestor))
+                         (sli-member (sli-prop-word (get-text-property (cdr first-stuff) 'sli-ancestor))
                                  sli-head-keys))
                     (goto-char (get-text-property (cdr first-stuff) 'sli-ancestor)))
-                   ((member (car first-stuff) sli-end-keys)
+                   ((sli-member (car first-stuff) sli-end-keys)
                     (setq beg (sli-get-key-for-end
                                (if (and (sli-prop-has-type (cdr first-stuff))
                                         (get-text-property (cdr first-stuff) 'sli-ancestor))
@@ -1466,7 +1520,7 @@ Answer POINT of where to go"
                       (sli-prop-renew2  beg (list 'sli-type 'head 'sli-reverse-ancestor (cdr first-stuff)))
                       (goto-char (cdr beg)))
                      (t nil)))
-                   ((member (car first-stuff) sli-strong-keys)
+                   ((sli-member (car first-stuff) sli-strong-keys)
                     (setq beg (sli-get-key-for-strong (cdr first-stuff) (car first-stuff)))
                     (when sli-verbose (princ "\n") (princ (list "(sli-backward-sexp) match: " beg)))
                     (cond
@@ -1488,10 +1542,10 @@ Answer POINT of where to go"
 (defun sli-find-end-forward (pt word)
   "WORD is a head or a strong. PT is at beginning of WORD.
 Answer is (endword . endpoint)."
-  (let ((whatwewant-regexp (if (member word sli-head-keys)
+  (let ((whatwewant-regexp (if (sli-member word sli-head-keys)
                                (sli-regexp-opt (sli-get-ends-from-head word))
                              (sli-regexp-opt (sli-get-ends-from-strong word))))
-        foundp end his-head)
+        foundp end his-head (case-fold-search sli-case-fold))
     (if (and (sli-prop-has-type pt)
              (get-text-property pt 'sli-reverse-ancestor))
         (sli-prop-full-key (get-text-property pt 'sli-reverse-ancestor))
@@ -1533,9 +1587,9 @@ Answer POINT of where to go."
         (progn
           (if (and arg (< arg 0))
               (sli-backward-sexp (- arg))
-            (let ((n (or arg 1)) end beg aux (modifiedp (buffer-modified-p)))
+            (let ((n (or arg 1)) end beg aux (modifiedp (buffer-modified-p)) (case-fold-search sli-case-fold))
               (while (> n 0)
-                (skip-syntax-backward "w_")
+                (sli-skip-to-beginning-of-keyword)
                 (cond
                  ((posix-looking-at (regexp-opt (if (boundp 'block-comment-start)
                                                     (append sli-comment-starts (list block-comment-start))
@@ -1558,18 +1612,19 @@ Answer POINT of where to go."
                     (princ "\n") (princ (list "(sli-forward-sexp) match: " end)))
                   (cond
                    ((and (consp end) (equal (car end) 'block-comment-end))
-                    (sli-prop-renew2 beg (list 'sli-type (if (member (car beg) sli-head-keys)
+                    (sli-prop-renew2 beg (list 'sli-type (if (sli-member (car beg) sli-head-keys)
                                                              'head 'strong)))
                     (sli-prop-renew2 end '(sli-type block-comment-end))
                     (goto-char (+ (length block-comment-end) (cdr end))))
                    ((consp end) 
                     (sli-prop-renew2 
-                     beg (list 'sli-type (if (member (car beg) sli-head-keys) 'head 'strong)
+                     beg (list 'sli-type (if (sli-member (car beg) sli-head-keys) 'head 'strong)
                                'sli-reverse-ancestor (cdr end)))
                     (sli-prop-renew2 end (list 'sli-type 'end 'sli-ancestor (cdr beg)))
                     (goto-char (+ (length (car end)) (cdr end))))
                    (t nil)))
-                 (t (forward-word 2)))
+                 (t (when sli-verbose (princ "\n((sli-forward-sexp) nothing found)"))
+                    (forward-word 2)))
                 (setq n (- n 1)))
           (set-buffer-modified-p modifiedp)))
           (when sli-verbose (princ "\n") (princ (list "(sli-forward-sexp) answer: " (point))))
@@ -1583,57 +1638,81 @@ Answer POINT of where to go."
       (sli-backward-sexp count)
     (sli-forward-sexp count)))
     
-(defun sli-show-sexp nil
-  (interactive)
+(defvar sli-select-end-of-overlay-fn
+  'sli-select-end-of-overlay-fn-default
+"Function used to give the end of the overlay.
+Takes two arguments KEY and PT.
+Default value is `sli-select-end-of-overlay-fn-default'.")
+
+(defun sli-select-end-of-overlay-fn-default (key pt)
+  (+ pt (length key)))
+
+(defun sli-select-end-of-overlay (key pt)
+  (funcall sli-select-end-of-overlay-fn key pt))
+
+(defun sli-show-sexp (&optional arg)
+  (interactive "P")
   (save-excursion
     (save-restriction
-      (unwind-protect
-          (let*((full-key (sli-find-full-key-at-point)) (pt (goto-char (cdr full-key)))
-                (modifiedp (buffer-modified-p)))
-            (setq sli-prop-used 0)
-            (narrow-to-region (sli-get-safe-backward-place) (sli-get-safe-forward-place))
-            (when sli-verbose
-              (princ "\n")
-              (princ (list "(sli-show-sexp) full-key: " full-key)))
-            (cond
-             ((and (member (car full-key) sli-head-keys)
-                   (not (sli-is-a-special-head (cdr full-key) (car full-key))))
-              (move-overlay sli-overlay-beg (cdr full-key) (+ (cdr full-key) (length (car full-key))))
-              (if (and (sli-forward-sexp)
-                       (equal (get-text-property (1- (point)) 'sli-type) 'end))
-                  (progn 
-                    (overlay-put sli-overlay-beg 'face 'show-paren-match-face)
-                    (overlay-put sli-overlay-end 'face 'show-paren-match-face)
-                    (when sli-prop-verbose
-                      (princ "\n")
-                      (princ (list "(sli-show-sexp) overlay-end:"
-                                   (get-text-property pt 'sli-reverse-ancestor) (point))))
-                    (move-overlay sli-overlay-end (get-text-property pt 'sli-reverse-ancestor)
-                                  (point)))
-                (overlay-put sli-overlay-beg 'face 'show-paren-mismatch-face)
+      (let ((old-sli-prop-do-not-recompute-time sli-prop-do-not-recompute-time))
+        (unwind-protect
+            (let ((full-key (sli-find-full-key-at-point)) pt
+                  (modifiedp (buffer-modified-p)))
+              (when sli-verbose
+                (princ "\n")
+                (princ (list "(sli-show-sexp) full-key-at-point: " full-key)))
+              (when full-key (setq pt (goto-char (cdr full-key))))
+              (when (and arg (= (car arg) 4)) ;; call prefixed by C-u
+                (setq sli-prop-do-not-recompute-time 0))
+              (setq sli-prop-used 0)
+              (narrow-to-region (sli-get-safe-backward-place) (sli-get-safe-forward-place))
+              (cond
+               ((and full-key (sli-member (car full-key) sli-head-keys)
+                     (not (sli-is-a-special-head (cdr full-key) (car full-key))))(print full-key)
+                     (move-overlay sli-overlay-beg (cdr full-key) 
+                                   (sli-select-end-of-overlay (car full-key) (cdr full-key)))
+                     (if (and (sli-forward-sexp)
+                              (equal (get-text-property (1- (point)) 'sli-type) 'end)); ?(1- point) ??
+                         (progn 
+                           (overlay-put sli-overlay-beg 'face 'show-paren-match-face)
+                           (overlay-put sli-overlay-end 'face 'show-paren-match-face)
+                           (when sli-prop-verbose
+                             (princ "\n")
+                             (princ (list "(sli-show-sexp) overlay-end:"
+                                          (get-text-property pt 'sli-reverse-ancestor) (point))))
+                           (setq full-key (sli-find-full-key-at-point))(print full-key)
+                           (move-overlay sli-overlay-end (get-text-property pt 'sli-reverse-ancestor)
+                                         (sli-select-end-of-overlay (car full-key) (cdr full-key))))
+                       (overlay-put sli-overlay-beg 'face 'show-paren-mismatch-face)
+                       (move-overlay sli-overlay-end (point-min) (point-min))))
+               ((and full-key (sli-member (car full-key) sli-end-keys))
+                (move-overlay sli-overlay-end (cdr full-key)
+                              (sli-select-end-of-overlay (car full-key) (cdr full-key)))
+                (if (and (sli-backward-sexp)
+                         (equal (get-text-property (point) 'sli-type) 'head))
+                    (progn 
+                      (overlay-put sli-overlay-beg 'face 'show-paren-match-face)
+                      (overlay-put sli-overlay-end 'face 'show-paren-match-face)
+                      (when sli-prop-verbose
+                        (princ "\n")
+                        (princ (list "(sli-show-sexp) overlay-beg:"
+                                     (get-text-property pt 'sli-ancestor) (next-property-change (point))))
+                        (princ "\n")
+                        (princ (list "(sli-show-sexp) number of text-properties used:" sli-prop-used)))
+                      (goto-char (get-text-property pt 'sli-ancestor))
+                      (setq full-key (sli-find-full-key-at-point))
+                      (move-overlay sli-overlay-beg (cdr full-key)
+                                    (sli-select-end-of-overlay (car full-key) (cdr full-key))))
+                  (overlay-put sli-overlay-end 'face 'show-paren-mismatch-face)
+                  (move-overlay sli-overlay-beg (point-min) (point-min))))
+               (t ;; Erase overlays:
+                (when sli-prop-verbose
+                  (princ (list "\n(sli-show-sexp) Erasing overlays")))
+                (move-overlay sli-overlay-beg (point-min) (point-min))
                 (move-overlay sli-overlay-end (point-min) (point-min))))
-             ((member (car full-key) sli-end-keys)
-              (move-overlay sli-overlay-end (cdr full-key) (+ (cdr full-key) (length (car full-key))))
-              (if (and (sli-backward-sexp)
-                       (equal (get-text-property (point) 'sli-type) 'head))
-                  (progn 
-                    (overlay-put sli-overlay-beg 'face 'show-paren-match-face)
-                    (overlay-put sli-overlay-end 'face 'show-paren-match-face)
-                    (when sli-prop-verbose
-                      (princ "\n")
-                      (princ (list "(sli-show-sexp) overlay-beg:"
-                                   (get-text-property pt 'sli-ancestor) (next-property-change (point))))
-                      (princ "\n")
-                      (princ (list "(sli-show-sexp) number of text-properties used:" sli-prop-used)))
-                    (move-overlay sli-overlay-beg
-                                  (get-text-property pt 'sli-ancestor) (next-property-change (point))))
-                (overlay-put sli-overlay-end 'face 'show-paren-mismatch-face)
-                (move-overlay sli-overlay-beg (point-min) (point-min))))
-             (t ;; Erase overlays:
-              (move-overlay sli-overlay-beg (point-min) (point-min))
-              (move-overlay sli-overlay-end (point-min) (point-min))))
-            (set-buffer-modified-p modifiedp))
-        (widen)))))
+              (set-buffer-modified-p modifiedp)
+              (widen)
+              (setq sli-prop-do-not-recompute-time old-sli-prop-do-not-recompute-time)))))))
 
 (defvar sli-show-sexp-idle-timer nil)
 
@@ -1679,7 +1758,7 @@ Answer POINT of where to go."
   (save-excursion
     (save-restriction
       (unwind-protect
-	  (let (aux wd)
+	  (let (aux (case-fold-search sli-case-fold))
 	    (narrow-to-region (progn (beginning-of-line) (point)) pt)
 	    (skip-chars-forward " \t")
             ;(princ "\n") (princ (list "(sli-get-first-fixed-or-strong-or-end-or-soft)" (point)))
@@ -1687,7 +1766,7 @@ Answer POINT of where to go."
                    (cond ((member aux '(block-comment-end block-comment-start))
                           (cons aux (point)))
                          ((and (or (member aux '(end strong soft))
-                                   (assoc (setq wd (sli-prop-word (point))) sli-fixed-keys-alist))
+                                   (assoc (sli-keyword (sli-prop-word (point))) sli-fixed-keys-alist))
                                (<= (next-property-change (point)) pt))
                           (sli-prop-full-key (point)))
                          (t nil)))
@@ -1719,14 +1798,14 @@ if PT is within a multiline-comment."
   (save-excursion
     (goto-char pt)
     (let ((level-comment1 0) (foundp nil) beg
-          (accessible-separator (member (char-to-string (preceding-char)) sli-separators))
-          word start (in-stringp nil) (case-fold-search nil)
+          (accessible-separator (sli-member (char-to-string (preceding-char)) sli-separators))
+          word start (in-stringp nil) (case-fold-search sli-case-fold)
           (aregexp
              (if nomrelation sli-all-keys-nomrelations-noseparators-regexp sli-all-keys-regexp)))
       (while (and (not foundp) (not (bobp)))
         (if (sli-anchored-posix-search-backward aregexp nil 1)
-          (progn;(princ "\n") 
-        	;(princ (list "(sli-get-first-non-end-key). word = " (match-string-no-properties 0) (point)))
+          (progn(princ "\n") 
+        	(princ (list "(sli-get-first-non-end-key). word = " (match-string-no-properties 0) (point)))
             (cond
              ((string= (setq word (match-string-no-properties 0)) "\"")
               (if (= (preceding-char) ?\\)
@@ -1751,19 +1830,19 @@ if PT is within a multiline-comment."
               (if (= level-comment1 0)
                   (setq foundp t)
                 (setq level-comment1 (1- level-comment1))))
-             ((member word sli-comment-starts)) ; within a one-line-comment
+             ((sli-member word sli-comment-starts)) ; within a one-line-comment
              ((> level-comment1 0)); within a multiline-comment
              ;; Out of imbedded comments:
              ((sli-is-a-separatorp) ; only if NOMRELATION is t.
               (setq start (point))
               (unless (sli-in-one-line-comment)
                 (goto-char start) (setq accessible-separator t)))
-             ((member word sli-math-relation-keys) ; only if NOMRELATION is t.
+             ((sli-member word sli-math-relation-keys) ; only if NOMRELATION is t.
               (unless accessible-separator
                 (setq start (point))
                 (unless (sli-in-one-line-comment)
                   (goto-char start) (setq foundp t))))
-             ((member word sli-end-keys)
+             ((sli-member word sli-end-keys)
               (setq start (point))
               (unless (sli-in-one-line-comment)
                 (if (setq beg (sli-find-matching-key 
@@ -1790,16 +1869,16 @@ if PT is within a multiline-comment."
                 (when sli-verbose (princ "\n((sli-get-first-non-end-key) ... and is indeed one !)"))
                 (sli-prop-renew (point) (+ (point) (length word)) '(sli-type head))
                 (setq foundp t)))
-             ((member word sli-special-head-keys)
+             ((sli-member word sli-special-head-keys)(princ " lyo ")
               (unless (or (sli-separator-directly-afterp pt word)
                           (sli-in-one-line-comment))
                 (setq foundp t)))
-             ((member word sli-separators))      ;; momentanous
+             ((sli-member word sli-separators))      ;; momentanous
              (t (setq foundp (not (sli-in-one-line-comment))))))
           ))
-          ;(princ "\n")
-          ;(princ (list "Out of sli-get-first-non-end-key with "
-          ;		   (if foundp (cons word (point)) nil) accessible-separator))
+          (princ "\n")
+          (princ (list "Out of sli-get-first-non-end-key with "
+          		   (if foundp (cons word (point)) nil) accessible-separator))
       (if foundp (cons word (point)) nil))))
 
 
@@ -1834,7 +1913,7 @@ Or on line after if AFTERP is t."
       (throw 'indent 0))
     ; First case, indentation of this line and (car first-stuff) is a fixed key:
     (when (and (not (null first-stuff))
-               (setq opp (assoc (car first-stuff) sli-fixed-keys-alist)))
+               (setq opp (assoc (sli-keyword (car first-stuff)) sli-fixed-keys-alist)))
       (when sli-verbose
 	(princ "\n") (princ (list "(sli-tell-indent) first-stuff is in sli-fixed-keys-alist")))
       (throw 'indent (+ (save-excursion (forward-line -1) (current-indentation))
@@ -1842,7 +1921,7 @@ Or on line after if AFTERP is t."
     ; Second case, line starts by a soft key:
     ; it has to be done in case of "if 2<3 \n then" since the "then"
     ; has been aligned with respect to the math-relation and not to the "if"
-    (when (and first-stuff (member (car first-stuff) sli-soft-keys))
+    (when (and first-stuff (sli-member (car first-stuff) sli-soft-keys))
       (setq appui (sli-get-key-for-soft (cdr first-stuff) (car first-stuff)))
       (when sli-verbose
 	(princ "\n") (princ (list "(sli-tell-indent) first-stuff is in sli-soft-keys")))
@@ -1866,23 +1945,23 @@ Or on line after if AFTERP is t."
 		 (consp (setq the-indent (sli-indent-after (car appui))))
 		 (eq (car the-indent) 'absolute))
         (sli-prop-renew2 first-stuff
-                         (list 'sli-type (if (member (car first-stuff) sli-end-keys) 'end 'strong)
+                         (list 'sli-type (if (sli-member (car first-stuff) sli-end-keys) 'end 'strong)
                                'sli-ancestor (cdr appui)))
         (sli-prop-renew2 appui
-                         (list 'sli-type (if (member (car appui) sli-head-keys) 'head 'strong)
+                         (list 'sli-type (if (sli-member (car appui) sli-head-keys) 'head 'strong)
                                'sli-reverse-ancestor (cdr first-stuff)))
         (when sli-verbose
           (princ "\n") (princ (list "(sli-indent) Absolute indent. Indent resting on: " (car appui))))
 	(throw 'indent (+ (cdr the-indent)
 			  (sli-get-shift (car appui) (car first-stuff)))))
       ; see whether heredity applies:
-      (unless (or (null appui) (member (car appui) sli-head-keys))
+      (unless (or (null appui) (sli-member (car appui) sli-head-keys))
         ; select head from appui and not from full-key because
         ; (1) it is shorter (2) (car head) *is* a strong key.
         (setq head (sli-get-head-from-ambiguous (cdr appui) (car appui)))
         ;(princ "\n") (princ (list "heredity ? for " (vector (car head) (car first-stuff))))
         (sli-prop-renew2 first-stuff
-                         (list 'sli-type (if (member (car first-stuff) sli-end-keys) 'end 'strong)
+                         (list 'sli-type (if (sli-member (car first-stuff) sli-end-keys) 'end 'strong)
                                'sli-ancestor (cdr appui)))
         (if (eq head 'sli-fail)
             (sli-prop-renew2 appui (list 'sli-type 'strong 'sli-reverse-ancestor (cdr first-stuff)))
@@ -1890,7 +1969,7 @@ Or on line after if AFTERP is t."
                            (list 'sli-type 'strong
                                  'sli-reverse-ancestor (cdr first-stuff) 'sli-ancestor (cdr head)))
           (sli-prop-renew2 head (list 'sli-type 'head 'sli-reverse-ancestor (cdr appui)))
-          (when (member (vector (car head) (car first-stuff)) sli-no-heredity-list)
+          (when (sli-member (vector (car head) (car first-stuff)) sli-no-heredity-list)
             (setq appui head))))
       (when sli-verbose
 	(princ "\n((sli-tell-indent) indentation of this line and not in comment)")
@@ -1935,25 +2014,25 @@ Or on line after if AFTERP is t."
        (when sli-verbose
 	  (princ "\n") (princ (list "(sli-tell-indent) within comment")))
        (throw 'indent (current-indentation)))
-      ((and (member (car first-stuff) (append sli-head-keys sli-strong-keys))
-            (not (assoc (car first-stuff) sli-soft-head-or-strong-alist)))
+      ((and (sli-member (car first-stuff) (append sli-head-keys sli-strong-keys))
+            (not (assoc (sli-keyword (car first-stuff)) sli-soft-head-or-strong-alist)))
        ;; head/strong without soft:
        (when sli-verbose
 	  (princ "\n") (princ (list "(sli-tell-indent) within a head/strong construct never followed by a soft")))
-       (sli-prop-renew2 first-stuff (list 'sli-type (if (member (car first-stuff) sli-head-keys) 'head 'strong)))
+       (sli-prop-renew2 first-stuff (list 'sli-type (if (sli-member (car first-stuff) sli-head-keys) 'head 'strong)))
        (sli-compute-indent-after first-stuff))
-      ((member (car first-stuff)
+      ((sli-member (car first-stuff)
 	       (append sli-head-keys sli-strong-keys sli-special-head-keys))
        ;; head/strong with soft missing or special-head:
        (sli-prop-renew2 first-stuff (list 'sli-type 
-                                          (cond ((member (car first-stuff) sli-head-keys) 'head)
-                                                ((member (car first-stuff) sli-strong-keys) 'strong)
+                                          (cond ((sli-member (car first-stuff) sli-head-keys) 'head)
+                                                ((sli-member (car first-stuff) sli-strong-keys) 'strong)
                                                 (t 'special-head))))
        (when sli-verbose
 	  (princ "\n((sli-tell-indent) within special-head or head/strong sometimes")
           (princ "\n                   followed by currently missing soft)"))
        (sli-compute-indent-after first-stuff t))
-      ((member (car first-stuff) sli-relation-keys)
+      ((sli-member (car first-stuff) sli-relation-keys)
        ; relation: if it is just before point ignore it:
        (if (save-excursion
 	     (save-restriction
@@ -1968,7 +2047,7 @@ Or on line after if AFTERP is t."
 	 (when sli-verbose
 	   (princ "\n") (princ (list "(sli-tell-indent) last non-end-key is in sli-relation-keys")))
 	 (sli-compute-indent-after first-stuff)))
-      ((member (car first-stuff) sli-soft-keys)
+      ((sli-member (car first-stuff) sli-soft-keys)
        ; a soft key. Find its head/strong and align things on it.
        (setq full-key (sli-get-key-for-soft (cdr first-stuff) (car first-stuff)))
        (when sli-verbose
@@ -2086,7 +2165,7 @@ In a program, use `sli-indent-line'."
                 (when sli-verbose
 		  (princ "\n") (princ (list "(sli-electric-terminate-line) indent before:" this-indent))
 		  (princ "\n") (princ (list "(sli-electric-terminate-line) indent after:" next-indent)))
-                (unless only-spacep (if (= (char-syntax (preceding-char)) ? )(delete-char -1)))
+                (unless only-spacep (if (= (char-syntax (preceding-char)) ?\ )(delete-char -1)))
 		;(princ "\n") (princ (list "(sli-electric-terminate-line) inserting a newline at: " (point)))
                 (sli-put-newline)
 		;(princ "\n") (princ (list "(sli-electric-terminate-line) inserting indent at: " (point)))
@@ -2135,7 +2214,7 @@ by specifying special furtherings in `sli-maid-correction-alist'"
 		  (princ (list "(sli-maid) Key to be continued: " full-key)))
                 (sli-remove-trailing-spaces)
                 ;; Sort ambiguity arising from ambiguous-keys:
-                (when (and full-key (member (car full-key) sli-ambiguous-keys))
+                (when (and full-key (sli-member (car full-key) sli-ambiguous-keys))
                   (if (eq (setq smore (sli-get-head-from-ambiguous (cdr full-key) (car full-key))) 'sli-fail)
                       (setq head 'sli-fail)
                     (setq head (car smore)))
@@ -2162,13 +2241,13 @@ by specifying special furtherings in `sli-maid-correction-alist'"
                 ;; add a newline before insertion if required:
                 (unless (sli-only-spacep)
                   (when (or (and (not is-a-special-head-head-keyp)
-                                 full-key (member (car full-key) sli-keys-with-newline))
+                                 full-key (sli-member (car full-key) sli-keys-with-newline))
 			    (and is-a-special-head-head-keyp (not head)
-				 (member head sli-keys-with-newline)))
+				 (sli-member head sli-keys-with-newline)))
                     (if on-listp
                         (setq where-to-write (append where-to-write (list 'newline)))
                       (sli-electric-terminate-line))))
-                    ;(princ "\n") (princ (list "Inside mupad-maid. full-key/head = " full-key head))
+                    (princ "\n") (princ (list "Inside mupad-maid. full-key/head = " full-key head))
                 ;; find or insert closing-key:
                 (cond
                  ((eq head 'sli-fail) (message "Could not resolve ambiguity"))
@@ -2181,20 +2260,20 @@ by specifying special furtherings in `sli-maid-correction-alist'"
                       (setq where-to-write (append where-to-write (list (setq key block-comment-end))))
                     (setq has-answered t)
                     (sli-safe-insert (setq key block-comment-end))))
-                 ((and (member (car full-key) sli-separators)
+                 ((and (sli-member (car full-key) sli-separators)
                                         ; Beware !! this key could be **very far**
                        (= (count-lines (cdr full-key) (point)) 0))
                   (setq key nil)) ; We shall put a newline, see below.
 		 (is-a-special-head-head-keyp ; a special head possibly a head
 		  (if head 
 		      ;; it is a special head:
-		      (setq key (cdr (assoc (car full-key) sli-special-head-alist)))
+		      (setq key (cdr (assoc (sli-keyword (car full-key)) sli-special-head-alist)))
 		    ;; it is a  head:
 		    (setq key (sli-following-key (car full-key))))
 		  ;(print (list "yes" key head))
 		  (unless (and (not (null key))
-                                 (or (not (= (char-syntax (string-to-char key)) ?w))
-                                     (= (char-syntax (preceding-char)) ? )))
+                                 (or (not (member (char-syntax (string-to-char key)) '(?w ?_ ?\( ?\) ?$)))
+                                     (= (char-syntax (preceding-char)) ?\ )))
                       (if on-listp
                           (setq where-to-write (append where-to-write '(" ")))
                         (setq has-answered t)
@@ -2203,21 +2282,21 @@ by specifying special furtherings in `sli-maid-correction-alist'"
                       (setq where-to-write (append where-to-write (list key)))
                     (setq has-answered t)
                     (sli-safe-insert key)))
-                 ((and (member (car full-key) sli-special-head-keys)
+                 ((and (sli-member (car full-key) sli-special-head-keys)
                        (not (sli-separator-directly-afterp (point-max) (car full-key))))
                   (if on-listp
                       (setq where-to-write
                             (append where-to-write
-                                    (list (cdr (assoc (car full-key) sli-special-head-alist)))))
+                                    (list (cdr (assoc (sli-keyword (car full-key)) sli-special-head-alist)))))
                     (setq has-answered t)
-                    (sli-safe-insert (cdr (assoc (car full-key) sli-special-head-alist)))))
+                    (sli-safe-insert (cdr (assoc (sli-keyword (car full-key)) sli-special-head-alist)))))
                  (t (setq key (if head ;  completion of an ambiguous-key:
                                   (car (sli-get-ends-from-head head))
                                 (sli-following-key (car full-key))))
-                                        ; add a space if required:
+                               (princ " Yol ")         ; add a space if required:
                     (unless (and (not (null key))
-                                 (or (not (= (char-syntax (string-to-char key)) ?w))
-                                     (= (char-syntax (preceding-char)) ? )))
+                                 (or (not (member (char-syntax (string-to-char key)) '(?w ?_ ?\( ?\) ?$)))
+                                     (= (char-syntax (preceding-char)) ?\ )))
                       (if on-listp
                           (setq where-to-write (append where-to-write '(" ")))
                         (setq has-answered t)
@@ -2234,7 +2313,7 @@ by specifying special furtherings in `sli-maid-correction-alist'"
                           (not (and arg (= (car arg) 4)))) ; call is not prefixed by C-u
                   (cond
                    ((or (null key) (eq head 'sli-fail)))
-                   ((setq smore (assoc key sli-add-to-key-alist))
+                   ((setq smore (assoc (sli-keyword key) sli-add-to-key-alist))
                     (if on-listp
                         (setq where-to-write (append where-to-write (list (cdr smore))))
                       (setq has-answered t)
@@ -2242,7 +2321,7 @@ by specifying special furtherings in `sli-maid-correction-alist'"
                 ;; Add a newline if required:
 		;(princ "\n(sli-maid) looking if a newline is required")
                 (cond
-                 ((or (member key sli-keys-without-newline) (eq head 'sli-fail)))
+                 ((or (sli-member key sli-keys-without-newline) (eq head 'sli-fail)))
                  ((eobp) (if on-listp
                              (setq where-to-write (append where-to-write (list 'newline)))
                            (sli-electric-terminate-line)))
@@ -2286,7 +2365,8 @@ by specifying special furtherings in `sli-maid-correction-alist'"
     (error (princ "\nsli-tutor can't understand what to do: ")(princ err) nil)))
 
 (defun sli-tools
-  (struct shift sep sepp fixed safe keyn keynn mkey comm noher &optional newl corr showsexpp)
+  (struct shift sep sepp fixed safe keyn keynn mkey comm noher
+          &optional newl corr showsexpp case-fold eoov)
 "Once these tools are loaded, you should have
 `sli-newline' and `sli-electric-terminate-line'
 which behave like `newline-and-indent' and
@@ -2305,6 +2385,7 @@ for instance C-M-f on a head sends cursor on its end.
 ways: either showsexpp is t, either showsexpp is nil
 in which case one should press [f8] to see the
 corresponding key.
+C-u[f8] forces to recompute text-properties locally.
 
 C-M-f/C-M-b run forward-sexp/backward-sexp in a special
 way: heads will be atuned to ends and strongs to either
@@ -2327,6 +2408,8 @@ For these tools to work, the parameters are
 `sli-put-newline-fn'
 `sli-maid-correction-alist'
 showsexpp
+`sli-case-fold'
+`sli-select-end-of-overlay-fn'
 and you should also set
 `block-comment-start'      `block-comment-end'
 `sli-more-maidp'           `sli-tab-always-indent'
@@ -2336,19 +2419,30 @@ and the syntax table should be ok."
       (progn
         (setq sli-structures struct           sli-shift-alist shift
               sli-separators sep              sli-fixed-keys-alist fixed
-              sli-safe-place-regexp safe      sli-keys-with-newline keyn
+              sli-case-fold case-fold         sli-keys-with-newline keyn
               sli-keys-without-newline keynn  sli-add-to-key-alist mkey
               sli-comment-starts comm         sli-no-heredity-list noher
               sli-maid-correction-alist corr)
+        (if  safe
+            (setq sli-safe-place-regexp safe)
+          (setq sli-safe-place-regexp "\\(\\'\\|\\`\\)")) ;beginning/end of buffer !
         (when sepp
           (setq sli-is-a-separatorp-fn sepp))
         (when newl
           (setq sli-put-newline-fn newl))
+        (when eoov
+          (setq sli-select-end-of-overlay-fn eoov))
         (set (make-local-variable 'indent-line-function) 'sli-electric-tab)
         (set (make-local-variable 'indent-region-function) 'sli-indent-region)
-        (setq sli-handles-sexp t sli-verbose t sli-prop-verbose nil)
+        (setq sli-handles-sexp t sli-verbose nil sli-prop-verbose nil)
+        (setq sli-overlay-beg (make-overlay (point-min) (point-min)))
+        (setq sli-overlay-end (make-overlay (point-min) (point-min)))
+        (overlay-put sli-overlay-beg 'face 'show-paren-match-face)
+        (overlay-put sli-overlay-end 'face 'show-paren-match-face)
+        (overlay-put sli-overlay-beg 'priority 0)
+        (overlay-put sli-overlay-end 'priority 0)
         (sli-show-sexp-semi-mode (if showsexpp 1 0))
         (sli-precomputations))
     (error (princ "\nSomething went wrong in sli-tools: ")(princ err) nil)))
 
-;;------------------ sli-tools ends here. 2354 lines ??
+;;------------------ sli-tools ends here. 2448 lines ??
