@@ -50,6 +50,17 @@ home page, in French</a></h2>
     <li><a href="BUGS">Known bugs</a>
 </ul>
 
+<h2><a name="links">Links</a></h2>
+
+<ul>
+    <li><a href="http://www.mupad.de">MuPAD</a>
+    <li><a
+    href="http://www.math.u-psud.fr/~agreg/AgregSoft/WEB/logiciels.html">Another
+    MuPAD mode for emacs used for the French agregation</a>
+    <li><a href="http://vim.sourceforge.net/scripts/script.php?script_id=723"
+        >mupad.vim : a VIM syntax file for MuPAD</a>
+</ul>
+
 <a href="http://sourceforge.net"> <img
 src="http://sourceforge.net/sflogo.php?group_id=73292&type=1"
 width="88" height="31" border="0" align=right alt="sourceforge logo">
