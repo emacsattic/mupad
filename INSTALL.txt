@@ -1,0 +1,130 @@
+// file INSTALL.txt
+// Describes how to install mupad*.el rapidly.
+// Version of mupad*.el: 2.0
+// Date:                 October 27th 2002
+// Author:               Olivier Ramare
+
+(1) Recover mupad.tar.gz somewhere, for instance from
+    http://www-gat.univ-lille1.fr/~ramare/ServeurPerso/MuPADCombined/PageMuPAD.html
+    It is a gnu-zipped archive containing 10 files including this one.
+(2) Go to the  directory where you which to install the lisp files.
+    We shall LISP_INSTALL_DIR.
+(3) Execute the command 
+        gunzip mupad.tar.gz
+    followed by
+        tar xvf mupad
+    Alternatively if your gzip supports it you can simply use
+        tar xvfz mupad
+(4) The script configure should do the installation for you.
+    Simply use
+        ./configure
+    If your installation is exotic, the following points describe what
+    is being done, so that you can adapt it to your situation. Else go directly
+    to point (10).
+(5 exotic) If you need to modify the lisp installation directory, you have to edit
+  - mupad.el
+     and replace
+       (defcustom mupad-el-info "/usr/share/emacs/site-lisp/mupad.el-info"
+       "Place of the mupad.el-info file."
+       :type 'string :group 'mupad)
+     by
+       (defcustom mupad-el-info "LISP_INTALL_DIR/mupad.el-info"
+       "Place of the mupad.el-info file."
+       :type 'string :group 'mupad)
+  - mupad-run.el
+     and replace
+       (defcustom mupad-run-info  "/usr/local/share/site-lisp/mupad-run.el-info"
+       "Ou on trouve mupad-run.el-info"
+       :type 'string :group 'mupad-run)
+     by
+       (defcustom mupad-run-info "LISP_INTALL_DIR/mupad-run.el-info"
+       "Ou on trouve mupad-run.el-info"
+       :type 'string :group 'mupad-run)
+(6 exotic) Assume MuPAD is installed in MUPAD_INSTALL_DIR. This variable
+    is also called $MUPAD_ROOT_PATH in shell. For instance the command
+    "which mupad" should answer "MUPAD_INSTALL_DIR/bin/mupad".
+    Then you need to edit
+  - mupad.el and mupad-help.el
+      and replace
+        (defvar mupad-directory "/usr/local/src/MuPAD/share/"
+        "Used for initializing some variables below.")
+      by
+        (defvar mupad-directory MUPAD_INSTALL_DIR
+        "Used for initializing some variables below.")
+      This variable is defined in two different places to allow independance
+      of mupad-run.el and mupad.el ...
+(7 exotic) If your version of MuPAD is 2.5 (which it probably is), you
+    can skip this part, but if you work with MuPAD 3.0, edit
+  - mupad-run.el
+      and replace
+        (defcustom mupad-run-pgm-opt
+         '("-R" "-U" "EMACS")
+        "Options given to the mupad process"
+        :type '(choice (const ("-R" "-U" "EMACS")) (const ("-E" "-U" "EMACS")))
+        :initialize 'custom-initialize-default
+        :set 'mupad-set-options
+        :group 'mupad-run)
+      by
+        (defcustom mupad-run-pgm-opt
+        '("-E" "-U" "EMACS")
+        "Options given to the mupad process"
+        :type '(choice (const ("-R" "-U" "EMACS")) (const ("-E" "-U" "EMACS")))
+        :initialize 'custom-initialize-default
+        :set 'mupad-set-options
+        :group 'mupad-run)
+(8 exotic) If your version of MuPAD is 2.5 (which it probably is), you
+    can skip this part, but if you work with MuPAD 3.0, edit
+  - mupad-run.el
+      and replace
+        (defvar mupad-help-method 'mupad-help-from-toc-to-buffer)
+      by
+        (defvar mupad-help-method 'mupad-help-from-file-to-buffer)
+(9 exotic) In you want to compile these files, load them one by one (only the
+    ones ending in .el) and type M-x (ESC x) byte-compile-file[return]. This
+    will produce .elc files.
+(10)To customize your installation, there are two cases:
+    -- you are the system administrator, so you edit the file
+       site-start.el (most probably in /usr/share/emacs/site-lisp/).
+    -- you are a single user, so you edit the file .emacs or
+       .emacs.el (anyone of them). It should be located in your home
+       directory.
+    If the file you need to edit doesn't exist, simply create it.
+    Then add the following lines:
+   ------------------------------------------------------------------------
+    (autoload 'mupad-mode "mupad.el" "MuPAD editing mode" t)
+    (autoload 'mupad-run "mupad-run.el" "To start a MuPAD session" t)
+    (autoload 'run-mupad "mupad-run.el" "To start a MuPAD session" t)
+    (autoload 'mupad-run-mode "mupad-run.el" "To start a MuPAD session" t)
+    (setq auto-mode-alist (cons '("\\.mu$" . mupad-mode) auto-mode-alist))
+   ------------------------------------------------------------------------
+    If you have compiled the files mupad.el and mupad-run.el it is better
+    to replace "mupad.el" by "mupad.elc" and "mupad-run.el" by "mupad-run.elc".
+    As a system administrator you should know that the file site-start.elc
+    is read before the file site-start.el, so you need either to compile
+    this file, or to delete the .elc file. .emacs or .emacs.el are usually
+    not compiled (no use !)
+(11)For vcam to work, please look at mupad-run.el-info.
+    The main thing is that you need to put
+    //--------------------------------------
+    if Pref::userOptions() = "EMACS"
+    then
+      proc()
+        local oldPlot, oldProtectState ;
+        option escape ;
+      begin
+        oldProtectState := protect(stdlib, ProtectLevelNone) ;
+        stdlib::oldPlot := stdlib::plot:
+        stdlib::plot :=
+        () -> (fprint(Unquoted,0,"[3] vcam /tmp/muplot" . getpid());
+	       stdlib::oldPlot(PlotDevice=["/tmp/muplot" . getpid(), Binary], args());
+	       system("vcam -xmupad /tmp/muplot" . getpid())):
+        protect(stdlib, oldProtectState) ; 
+      end_proc() :
+    end_if:
+    //--------------------------------------
+    in your ~/.mupad/userinit.mu or in MuPAD_INSTALL_DIR/packages/init.mu
+    if you want a system installation.
+
+(12)I think that's all ....
+
+// end of file INSTALL.txt

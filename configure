@@ -1,0 +1,181 @@
+#!/bin/sh -f
+
+# Special settings to run MuPAD without any local modifications
+
+LISP_INSTALL_DIR=`pwd`
+
+echo "Lisp files installed in $LISP_INSTALL_DIR"
+
+MUPAD_EXE=`which mupad`
+
+MUPAD_INSTALL_DIR_SHARE_BIN=`dirname $MUPAD_EXE`
+
+MUPAD_INSTALL_DIR_SHARE=`dirname $MUPAD_INSTALL_DIR_SHARE_BIN`
+
+MUPAD_INSTALL_DIR=`dirname $MUPAD_INSTALL_DIR_SHARE`
+
+echo "MuPAD installed in $MUPAD_INSTALL_DIR"
+
+#Start file configure-to-compile-mupad-el-and-all:
+
+if test -f configure-to-compile-mupad-el-and-all; then
+   rm configure-to-compile-mupad-el-and-all  
+fi
+
+echo -e ";;File automatically created by the shell script toinstall" > "configure-to-compile-mupad-el-and-all"
+echo -e "(setq load-path (append (list \"$LISP_INSTALL_DIR\") load-path))" >> "configure-to-compile-mupad-el-and-all"
+echo -e "(setq byte-compile-warnings '(obsolete))" >> "configure-to-compile-mupad-el-and-all"
+echo -e "\n(require 'disp-table)" >> "configure-to-compile-mupad-el-and-all"
+echo -e "(require 'backquote)" >> "configure-to-compile-mupad-el-and-all"
+echo -e "(require 'gud)" >> "configure-to-compile-mupad-el-and-all"
+echo -e "(require 'regexp-opt)" >> "configure-to-compile-mupad-el-and-all"
+echo -e "(require 'imenu)" >> "configure-to-compile-mupad-el-and-all"
+echo -e "\n(setq byte-compile-warnings '(obsolete))" >> "configure-to-compile-mupad-el-and-all"
+echo -e "(setq byte-optimize t)" >> "configure-to-compile-mupad-el-and-all"
+
+#file mupad-bus.el
+if test -f mupad-bus.el; then
+   echo "+ File mupad-bus.el found."
+   echo -e "(byte-compile-file \"mupad-bus.el\")" >> "configure-to-compile-mupad-el-and-all"
+else
+   echo "- File mupad-bus.el NOT found."
+   echo "  This script is to be run in the directory where you installed mupad*.el"
+   echo "  This file is required for both mupad-run.el and mupad.el"
+fi
+
+#file mupad.el
+if test -f mupad.el; then
+   if (! test -f mupad.el-info); then
+      echo "- File mupad.el-info NOT found."
+   fi
+   # file mupad.el-info and variable mupad-directory in mupad.el:
+   # and do not complain when compiling:
+   sed -e "s|(defcustom mupad-el-info .*mupad.el-info|(defcustom mupad-el-info \"$LISP_INSTALL_DIR/mupad\.el-info|" -e "s|/usr/local/src/MuPAD/share/|$MUPAD_INSTALL_DIR|" -e "s|  (setq byte-compile-warnings '(free-vars unresolved callargs redefine obsolete))|  ;(setq byte-compile-warnings '(free-vars unresolved callargs redefine obsolete))|" -e "s|  ;(setq byte-compile-warnings '(unresolved redefine obsolete))|  (setq byte-compile-warnings '(unresolved redefine obsolete))|" mupad.el > mupad-bis.el
+
+   rm mupad.el
+   mv mupad-bis.el mupad.el
+
+   echo -e "\n(byte-compile-file \"mupad.el\")" >> "configure-to-compile-mupad-el-and-all"
+
+   #file mupad-fontification.el
+   if test -f mupad-fontification.el; then
+      echo "+ File mupad-fontification.el found:"
+      echo "  Fontification of mupad scripts allowed."
+
+      echo -e "(byte-compile-file \"mupad-fontification.el\")" >> "configure-to-compile-mupad-el-and-all"
+
+   else
+      echo "- File mupad-fontification.el NOT found:"
+      echo "  Fontification of mupad scripts NOT allowed."
+   fi
+
+   #file sli-tools.el
+   if test -f sli-tools.el; then
+      echo "+ File sli-tools.el found:"
+      echo "  Indentation of mupad scripts activated."
+
+      echo -e "(byte-compile-file \"sli-tools.el\")" >> "configure-to-compile-mupad-el-and-all"
+
+   else
+      echo "- File sli-tools.el NOT found:"
+      echo "  It may exist somewhere else in the emacs load-path."
+      echo "  This file is required for mupad.el to work."
+   fi
+
+  #file mupad-cpl.el
+   if test -f sli-tools.el; then
+      echo "+ File mupad-cpl.el found:"
+      echo "  Completion inside mupad scripts activated."
+
+      echo -e "(byte-compile-file \"mupad-cpl.el\")" >> "configure-to-compile-mupad-el-and-all"
+
+   else
+      echo "- File mupad-cpl.el NOT found:"
+      echo "  Completion inside mupad scripts NOT activated."
+   fi
+
+  
+else
+   echo "- File mupad.el was NOT found."
+   echo "  This script is to be run in the directory where you installed mupad.el"
+   echo "  You may still be able to use mupad-run.el"
+fi
+
+#file mupad-help.el:
+if test -f mupad-help.el; then
+   echo "+ File mupad-help.el found:"
+   echo "  Online help allowed."
+
+   #Variable mupad-directory in mupad-help.el:
+   sed -e "s|/usr/local/src/MuPAD/share/|$MUPAD_INTALL_DIR|" -e "s|(defvar mupad-directory \".*\"|(defvar mupad-directory \"$MUPAD_INSTALL_DIR/\"|" mupad-help.el > mupad-help-bis.el
+   
+   rm mupad-help.el
+   mv mupad-help-bis.el mupad-help.el
+
+   #Variable mupad-help-method:
+   if [ `mupad -V` = 2.5.1 ]; then
+      sed "s|(defvar mupad-help-method 'mupad-help-from-file-to-buffer)|(defvar mupad-help-method 'mupad-help-from-toc-to-buffer)|" mupad-run.el > mupad-run-bis.el
+   else
+      sed "s|(defvar mupad-help-method 'mupad-help-from-toc-to-buffer)|(defvar mupad-help-method 'mupad-help-from-file-to-buffer)|" mupad-run.el > mupad-run-bis.el
+   fi
+
+   rm mupad-run.el
+   mv mupad-run-bis.el mupad-run.el
+
+   echo -e "(byte-compile-file \"mupad-help.el\")" >> "configure-to-compile-mupad-el-and-all"
+
+else
+   echo "- File mupad-help.el NOT found:"
+   echo "  Online help NOT allowed."
+fi
+
+
+#file mupad-run.el-info in mupad-run.el:
+if test -f mupad-run.el; then
+   echo "+ File mupad-run.el found:"
+   echo "  You can run MuPAD sessions under emacs."
+
+   if test -f mupad-run.el-info; then
+      sed "s|(defcustom mupad-run-info .*mupad-run\.el-info|(defcustom mupad-run-info \"$LISP_INSTALL_DIR/mupad-run\.el-info|" mupad-run.el > mupad-run-bis.el
+
+      rm mupad-run.el
+      mv mupad-run-bis.el mupad-run.el
+   else
+      echo "- File mupad-run.el-info NOT found."
+   fi
+   echo -e "(byte-compile-file \"mupad-run.el\")" >> "configure-to-compile-mupad-el-and-all"
+
+   #To handle option of the mupad process:
+   echo ""
+   echo "Options for MuPAD process:"
+   if [ `mupad -V` = 2.5.1 ]; then
+      echo "Your MuPAD version is 2.5.1: nothing to modify"
+   else
+      echo "Your MuPAD version is assumed to be 3.0"
+
+      sed 's|'\''("-R" "-U" "EMACS")|'\''("-E" "-U" "EMACS")|' mupad-run.el > mupad-run-bis.el
+
+      rm mupad-run.el
+      mv mupad-run-bis.el mupad-run.el
+   fi  
+
+else
+   echo "- File mupad-run.el was NOT found."
+   echo "  This script is to be run MuPAD sessions under emacs."
+   echo "  You may still be able to use mupad.el to edit scripts"
+fi
+
+echo ""
+echo "Byte-Compiling ..."
+
+emacs -batch -l configure-to-compile-mupad-el-and-all
+
+echo ""
+echo "Disregard warnings concerning files newer than byte-compiled ones."
+echo ""
+echo "To end the installation and to make vcam work,"
+echo "you should read the file INSTALL.txt and"
+echo "    add the script decribed there to your .emacs file"
+echo "    add the script described there to your .mupad/userinit.mu file."
+
+rm configure-to-compile-mupad-el-and-all
