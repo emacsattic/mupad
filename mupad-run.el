@@ -679,7 +679,7 @@ Available special keys:
     (goto-char (point-max))
     (recenter -1)
     (goto-char brp))
-  (set-buffer brc))
+  (set-buffer brc)))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
