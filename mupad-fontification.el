@@ -75,10 +75,7 @@ commands export/unexport. This variable is used only by font-lock.")
     ''mupad-comment  ''mupad-string  ''mupad-keyword ''mupad-options
     ''mupad-domain ''mupad-function-name  ''mupad-variable-name ''mupad-global-var
     ''mupad-type     ''mupad-info ''mupad-prompt ''mupad-last-prompt ''mupad-primitive-name
-    ''mupad-user-def ''mupad-input ''mupad-last-input ''mupad-output))
-(mapcar (lambda (aplace) (eval (list 'defvar (eval aplace) aplace)))
-     (append mupad-places
-       (list ''shade1 ''shade2 ''shade3 ''shade4 ''shade5))))
+    ''mupad-user-def ''mupad-input ''mupad-last-input ''mupad-output)))
 
 (defconst mupad-color-scheme-alist
  ;; Each scheme should at least contain 'mupad-prompt 'mupad-input 'mupad-type
@@ -295,7 +292,7 @@ commands export/unexport. This variable is used only by font-lock.")
     '(mupad-find-simple-loaded-primitive-name (0 mupad-primitive-name))
     '(mupad-find-composed-primitive-name (0 mupad-primitive-name))
     '(eval . (cons mupad-prefix-regexp '(0 mupad-domain)))
-    '("\\<stdlib\\>" (0 mupad-domain))
+    '("\\<stdlib\\>" (0 'mupad-domain))
     '(mupad-find-ops (0 mupad-keyword append t))
     )))
 
@@ -369,9 +366,9 @@ Default is `font-lock-builtin-face'.")))
     (require 'font-lock)
     (mupad-first-use-color-scheme)
     (make-local-variable 'font-lock-comment-face)
-    (setq font-lock-comment-face '(eval mupad-comment))
+    (setq font-lock-comment-face 'mupad-comment)
     (make-local-variable 'font-lock-string-face)
-    (setq font-lock-string-face '(eval mupad-string))))
+    (setq font-lock-string-face 'mupad-string)))
 
 ;; Parsers :
 

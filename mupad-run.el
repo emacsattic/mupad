@@ -398,9 +398,10 @@ Available special keys:
 ; initialisation des couleurs
     (mapcar
       (lambda (a-face)
-        (make-face (car a-face)) 
+        (make-face (car a-face))
         (set-face-foreground (car a-face) (cadr a-face))
-        (set-face-background (car a-face) (car (cddr a-face))))
+        (set-face-background (car a-face) (car (cddr a-face)))
+	)
       mupad-run-face)
 ; gestion de l'historique 
     (setq mupad-run-hist-commands (head-tail-void))

@@ -1528,12 +1528,12 @@ and source-file directory for your debugger."
 	["Set DIGITS..." mupad-bus-set-digits :active (processp mupad-bus-my-mupad-run-process)]
 	["Adapt TEXTWIDTH" mupad-bus-adapt-textwidth :active (processp mupad-bus-my-mupad-run-process)
 	 :help "Set the textwidth of the mupad process to the actual width of your window"]
-        ["PrettyPrint switch" mupad-bus-prettyprint-switch :active t
+        ["PrettyPrint switch" mupad-bus-prettyprint-switch :active (processp mupad-bus-my-mupad-run-process)
          :help "Toggle the value of PRETTYPRINT"]
 	"--------------------"
 	["Exchange Keys" mupad-toggle :active t :help "Exchange bindings of RET/M-RET" ]
 	["Customize" mupad-customize-mupad-group
-	 :active (processp mupad-bus-my-mupad-run-process) :key-sequence nil])))
+	 :active t :key-sequence nil])))
 
 ;;----------------------------
 ;; Add a menu to the menu-bar.
