@@ -128,36 +128,6 @@ CLOSING-STATEMENT can be \";\". See `mupad-region' for more information."
   (mupad-bus-send-file ";"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Helpsss
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(unless (fboundp 'backward-extended-mupadword)  ;  These functions come from mupad.el
-  (defun backward-extended-mupadword nil nil))  ;
-(unless (fboundp 'forward-extended-mupadword)   ;
-  (defun forward-extended-mupadword nil (point)))  ;
-;----------------------------------------------------------------------------------------
-
-(defun mupad-bus-ask-fn-name (question)
-  (save-excursion
-    (let* ((posfuncname
-            (buffer-substring-no-properties
-	     (or (backward-extended-mupadword) (point))
-	     (forward-extended-mupadword)))
-           (funcname (completing-read
-                      (if (string-equal posfuncname "")
-                          (concat question ": ")
-                        (concat question " [" posfuncname "]: "))
-                      mupad-help-completion-array)))
-      (and (string-equal funcname "")
-           (setq funcname posfuncname))
-      funcname)))
-
-(defun mupad-bus-get-help nil
-  (interactive)
-  (mupad-help-init)
-  (mupad-help-from-string-to-buffer (mupad-bus-ask-fn-name "Help about")))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Control !
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
