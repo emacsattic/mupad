@@ -159,11 +159,11 @@ but absolute with respect to the left margin. It applies also to the next
 strong/end key.  In this construct, you can also use [SPECIAL-HEAD-STRING
 special-head INDENT-SPECIAL-HEAD SEPARATORS]. This key is closed by SEPARATORS
 which is either a separator which belongs to `sli-separators' or a list of
-separators all in `sli-separators' inwhich case the first one is the one used
-by sli-maid. No other construct sould happen between the special-head and its
+separators all in `sli-separators' in which case the first one is the one used
+by sli-maid. No other construct should happen between the special-head and its
 separator except comments and keys termed CONSTRUCTORs; for instance the
 'proc/(option)/begin/end_proc' construct of MuPAD is
-a head/special-head/strong/end.  You can use several [END-STRING end]. The first
+a head/special-head/strong/end. You can use several [END-STRING end]. The first
 one is going to be used by the maid. Furthermore you can use the same END-STR
 for several constructs. It then applies to the first 'head' that appears
 (going backward). Concerning SPECIAL-HEAD, the syntax could make believe that
@@ -234,19 +234,26 @@ Elements of this list have format [head-key key].")
 
 (defvar sli-separators nil "Do not forget `sli-is-a-separatorp'.")
 
-(defvar sli-is-a-separatorp-fn 'sli-is-a-separatorp-default)
+(defvar sli-is-a-separatorp-fn 'sli-is-a-separatorp-default
+  "Function called to decide if character after POINT
+is a separator. This function takes an optional argument
+which is the value of POINT and should be surrounded by
+save-excursion and save-match-data, see `sli-is-a-separatorp-default'.")
 
 (defun sli-is-a-separatorp-default (&optional pt)
-  (if sli-separators
-      (let ((case-fold-search sli-case-fold))
-        (looking-at (regexp-opt sli-separators)))
-    nil))
+  (save-excursion
+    (when pt (goto-char pt))
+    (save-match-data
+      (if sli-separators
+          (let ((case-fold-search sli-case-fold))
+            (looking-at (regexp-opt sli-separators)))
+        nil))))
 
 (defun sli-is-a-separatorp (&optional pt)
   (funcall sli-is-a-separatorp-fn pt))
 
 (defvar sli-put-newline-fn 'sli-put-newline-default
-"Function used to insert a newline.")
+"Function used to insert a newline. Takes no argument.")
 
 (defun sli-put-newline-default nil (insert-char ?\n 1))
 
@@ -316,7 +323,7 @@ from the margin.")
 (defvar sli-keys nil)
 (defvar sli-max-keys-length 0
 "An integer: the maximum length of a keyword in sli-structures.
-Used in `sli-anchored-posix-search-backward', a fix for posix-search-backward. ")
+Used in `sli-anchored-posix-search-backward', a fix for `posix-search-backward'. ")
 (defvar sli-all-keys-nomrelations-noseparators-regexp nil)
 (defvar sli-all-keys-regexp nil) ; including string quotes and all kind of comments.
 (defvar sli-all-end-strong-regexp nil)
@@ -350,7 +357,10 @@ this is the alist ((key . (keys in the same class)) ...).")
 "The alist ((end/strong-key . (head/strong1 head/strong2 ...)) ...)
 of keys that can occur before the first key.")
 
-(defvar sli-second-offset-alist nil )  ; to apply after the soft
+(defvar sli-second-offset-alist nil "Alist (key . offset) where
+OFFSET is the one to apply after the soft key if it exist, after
+KEY if it doesn't have any soft. KEY can be a head/end/strong/soft.")  ; to apply after the soft
+(defvar sli-special-head-offset-alist nil "Alist (special-head . offset).")
 (defvar sli-relation-offset-alist nil)
 
 (defvar sli-maid-alist nil)
@@ -360,14 +370,16 @@ They *should be* soft or strong keys.")
 
 ;; Only to shut up compiler. These two variables should be defined when the
 ;; correct buffer is set ! Used by sli-show-sexp.
-(defvar sli-overlay-beg)
-(defvar sli-overlay-end)
+(defvar sli-overlay-beg nil "overlay set by `sli-show-sexp' and showing the head key.")
+(defvar sli-overlay-end nil "overlay set by `sli-show-sexp' and showing the end key.")
 
 (defvar sli-prop-do-not-recompute-time 10
 "Time span in milliseconds under which it is not necessary to recompute
 text properties alloted by sli-tools.")
 (defvar sli-prop-used 0
 "Number of times text-properties have been used.")
+(defvar sli-key-is-a-special-headp nil
+  "Set by `sli-get-corresponding-key' and `sli-get-first-non-end-key'.")
 
 (mapcar 'make-variable-buffer-local 
 '(sli-verbose sli-prop-verbose sli-handles-sexp sli-overlay-beg sli-overlay-end
@@ -384,7 +396,8 @@ sli-strong-regexp sli-relevant-alist sli-ancestors-alist sli-fixed-keys-alist
 sli-fixed-regexp sli-companion-strong-keys-alist sli-soft-alist
 sli-first-offset-alist sli-second-offset-alist sli-relation-offset-alist
 sli-maid-alist sli-ambiguous-keys sli-constructor-keys sli-all-keys-and-constructors-regexp
-sli-block-comment-middle-offset sli-block-comment-end-offset))
+sli-block-comment-middle-offset sli-block-comment-end-offset sli-key-is-a-special-headp
+sli-special-head-offset-alist))
 
 ;;;-----------------------------------------------------------------------------
 ;;; This section is devoted to some precomputations from sli-structures.
@@ -728,8 +741,8 @@ sli-block-comment-middle-offset sli-block-comment-end-offset))
          (cond
            ((equal (elt pl 1) 'head)
             (setq last-cand pl))
-           ((and (member (elt pl 1) '(end strong special-head))
-		 (not (assoc (elt pl 0) sli-special-head-heads-alist)))
+           ((and (member (elt pl 1) '(end strong))
+		 (not (assoc (elt pl 0) sli-special-head-heads-alist))) ;; ???
             (when last-cand ;; no soft after last-cand.
               (setq res (append res (list (cons (elt last-cand 0)
                                                 (elt last-cand 2))))))
@@ -753,6 +766,19 @@ sli-block-comment-middle-offset sli-block-comment-end-offset))
 	 (lambda (pl)
 	   (cond
 	    ((member (elt pl 1) '(math-relation beacon))
+	     (add-to-list 'res (cons (elt pl 0) (elt pl 2))))))
+	 ph))
+      (mapcar 'sli-flatten sli-structures))
+    res))
+
+(defun sli-get-special-head-offset-alist nil
+  (let ((res '()))
+    (mapcar
+      (lambda (ph)
+        (mapcar
+	 (lambda (pl)
+	   (cond
+	    ((member (elt pl 1) '(special-head))
 	     (add-to-list 'res (cons (elt pl 0) (elt pl 2))))))
 	 ph))
       (mapcar 'sli-flatten sli-structures))
@@ -906,7 +932,7 @@ If beg1 = beg2= ... = begN, we answer (beg1 end1 end2 ... endN)."
 
 (defun sli-precomputations nil
   ;; variables:
-  ;(princ "\nPrecomp: variables")
+  ;(princ "\nPrecomputations: variables")
   (setq sli-head-keys (sli-scan-structures 'head)
         sli-special-head-keys (sli-scan-structures 'special-head)
         sli-soft-keys (sli-scan-structures 'soft)
@@ -922,7 +948,7 @@ If beg1 = beg2= ... = begN, we answer (beg1 end1 end2 ... endN)."
 	sli-keys (append sli-keys-nomrelations sli-relation-keys)
         sli-max-keys-length (sli-get-max-keys-length sli-keys))
   ;;regexps:
-  ;(princ "\nPrecomp: regexps")
+  ;(princ "\nPrecomputations: regexps")
   (setq sli-all-end-strong-regexp (sli-regexp-opt (append sli-end-keys sli-strong-keys))
         sli-fixed-regexp (sli-regexp-opt (mapcar 'car sli-fixed-keys-alist))
         sli-head-regexp (sli-regexp-opt sli-head-keys)
@@ -938,7 +964,7 @@ If beg1 = beg2= ... = begN, we answer (beg1 end1 end2 ... endN)."
                                   sli-constructor-keys
                                   (list "\"" block-comment-start block-comment-end))))
   ;; association lists:
-  ;(princ "\nPrecomp: alists")
+  ;(princ "\nPrecomputations: alists")
   (setq sli-ends-head-alist (sli-get-ends-head-alist)
 	sli-head-end-alist (sli-get-head-end-alist)
 	sli-heads-strong-alist (sli-get-heads-strong-alist) ; sli-ambiguous-keys also is partly created there.
@@ -953,6 +979,7 @@ If beg1 = beg2= ... = begN, we answer (beg1 end1 end2 ... endN)."
         sli-first-offset-alist (sli-get-first-offset-alist)
         sli-second-offset-alist (sli-get-second-offset-alist)
         sli-relation-offset-alist (sli-get-relation-offset-alist)
+        sli-special-head-offset-alist (sli-get-special-head-offset-alist)
         ;; the maid :
         sli-maid-alist (sli-get-maid-alist) ; sli-ambiguous-keys also is partly created there.
         )
@@ -984,6 +1011,11 @@ If beg1 = beg2= ... = begN, we answer (beg1 end1 end2 ... endN)."
   (setq key (sli-keyword key))
   (eval
    (cond
+    ;; See how special-heads are handled: if specified by sli-key-is-a-special-headp
+    ;; put to t they take precedence, otherwise the head-offset has precedence.
+    ;; If no head exist then the offset as a special-head is finally used.
+    (sli-key-is-a-special-headp
+     (cdr (assoc key sli-special-head-offset-alist)))
     ((and before-soft (sli-member key (append sli-head-keys sli-strong-keys)))
      (cdr (assoc key sli-first-offset-alist)))
     ((sli-member key (append sli-head-keys sli-strong-keys))
@@ -993,7 +1025,7 @@ If beg1 = beg2= ... = begN, we answer (beg1 end1 end2 ... endN)."
     ((sli-member key sli-soft-keys)
      (cdr (assoc key sli-second-offset-alist)))
     ((sli-member key sli-special-head-keys)
-     (cdr (assoc key sli-second-offset-alist)))
+     (cdr (assoc key sli-special-head-offset-alist)))
     (t 0))))
 
 (defsubst sli-get-shift (beg end)
@@ -1378,7 +1410,7 @@ was a special-head: it is thus a special-head or a head located before (word . p
       (dolist (wd whatwewant)
         (dolist (x (cdr (assoc (sli-keyword wd) sli-relevant-alist)))
           (when (sli-member x sli-end-keys) (add-to-list 'relevant x))))
-      (setq aregexp (sli-regexp-opt relevant))
+      (setq aregexp (sli-regexp-opt relevant) sli-key-is-a-special-headp nil)
       ;(princ "\n") (princ (list "(sli-get-corresponding-key) getting in " relevant))
       (while (and (not foundp) (not (bobp)))
         (if (sli-anchored-posix-search-backward aregexp nil 1)
@@ -1424,7 +1456,7 @@ was a special-head: it is thus a special-head or a head located before (word . p
 			     (sli-in-one-line-comment))
                    (sli-prop-renew (point) (+ (point) (length word))
                                    (list 'sli-type 'special-head 'sli-ancestor (cdr aux)))
-		   (setq foundp t))
+		   (setq foundp t sli-key-is-a-special-headp t))
 	       ;; acts like a head:
 	       (when sli-verbose (princ "\n(                            ... and is indeed one !)"))
                (sli-prop-renew (point) (+ (point) (length word)) '(sli-type head))
@@ -1722,6 +1754,12 @@ Default value is `sli-select-end-of-overlay-fn-default'.")
   (funcall sli-select-end-of-overlay-fn key pt))
 
 (defun sli-show-sexp (&optional arg)
+  "POINT is on a head or end key.
+This key is highlighted as well as its corresponding end/head.
+Color used is `show-paren-match-face'. Nothing is highlighted
+if no corresponding key is found. 
+  When used with prefix C-u, remove stale text properties and
+recompute things by setting `sli-prop-do-not-recompute-time' to 0."
   (interactive "P")
   (save-excursion
     (save-restriction
@@ -1789,6 +1827,10 @@ Default value is `sli-select-end-of-overlay-fn-default'.")
 (defvar sli-show-sexp-idle-timer nil)
 
 (defun sli-show-sexp-semi-mode (arg)
+  "When ARG>0 corresponding head/end keys are automatically
+shown with an idle timer. When ARG=0, sli-show-sexp is bound
+to f8. When ARG is anything else, remove `sli-overlay-beg' and
+`sli-overlay-end'."
   (when sli-show-sexp-idle-timer
       (cancel-timer sli-show-sexp-idle-timer))
   (cond
@@ -1874,6 +1916,7 @@ if PT is within a multiline-comment."
           word start (in-stringp nil) (case-fold-search sli-case-fold)
           (aregexp
              (if nomrelation sli-all-keys-nomrelations-noseparators-regexp sli-all-keys-regexp)))
+      (setq sli-key-is-a-special-headp nil)
       (while (and (not foundp) (not (bobp)))
         (if (sli-anchored-posix-search-backward aregexp nil 1)
           (progn ;(princ "\n") 
@@ -1938,7 +1981,7 @@ if PT is within a multiline-comment."
                   (unless (or (sli-separator-directly-afterp pt word)
                               (sli-in-one-line-comment))
                     (sli-prop-renew (point) (+ (point) (length word)) '(sli-type special-head))
-                    (setq foundp t))
+                    (setq foundp t sli-key-is-a-special-headp t))
                 ;; acts like a head:
                 (when sli-verbose (princ "\n((sli-get-first-non-end-key) ... and is indeed one !)"))
                 (sli-prop-renew (point) (+ (point) (length word)) '(sli-type head))
@@ -2149,6 +2192,7 @@ Or on line after if AFTERP is t."
     ;; This point can be reached only if AFTERP is t OR first-stuff is nothing special
     ;; (which could be a fixed key).
     (setq first-stuff (sli-get-first-non-end-key pt nomrelation)) ; backward search
+    ;; sli-key-is-a-special-headp is set.
     (when sli-verbose
       (princ "\n") (princ (list "(sli-tell-indent) indentation of line after?" afterp))
       (princ "\n") (princ (list "(sli-tell-indent) key deciding of indent = " first-stuff)))
@@ -2164,6 +2208,9 @@ Or on line after if AFTERP is t."
        (when sli-verbose
 	  (princ "\n") (princ (list "(sli-tell-indent) within comment")))
        (throw 'indent (current-indentation)))
+      (sli-key-is-a-special-headp ;; a special head;
+       (when sli-verbose (princ "\n((sli-tell-indent) within special-head.)"))
+       (sli-compute-indent-after first-stuff t))
       ((and (sli-member (car first-stuff) (append sli-head-keys sli-strong-keys))
             (not (assoc (sli-keyword (car first-stuff)) sli-soft-head-or-strong-alist)))
        ;; head/strong without soft:
