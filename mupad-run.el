@@ -99,8 +99,8 @@
 ;
 ; modifié par la configuration automatique
 (defcustom mupad-run-info 
-  "/home/ramare/lisp/first-look/MuPAD/mupad-run.el-info"
-  "Indique où est le fichier de présentation de mupad-run"
+  "/usr/local/share/emacs/site-lisp/mupad-run.el-info"
+  "Location of the mupad-run.el-info file describing mupad-run.el"
   :type 'file :group 'mupad-run)
 
 (defvar mupad-help-method 'mupad-help-from-toc-to-buffer)
