@@ -4,6 +4,21 @@
 // Date:                 October 27th 2002
 // Author:               Olivier Ramare
 
+******************************************************************************
+WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
+
+This file is largely outdated. Most of the configuration is taken care
+of automatically by the configure script. Other things can be
+configured later on from within MuPAD with M-x customize-group mupad.
+
+You may however find below a few helpful tips and tricks for
+troubleshooting or advanced features.
+
+WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
+******************************************************************************
+
+
+
 (1) Recover mupad.tar.gz somewhere, for instance from
     http://www-gat.univ-lille1.fr/~ramare/ServeurPerso/MuPADCombined/PageMuPAD.html
     It is a gnu-zipped archive containing 10 files including this one.
