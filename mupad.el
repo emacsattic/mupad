@@ -1,24 +1,38 @@
 ;;; mupad.el --- mupad editing support package
 
+;; Copyright (C) 2002, Fran\c cois Maltey, Nicolas Thiery, Olivier Ramar\'e
+
+;; Maintainer: Olivier Ramare <ramare@agat.univ-lille1.fr>
+;; keywords: progmodes
+
+;; This library is free software; you can redistribute it and/or
+;; modify it under the terms of the GNU Lesser General Public
+;; License as published by the Free Software Foundation version 2.1.
+
+;; This library is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+;; Lesser General Public License for more details.
+
+;; You should have received a copy of the GNU Lesser General Public
+;; License along with this library; if not, write to the Free Software
+;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+;;; Commentary:
+
 ;; Major mode for MuPAD editing. It provides functions for editing
 ;; MuPAD code and interacting with MuPAD. See the documentation
 ;; of mupad-mode.
-
-;; LCD Archive Entry:
-;; mupad-mode|Olivier Ramare|ramare@agat.univ-lille1.fr|
-;; MuPAD editing support|
-;; 15-Dec-01|2.00|~/modes/mupad.el.Z|
-
-;; Maintainer: Olivier Ramare <ramare@agat.univ-lille1.fr>
 
 ;; This code was initialy stolen by ?? from "maple.el" which is the work
 ;; of Bruno Salvy (Bruno.Salvy@inria.fr). Since then a huge part of
 ;; "pari.el" of Annette Hoffman/David Carlisle/Karim Belabas/Olivier Ramare
 ;; has been incorporated as well as most of "mupad-mode.el" of Juergen Billing.
 ;; 15/09/1995: First release of mupad.el
-;; Till March 2001, combined efforts/comments of
+;; Till December 2002, combined efforts/comments of
 ;;        Henning von Bargen (h.vonbargen@cityweb.de)
 ;;        Juergen Billing (bij@plato.uni-paderborn.de)
+;;        Francois Maltey (Francois.Maltey@enst-bretagne.fr)
 ;;        Michel Quercia (quercia@cal.enst.fr)
 ;;        Nicolas Thiery (nthiery@jonas.univ-lyon1.fr)
 ;;        Winfried Truemper (winni@xpilot.org)
@@ -26,12 +40,6 @@
 ;;        Paul Zimmermann (Paul.Zimmermann@loria.fr)
 ;; have brought this version to life.
 
-;; TODO
-;;    (1)  debug the debugguer !
-;;    
-
-;; DONE
-;;   
 (provide 'mupad)
 ;(require 'mupad-xemacs)
 ;;----------------------------------------------------
