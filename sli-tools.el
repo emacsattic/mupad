@@ -1572,8 +1572,8 @@ Answer POINT of where to go."
                 (move-overlay sli-overlay-beg (point-min) (point-min))))
              (t ;; Erase overlays:
               (move-overlay sli-overlay-beg (point-min) (point-min))
-              (move-overlay sli-overlay-end (point-min) (point-min)))
-            (set-buffer-modified-p modifiedp)))
+              (move-overlay sli-overlay-end (point-min) (point-min))))
+            (set-buffer-modified-p modifiedp))
         (widen)))))
 
 (defvar sli-show-sexp-idle-timer nil)
