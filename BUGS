@@ -1,3 +1,10 @@
+Sending this multiline input to the debugger hangs it.
+
+proc()
+begin
+1
+end
+------------------------------------------------------------------------------
 Make sure that the in-buffer completion list is always completely visible;
 There are cases where there seems to be a conflict with the recentering heuristic,
 and all the completion lists is below the last visible line ...
