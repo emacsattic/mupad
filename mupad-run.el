@@ -80,7 +80,7 @@
   "Command to run mupad"
   :type 'string :group 'mupad-run)
 
-(defcustom mupad-run-info  "/mupad-run.el-info"
+(defcustom mupad-run-info "/home/ramare/lisp/first-look/MuPAD/mupad-run.el-info"
   "Indique où est le fichier de présentation de mupad-run"
   :type 'string :group 'mupad-run)
 

@@ -65,7 +65,7 @@ and furthering of constructs"
 put for instance \"netscape file:/usr/local/MuPAD/mupad_html_help/index.html\""
 :type 'string :group 'mupad)
 
-(defcustom mupad-el-info "/mupad.el-info"
+(defcustom mupad-el-info "/home/ramare/lisp/first-look/MuPAD/mupad.el-info"
 "Place of the mupad.el-info file."
 :type 'string :group 'mupad)
 

@@ -82,9 +82,7 @@
 "not" "of" "option" "or" "otherwise" "proc" "quit" "repeat" "step"
 "then" "to" "TRUE" "union" "until" "UNKNOWN" "while" "domain"
 "end_domain" "PI" "EULER" "CATALAN" "MSDOS" "EMPTY" "OPTIMAL" "Global"
-"UNBOUNDED" "infinity" "undefined" "toBeDefined")
-
-   complexInfinity))
+"UNBOUNDED" "infinity" "undefined" "toBeDefined" "complexInfinity"))
 
 (defconst mupad-options-list ;; obtained via stdlib::OPTIONS 
 ;; or indexval(stdlib, "OPTIONS") ;
