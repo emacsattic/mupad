@@ -84,8 +84,9 @@
   "Indique où est le fichier de présentation de mupad-run"
   :type 'string :group 'mupad-run)
 
-(defvar mupad-help-method 'mupad-help-from-toc-to-buffer) ; pour l'option -R 
-; (defvar mupad-help-method 'mupad-help-from-file-to-buffer) ; pour l'option -E
+(defvar mupad-help-method 'mupad-help-from-toc-to-buffer)
+; mupad-help-from-toc-to-buffer  --> valable pour l'option -R 
+; mupad-help-from-file-to-buffer --> valable pour l'option -E
 
 (defun mupad-run-set-options (sym val)
   (set sym val)
