@@ -1006,9 +1006,9 @@ Available special keys:
 	   (setq buffer-undo-list nil)
 	   )
 	((eq brt 35)      ; display variable MPRCmdb_disp_list
-          (mupad-run-print (concat output-str "\n")
-            'mupad-run-face-result
-            (marker-position mupad-run-todo) brt nil))
+	 (mupad-run-print (concat output-str "\n")
+			  'mupad-run-face-result
+			  (marker-position mupad-run-todo) brt nil))
         ((or (eq brt 9)   ; error message
 	     (eq brt 63)) ; NT: debugger error message
           (mupad-run-print output-str
@@ -1040,6 +1040,7 @@ Available special keys:
 	     (eq brt 66))           ; MPRCmdb_where
          ; Extract this in a separate function
 ; debugger -> frontend: display file at position line no.
+
 	 (string-match "^\\(\\S-+\\)\n\\([0-9]+\\)" output-str)
 	 (let
 	     ((file (match-string 1 output-str))
@@ -1063,27 +1064,33 @@ Available special keys:
 		   (set-buffer (get-file-buffer file))
 		 ;(message "Open buffer")
 		 (set-buffer (find-file-noselect file t))
-		 ;(message "Set buffer read only")
-		 (setq buffer-read-only t)
 		 ;(message "Switch to mupad-mode")
-		 (mupad-mode)		 (setq buffer-read-only t))
+		 (mupad-mode))
 	       ;(message "Revert buffer")
 	       (revert-buffer t t t)
+	       ;(message "Set buffer read only")
+	       (setq buffer-read-only t)
 	       )))
 	   ;(message "Calling gud")
 	   (gud-display-line file line)
 	   ;(message "Setting file")
 	   (setq mupad-run-debugger-file file)
 	   (setq mupad-run-debugger-line line)
+	   ; Ask the kernel to display the variables MPRCmdb_disp_list
+	   (process-send-string mupad-run-process
+				(concat "\006" (string 35) "\007\n"))
+	   (setq mupad-run-state 'wait-display-list)
 	   ))
-	((eq brt 62)
+	((eq brt 62) ; prompt
 	 ; kernel has stopped and waits for the next debugger command
-	 (setq mupad-run-prompt output-str)
-	 (set-marker mupad-run-last-prompt (1- mupad-run-todo))
-	 (mupad-run-print (concat output-str "\n")
-	  'mupad-run-face-prompt (marker-position mupad-run-todo) brt nil)
-	 (set-marker mupad-run-last-prompt (1+ mupad-run-last-prompt))
-	 (setq mupad-run-state 'wait-debugger-input))
+	 (if (equal mupad-run-state 'wait-display-list)
+	     (setq mupad-run-state 'wait-prompt)
+	   (setq mupad-run-prompt output-str)
+	   (set-marker mupad-run-last-prompt (1- mupad-run-todo))
+	   (mupad-run-print (concat output-str "\n")
+			    'mupad-run-face-prompt (marker-position mupad-run-todo) brt nil)
+	   (set-marker mupad-run-last-prompt (1+ mupad-run-last-prompt))
+	   (setq mupad-run-state 'wait-debugger-input)))
 ; We ignore all begin and end tags, and a few others
 	((memq brt '(36	             ; MPRCmdb_disp_list_begin
 		     37		     ; MPRCmdb_disp_list_end
@@ -1394,7 +1401,7 @@ Available special keys:
 ;          (insert br)
 ;          (save-excursion (goto-char mupad-run-comp-edit) (insert br))))
       (t (message "Ne doit pas se produire")))
-    (setq mupad-run-emacs-completion nil)))
+    (setq mupad-run-emacs-completion nil))) ; Could use mupad-run-state instead?
 ;; 
 ;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 ;;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
