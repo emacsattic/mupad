@@ -6,7 +6,7 @@
 domain bla
   inherits zut;
   category ble::bli;
-    
+  
   bla := 1;
 end_domain;
 
