@@ -93,9 +93,9 @@
 
 (defun mupad-run-set-options (sym val)
   (set sym val)
-  (cond ((eq val '("-E" "-U" "EMACS"))
+  (cond ((member "-E" val)
           (setq mupad-help-method 'mupad-help-from-toc-to-buffer))
-        ((eq val '("-R" "-U" "EMACS"))
+        ((member "-R" val)
           (setq mupad-help-method 'mupad-help-from-file-to-buffer))))
 
 (defcustom mupad-run-pgm-opt
@@ -399,7 +399,7 @@ Available special keys:
     (set-text-properties (point-min) (point-max) nil)
     (mapcar     
       (lambda (var) (make-local-variable var))
-      '(mupad-help-method mupad-run-history-max mupad-run-system-trace 
+      '(mupad-run-history-max mupad-run-system-trace 
         mupad-run-system-exception mupad-run-process
         mupad-run-edit mupad-run-todo mupad-run-comp-edit 
         mupad-run-last-prompt mupad-run-hist-commands 
