@@ -91,6 +91,10 @@
 ;mupad-help-from-toc-to-buffer  --> valable pour l'option -R
 ;mupad-help-from-file-to-buffer --> valable pour l'option -E
 
+(defvar mupad-run-is-for-students nil
+  "Set it to t if this is the version for students.
+In which case the options for starting mupad won't be asked for.")
+
 (defun mupad-run-set-options (sym val)
   (set sym val)
   (cond ((member "-E" val)
@@ -362,13 +366,14 @@ should be present."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 (defun mupad-run-ask-pgm-opt nil
-  (let ((cmd-to-start
-	 (read-from-minibuffer
-	  "Command to start mupad: "
-	  (concat mupad-run-pgm " "
-		  (mapconcat (lambda (wd) wd) mupad-run-pgm-opt " ")))))
-    (mupad-run-set-options
-     'mupad-run-pgm-opt (cdr (split-string cmd-to-start " ")))))
+  (unless mupad-run-is-for-students
+    (let ((cmd-to-start
+	   (read-from-minibuffer
+	    "Command to start mupad: "
+	    (concat mupad-run-pgm " "
+		    (mapconcat (lambda (wd) wd) mupad-run-pgm-opt " ")))))
+      (mupad-run-set-options
+       'mupad-run-pgm-opt (cdr (split-string cmd-to-start " "))))))
 
 (defalias 'run-mupad 'mupad-run)
 (defun mupad-run nil
