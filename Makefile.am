@@ -27,9 +27,11 @@ DISTCLEANFILES = $(PKG_RPM_NAME).info $(PKG_RPM_NAME).spec -r packages/rpm site-
 
 KNOWN_EMACS_SITE_START_DIRECTORIES = /etc/emacs/site-start.d /usr/share/emacs/site-lisp/site-start.d
 
-install-data-local:
+site-start.d/mupacs.el: FORCE
 	@echo Finalizing the variable substitution in site-start.d/mupacs.el;
 	@sed site-start.d/mupacs.el.in -e 's,$${datadir},${datadir},' > site-start.d/mupacs.el
+
+install-data-local: site-start.d/mupacs.el
 	@found=no;							\
 	for dir in $(KNOWN_EMACS_SITE_START_DIRECTORIES); do		\
 	  if test -d $$dir; then					\
