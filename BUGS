@@ -1,3 +1,6 @@
+mapc is missing in emacs < 20.7 (fixed: 2003/01/29)
+There remains some error about wd. To be investigated.
+------------------------------------------------------------------------------
 (fixed: 3.2.2 2003/10/27)
 Fixed caar in sli-maid-get-alist. The following error message was
 printed on loading mupacs:
