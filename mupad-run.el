@@ -89,7 +89,7 @@
 
 (defun mupad-run-set-options (sym val)
   (set sym val)
-  (cond ((eq val '("-E" "-U" "EMACS"))
+  (cond ((eq val '("-R" "-U" "EMACS"))
           (setq mupad-help-method 'mupad-help-from-toc-to-buffer))
         ((eq val '("-E" "-U" "EMACS"))
           (setq mupad-help-method 'mupad-help-from-file-to-buffer))))
@@ -1643,7 +1643,7 @@ Available special keys:
   (interactive)
   (condition-case err
     (let 
-        ((wind (selected-window)) (where-it-is "")
+        ((wind (selected-window)) (where-it-is "") (inhibit-read-only t)
         (to-be-tested 
           (list 
             "/usr/local/lib/MuPAD/emacs/" "/usr/local/share/lib/MuPAD/emacs/" 
