@@ -44,7 +44,7 @@
 
 ;; We use "" and  \" for strings.
 
-(defvar sli-verbose t "A true value gives (debugging) infos")
+(defvar sli-verbose nil "A true value gives (debugging) infos")
 
 (defvar sli-structures nil
   "List of lists. Each item is a vector or a list which we call a STRUCTURE
