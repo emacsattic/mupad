@@ -60,7 +60,7 @@ and furthering of constructs"
 
 (defcustom mupad-manual-command
 ;"netscape file:/usr/local/MuPAD/mupad_html_help/Automated/index.html"
-(concat mupad-directory "/bin/manual")
+(concat mupad-directory "/share/bin/manual")
 "The manual command. If you prefer the html documentation,
 put for instance \"netscape file:/usr/local/MuPAD/mupad_html_help/index.html\""
 :type 'string :group 'mupad)
