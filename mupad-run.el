@@ -23,7 +23,7 @@
 ;;  8/ Historique des commandes et recherche
 ;;  9/ Commandes de déplacement spéciales
 ;; 10/ Suppression (temporaire) d'affichage
-;; 11/ Gestion du couper/coller
+;;   11/ Gestion du couper/coller
 ;;   12/ Ajout de hook avant et après les commandes envoyées à mupad
 ;;   13/ Affichage du temps de calcul (calculé par emacs)
 ;;   14/ Modification de la ligne d'état
@@ -129,7 +129,7 @@
   '(mupad-run-edit mupad-run-todo mupad-run-comp-edit mupad-run-last-prompt
     mupad-run-itema mupad-run-itemb mupad-run-last-type
     mupad-run-output mupad-run-state mupad-run-time-start 
-    mupad-run-hist-commands mupad-run-hist-index mupad-run-question-before-kill
+    mupad-run-hist-commands mupad-run-question-before-kill
     mupad-run-save-buffer mupad-run-comp-begin mupad-run-prompt)))
 ;;
 (defvar mupad-run-process nil)
@@ -287,7 +287,7 @@
 ;;   un compteur pour séparer les commandes en attente     [ mupad-run-itema ]
 ;;   un compteur pour séparer les sorties de mupad         [ mupad-run-itemb ]
 ;;   les attributs des polices de caractères                [ mupad-run-face ] 
-;;   l'historique des commandes      [ muapd-hist-list, mupad-run-hist-index ]
+;;   l'historique des commandes                        [ muapd-hist-commands ]
 ;;
 ;; fonctions principales : 
 ;;   lancement du mode mupad-run dans un nouveau tampon          [ mupad-run ]
@@ -369,7 +369,7 @@ Available special keys:
         mupad-run-system-exception mupad-run-process mupad-run-face 
         mupad-run-edit mupad-run-todo mupad-run-comp-edit 
         mupad-run-last-prompt mupad-run-hist-commands 
-        mupad-run-hist-index mupad-run-output mupad-run-state 
+        mupad-run-output mupad-run-state 
         mupad-run-itema mupad-run-itemb mupad-run-last-type 
         mupad-run-time-start mupad-run-comp-begin mupad-run-prompt
         mupad-run-question-before-kill))
@@ -393,8 +393,8 @@ Available special keys:
         (set-face-background (car a-face) (car (cddr a-face))))
       mupad-run-face)
 ; gestion de l'historique 
-    (setq mupad-run-hist-commands ())
-    (setq mupad-run-hist-index -1)
+    (setq mupad-run-hist-commands (head-tail-void))
+    (set-ptr-head mupad-run-hist-commands)
 ; lancement du programme 
     (setq mupad-run-output "")
     (setq mupad-run-state 'beginning)
@@ -439,14 +439,13 @@ Available special keys:
   (interactive) 
   (let 
     ( (br (buffer-name (current-buffer))) (brc mupad-run-hist-commands) 
-      (bri mupad-run-hist-index) br1 (mupad-run-question-before-kill nil))
+      br1 (mupad-run-question-before-kill nil))
     (when (processp mupad-run-process)
       (setq br1 (mupad-run-save-br))
       (setq mupad-run-process nil)
       (kill-buffer br)
       (switch-to-buffer (set-buffer (get-buffer-create br)))
       (mupad-run-mode)
-      (setq mupad-run-hist-index bri)
       (setq mupad-run-hist-commands brc)
       (insert-buffer br1)
       (kill-buffer br1)
@@ -1137,69 +1136,167 @@ Available special keys:
 ;;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 ;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 ;;
-(defun mupad-run-get-next-command (str) 
-  (if (<= mupad-run-hist-index 0)   
-    (error "end of history list")
-    (setq mupad-run-hist-index (1- mupad-run-hist-index))
-    (car (nthcdr mupad-run-hist-index mupad-run-hist-commands))))
-;(defun mupad-run-get-next-command (str) 
-;  (while (and (> mupad-run-hist-index 0) br1)
-;    (setq mupad-run-hist-index (1- mupad-run-hist-index))
-;    (setq br2 (nthcdr mupad-run-hist-index mupad-run-hist-commands))
-;    (when 
-;      (string= 
-;        str 
-;        (substring (car br2) 0 (min (length str) (length (car br2)))))
-;      (setq br1 nil)))
-;    (when br1 
-;      (car (nthcdr mupad-run-hist-index mupad-run-hist-commands))));
-;
-;    (error "end of history list")
-;
+;; structure des données doublement chainé avec un point d'accès 
+;; intermédiaire sous forme d'un tableau :
+;; 0 = liste directe - 1 = liste inverse - 2 = particulier - 3 = longueur.
+;; L'accès aux éléments de la liste se fait ainsi :
+;; 0 = valeur - 1 = terme suivant - 2 = terme précédent
+;;
+(defun head-tail-void ()
+  (let ((res (make-vector 4 nil)))
+    (aset res 3 0)
+    res))
+
+(defun add-head (a struct) 
+  (let ((br (make-vector 3 nil)) (tete (aref struct 0)))
+    (aset br 0 a) 
+    (aset br 1 tete)
+    (if tete (aset tete 2 br) (aset struct 1 br))
+    (aset struct 0 br)
+    (aset struct 3 (1+ (aref struct 3)))
+    struct))
+
+(defun add-tail (a struct) 
+  (let ((br (make-vector 3 nil)) (queue (aref struct 1)))
+    (aset br 0 a) 
+    (aset br 2 queue)
+    (if queue (aset queue 1 br) (aset struct 0 br))
+    (aset struct 1 br)
+    (aset struct 3 (1+ (aref struct 3)))
+    struct))
+
+(defun remove-head (struct) 
+  (unless (aref struct 0) (error "structure vide"))
+  (when (eq (aref struct 2) (aref struct 0)) (aset struct 2 'head))
+  (aset struct 0 (aref (aref struct 0) 1))
+  (if (aref struct 0) (aset (aref struct 0) 2 nil) (aset struct 1 nil))
+  (aset struct 3 (1- (aref struct 3)))
+  struct)
+
+(defun remove-tail (struct) 
+  (unless (aref struct 0) (error "structure vide"))
+  (when (eq (aref struct 2) (aref struct 1)) (aset struct 2 'tail))
+  (aset struct 0 (aref (aref struct 0) 1))
+  (if (aref struct 0) (aset (aref struct 0) 2 nil) (aset struct 1 nil))
+  (aset struct 3 (1- (aref struct 3)))
+  struct)
+
+(defun list-tail (A) 
+  (let ((tmp (aref A 0)) res)
+    (while tmp (setq res (cons (aref tmp 0) res)) (setq tmp (aref tmp 1)))
+    res))
+
+(defun list-head (A) 
+  (let ((tmp (aref A 1)) res)
+    (while tmp (setq res (cons (aref tmp 0) res)) (setq tmp (aref tmp 2)))
+    res))
+
+(defun set-ptr-head (A) 
+  (if (aref A 1) (aset A 2 (aref A 0)) (aset A 2 'head)))
+
+(defun set-ptr-tail (A) 
+  (if (aref A 1) (aset A 2 (aref A 1)) (aset A 2 'tail)))
+
+(defun ptr-to-tail (A)
+  (cond 
+    ((not (aref A 2)) (error "pointeur vide"))
+    ((eq (aref A 2) 'tail))
+    ((eq (aref A 2) 'head) (or (aset A 2 (aref A 0)) (aset A 2 'tail)))
+    ((not (aref (aref A 2) 1)) (aset A 2 'tail))
+    (t (aset A 2 (aref (aref A 2) 1))))
+  A)
+
+(defun ptr-to-head (A)
+  (cond 
+    ((not (aref A 2)) (error "pointeur vide"))
+    ((eq (aref A 2) 'head))
+    ((eq (aref A 2) 'tail)  (or (aset A 2 (aref A 1)) (aset A 2 'head)))
+    ((not (aref (aref A 2) 2)) (aset A 2 'head))
+    (t (aset A 2 (aref (aref A 2) 2))))
+  A)
+;; 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+(defun mupad-run-get-previous-command (str)
+  (let (br brt brs) 
+    (setq br (aref mupad-run-hist-commands 2))
+    (ptr-to-tail mupad-run-hist-commands)
+    (setq brt t)
+    (while 
+      (and 
+         brt 
+         (not (symbolp (aref mupad-run-hist-commands 2)))
+         (setq brs (aref (aref mupad-run-hist-commands 2) 0))
+; Si chaines égales alors brt vaut nil
+         (setq brt 
+           (not 
+             (string= str (substring brs 0 (min (length str) (length brs)))))))
+      (ptr-to-tail mupad-run-hist-commands))
+    (when brt (aset mupad-run-hist-commands 2 br))
+    (and (not brt) brs)))
+;; 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+(defun mupad-run-get-next-command (str)
+  (let (br brt brs) 
+    (setq br (aref mupad-run-hist-commands 2))
+    (when (eq br 'tail) (ptr-to-head mupad-run-hist-commands))
+    (ptr-to-head mupad-run-hist-commands)
+    (setq brt t)
+    (while 
+      (and 
+         brt 
+         (not (symbolp (aref mupad-run-hist-commands 2)))
+         (setq brs (aref (aref mupad-run-hist-commands 2) 0))
+         (setq brt 
+           (not 
+             (string= str (substring brs 0 (min (length str) (length brs)))))))
+      (ptr-to-head mupad-run-hist-commands))
+    (when brt (aset mupad-run-hist-commands 2 br))
+    (and (not brt) brs)))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
-(defun mupad-run-get-previous-command (str) 
-  (if (>= mupad-run-hist-index (1- (length mupad-run-hist-commands)))
-    (error "end of history list")
-    (setq mupad-run-hist-index (1+ mupad-run-hist-index))
-    (car (nthcdr mupad-run-hist-index mupad-run-hist-commands))))
-;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;
-(defun mupad-run-store-line (str ind)
+(defun mupad-run-store-line (str)
   (cond 
     ((string= "" str))
-    ((and mupad-run-hist-commands (string= (car mupad-run-hist-commands) str)))
     ((and 
-       (>= ind 0)
-       (nthcdr ind mupad-run-hist-commands)
-       (string= 
-         (car (nthcdr ind mupad-run-hist-commands)) str)))
-    (t 
-      (setq mupad-run-hist-commands (cons str mupad-run-hist-commands))
-      (let ((br (nthcdr (1- mupad-run-history-max) mupad-run-hist-commands)))
-        (if br (rplacd br nil))
-          (if (< mupad-run-hist-index mupad-run-history-max)
-            (setq mupad-run-hist-index (1+ mupad-run-hist-index)))))))
+      (aref mupad-run-hist-commands 0) 
+      (string= (aref (aref mupad-run-hist-commands 0) 0) str)))
+    ((and 
+      (eq (aref mupad-run-hist-commands 2) 'tail)
+      (aref mupad-run-hist-commands 1) 
+      (string= (aref (aref mupad-run-hist-commands 1) 0) str)))
+    ((and 
+      (not (symbolp (aref mupad-run-hist-commands 2)))
+      (string= (aref (aref mupad-run-hist-commands 2) 0) str)))
+    (t (add-head str mupad-run-hist-commands))))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 (defun mupad-run-store-current-command (str)
-  (mupad-run-store-line str 0) (setq mupad-run-hist-index -1))
+  (add-head str mupad-run-hist-commands)
+  (aset mupad-run-hist-commands 2 'head))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 (defun mupad-run-previous-history ()
   (interactive)
   (when (>= (point) (marker-position mupad-run-edit))
-    (let
-      ((br (buffer-substring mupad-run-edit (point-max)))
-       (br1 (mupad-run-get-previous-command "")))
+    (let 
+      ( (br (buffer-substring mupad-run-edit (point-max))) br1 br2 br3
+        (brs (buffer-substring mupad-run-edit (point))) (brn (point)))
+      (setq br2 (aref mupad-run-hist-commands 2))
+      (setq br1 (mupad-run-get-previous-command brs))
+      (setq br3 (aref mupad-run-hist-commands 2))
+      (unless br1 (error "end of history list"))
+      (aset mupad-run-hist-commands 2 br2)
+      (mupad-run-store-line br)
+      (aset mupad-run-hist-commands 2 br3)
       (delete-region mupad-run-edit (point-max))
-     (goto-char mupad-run-edit)
-     (insert br1)
-     (mupad-run-store-line br (1- mupad-run-hist-index)))))
+      (goto-char mupad-run-edit)
+      (insert br1) 
+      (goto-char brn))))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -1207,13 +1304,19 @@ Available special keys:
   (interactive)
   (when (>= (point) (marker-position mupad-run-edit))
     (let 
-      ((br (buffer-substring mupad-run-edit (point-max)))
-       (br1 (mupad-run-get-next-command "")))
+      ( (br (buffer-substring mupad-run-edit (point-max))) br1 br2 br3
+        (brs (buffer-substring mupad-run-edit (point))) (brn (point)))
+      (setq br2 (aref mupad-run-hist-commands 2))
+      (setq br1 (mupad-run-get-next-command brs))
+      (setq br3 (aref mupad-run-hist-commands 2))
+      (unless br1 (error "end of history list"))
+      (aset mupad-run-hist-commands 2 br2)
+      (mupad-run-store-line br)
+      (aset mupad-run-hist-commands 2 br3)
       (delete-region mupad-run-edit (point-max))
       (goto-char mupad-run-edit)
-      (insert br1)
-      (mupad-run-store-line br (1+ mupad-run-hist-index)))))
-;;
+      (insert br1) 
+      (goto-char brn))))
 ;; 
 ;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 ;;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
