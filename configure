@@ -107,11 +107,7 @@ if test -f mupad-help.el; then
    echo "  Online help allowed."
 
    #Variable mupad-directory in mupad-help.el:
-<<<<<<< configure
-   sed -e "s|/usr/local/src/MuPAD/share/|$MUPAD_INTALL_DIR|" -e "s|(defsubst mupad-directory \".*\"|(defsubst mupad-directory \"$MUPAD_INSTALL_DIR/\"|" mupad-help.el > mupad-help-bis.el
-=======
    sed -e "s|/usr/local/src/MuPAD/share/|$MUPAD_INTALL_DIR|" -e "s|(defcustom mupad-directory \".*\"|(defcustom mupad-directory \"$MUPAD_INSTALL_DIR/\"|" mupad-help.el > mupad-help-bis.el
->>>>>>> 3.1
    
    rm mupad-help.el
    mv mupad-help-bis.el mupad-help.el

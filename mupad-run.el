@@ -230,10 +230,6 @@ should be present."
   '((("grey95" . "A") "grey85") 
     (("grey25" . "A") "grey40")))
 
-;;;###autoload
-(defconst xemacsp (string-match "Lucid\\|XEmacs" emacs-version)
-  "Non nil if using XEmacs.") ;; taken from ispell
-
 (defvar mupad-run-mode-map nil "Touches définies par mupad-run-mode.")
 (unless mupad-run-mode-map
   (let ((map (make-sparse-keymap)))
@@ -253,28 +249,15 @@ should be present."
     (define-key map [f6] (function mupad-help-emacs-ask))
     (define-key map "\C-c\C-i" (function mupad-help-emacs-ask))
     (define-key map "\C-y" (function mupad-run-yank))
-    (if xemacsp
-	(progn
-	  (define-key map [(control return)] (function mupad-run-creturn))
-	  (define-key map [(control up)] (function mupad-run-previous-history))
-	  (define-key map [(control down)] (function mupad-run-next-history))
-	  (define-key map [(control prior)] (function mupad-run-previous-history-search))
-	  (define-key map [(control next)] (function mupad-run-next-history-search))
-	  (define-key map [(control left)] (function mupad-run-left))
-	  (define-key map [(control right)] (function mupad-run-right))
-	  (define-key map [(control delete)] (function mupad-run-hide))
-	  (define-key map [(control insert)] (function mupad-run-show))
-	  )
-      (define-key map [C-return] (function mupad-run-creturn))
-      (define-key map [C-up] (function mupad-run-previous-history))
-      (define-key map [C-down] (function mupad-run-next-history))
-      (define-key map [C-prior] (function mupad-run-previous-history-search))
-      (define-key map [C-next] (function mupad-run-next-history-search))
-      (define-key map [C-left] (function mupad-run-left))
-      (define-key map [C-right] (function mupad-run-right))
-      (define-key map [C-delete] (function mupad-run-hide))
-      (define-key map [C-insert] (function mupad-run-show))
-      )
+    (define-key map [C-return] (function mupad-run-creturn))
+    (define-key map [C-up] (function mupad-run-previous-history))
+    (define-key map [C-down] (function mupad-run-next-history))
+    (define-key map [C-prior] (function mupad-run-previous-history-search))
+    (define-key map [C-next] (function mupad-run-next-history-search))
+    (define-key map [C-left] (function mupad-run-left))
+    (define-key map [C-right] (function mupad-run-right))
+    (define-key map [C-delete] (function mupad-run-hide))
+    (define-key map [C-insert] (function mupad-run-show))
     (setq mupad-run-mode-map map)))
 
 (defun mupad-run-set-arrow-behaviour (symbol val)

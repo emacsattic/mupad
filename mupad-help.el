@@ -23,7 +23,7 @@
     (setq  mupad-help-tree (concat mupad-directory "/share/doc/"))))
 
 ;; This variable should be set by a CONFIGURE if it ever exists...
-(defcustom mupad-directory "/usr/local/src/MuPAD"
+(defcustom mupad-directory "/usr/local/src/MuPAD/"
 "Used for initializing `mupad-manual-command' and `mupad-help-tree'."
 :initialize 'custom-initialize-default
 :set 'mupad-set-mupad-directory
@@ -60,14 +60,9 @@ Used to set `mupad-help-file-name-tar' and `mupad-help-file-name-toc'."
     (define-key map "\C-c\C-i" (function mupad-help-emacs-ask))
     (define-key map [mouse-2] (function mupad-help-mouse-2))
     (define-key map "\M-o" (function mupad-restore-wind-conf))
-  (if xemacsp
-      (progn
-	(define-key map [(control left)] (function mupad-help-previous-exemple))
-	(define-key map [(control right)] (function mupad-help-next-exemple))
-	)
     (define-key map [C-left] (function mupad-help-previous-exemple))
-    (define-key map [C-right] (function mupad-help-next-exemple)))
-  (setq mupad-help-mode-map map)))
+    (define-key map [C-right] (function mupad-help-next-exemple))
+    (setq mupad-help-mode-map map)))
 
 (defconst mupad-help-face
   (if (or (eq frame-background-mode 'light) (not frame-background-mode))

@@ -61,7 +61,7 @@ and furthering of constructs"
     (setq  mupad-help-tree (concat mupad-directory "/share/doc/"))))
 
 ;; This variable should be set by a CONFIGURE if it ever exists...
-(defcustom mupad-directory "/usr/local/src/MuPAD"
+(defcustom mupad-directory "/usr/local/src/MuPAD/"
 "Used for initializing `mupad-manual-command' and `mupad-help-tree'."
 :initialize 'custom-initialize-default
 :set 'mupad-set-mupad-directory
@@ -116,16 +116,10 @@ insertion of javadoc-style description of it.
 See `mupad-describe-this-proc' and `mupad-user-mail-address'."
 :type 'boolean :group 'mupad-miscellana)
 
-;;;###autoload
-(defconst xemacsp (string-match "Lucid\\|XEmacs" emacs-version)
-  "Non nil if using XEmacs.") ;; taken from ispell
-
 (defcustom mupad-user-mail-address
-(if xemacsp
-    (user-full-name) ; ok that's bad but I couldn't find how to do it
-  (concat user-login-name "@" system-name))
-"What it says it is. See `mupad-javadoc-stylep'."
-:type 'string :group 'mupad-miscellana)
+  (concat user-login-name "@" system-name)
+  "What it says it is. See `mupad-javadoc-stylep'."
+  :type 'string :group 'mupad-miscellana)
 
 (defcustom mupad-tutorial-requiredp t
 "If non-nil, more information will be given."
@@ -329,7 +323,8 @@ after 'end_proc' and so on. See `sli-more-maidp'."
     (with-current-buffer "*Compile-Log*"
       (insert messg "\n"))))
 
-(defsubst mupad-setup nil
+(eval-and-compile 
+(defun mupad-setup nil
   "Common packages required while compiling and running."
   (require 'disp-table)   ;; Almost always required.
   (require 'backquote)    ;; For macros.
@@ -348,7 +343,7 @@ after 'end_proc' and so on. See `sli-more-maidp'."
         ;; This part is no crap ! 'easymenu has to be present
         ;; at compilation time.
         (mupad-print-if-compiling "No menu-bar: easymenu.el not found.")
-        (fset 'easy-menu-define nil))))
+        (fset 'easy-menu-define nil)))))
 
 (mupad-setup)
 (eval-when-compile  ;; Carefull !! the shell script configure uses strict syntax here.
@@ -539,7 +534,8 @@ by a carriage return in mupad-mode."
 ;; Parsers related to 'mupad-mode:
 
 (defsubst mupad-within-string nil
-  (nth 3 (parse-partial-sexp (line-beginning-position) (point))))
+  (nth 3 (parse-partial-sexp (save-excursion
+			       (beginning-of-line) (point)) (point))))
 
 ;; Comments : between # #, or /* */ or starting with //
 
@@ -1448,43 +1444,43 @@ unique completion can be done."
 ;; Add a menu to the menu-bar.
 ;;---------------------------
 
-(defmacro mupad-menu-bar ()
+(defun mupad-menu-bar nil
   "Menu-bar item MuPAD"
-   (` (append
-        (list "MuPAD"
-              ["Start MuPAD" mupad-bus-start :included (featurep 'mupad-run)
-	       :active t
-	       :help "Start a mupad process in another buffer"]
-         (list
-          "Send file to MuPAD..."
-          ["Silently"  mupad-bus-file :active t :included (featurep 'mupad-run)
-	   :help "Send a file to the mupad-process by `read(...):'"]
-          ["Openly"    mupad-bus-execute-file :active t :included (featurep 'mupad-run)
-	   :help "Send a file to the mupad-process by `read(...);'"])
-         ["Send region to MuPAD"  mupad-bus-region :included (featurep 'mupad-run)
-	  :active (and (featurep 'mupad-run) mark-active)]
-         "---------------------")
-        (mupad-build-main-syn-menu)
-        (list
-         (list
-          "Shortcuts"
-          ["Further Statements" sli-maid :active t :help "Strive to continue the present construct"]
-          ["Closes All Statements" sli-tutor :active t]
-	  ["Word completion" mupad-complete :active t :help "Also available via by pressing twice TAB"])
-         "---------------------")
-        (list
-         ["Manual" mupad-start-manual :active t :key-sequence nil :help "Open the hytex manual"]
-         ["Info on this mode" mupad-show-mupad-info :active t :key-sequence nil]
-	 "-----------------------"
-	 ["Help on ..." mupad-help-emacs-ask :key-sequence nil :help "Text help on a mupad object"])
-        mupad-menu-separator
-        
-        ;(mupad-build-color-cpl-menu)
-        ;"Environment" sub-menu is added here.
-        mupad-menu-separator
-        (list ["Restore windows" mupad-restore-wind-conf :active (not (null mupad-registers-list))
-	       :help "Go to previous window configuration"])
-        (mupad-environment-menu))))
+   (append
+    (list "MuPAD"
+	  ["Start MuPAD" mupad-bus-start :included (featurep 'mupad-run)
+	   :active t
+	   :help "Start a mupad process in another buffer"]
+	  (list
+	   "Send file to MuPAD..."
+	   ["Silently"  mupad-bus-file :active t :included (featurep 'mupad-run)
+	    :help "Send a file to the mupad-process by `read(...):'"]
+	   ["Openly"    mupad-bus-execute-file :active t :included (featurep 'mupad-run)
+	    :help "Send a file to the mupad-process by `read(...);'"])
+	  ["Send region to MuPAD"  mupad-bus-region :included (featurep 'mupad-run)
+	   :active (and (featurep 'mupad-run) mark-active)]
+	  "---------------------")
+    (mupad-build-main-syn-menu)
+    (list
+     (list
+      "Shortcuts"
+      ["Further Statements" sli-maid :active t :help "Strive to continue the present construct"]
+      ["Closes All Statements" sli-tutor :active t]
+      ["Word completion" mupad-complete :active t :help "Also available via by pressing twice TAB"])
+     "---------------------")
+    (list
+     ["Manual" mupad-start-manual :active t :key-sequence nil :help "Open the hytex manual"]
+     ["Info on this mode" mupad-show-mupad-info :active t :key-sequence nil]
+     "-----------------------"
+     ["Help on ..." mupad-help-emacs-ask :key-sequence nil :help "Text help on a mupad object"])
+    mupad-menu-separator
+    
+					;(mupad-build-color-cpl-menu)
+					;"Environment" sub-menu is added here.
+    mupad-menu-separator
+    (list ["Restore windows" mupad-restore-wind-conf :active (not (null mupad-registers-list))
+	   :help "Go to previous window configuration"])
+    (mupad-environment-menu)))
 
 (defun mupad-init-menu-bar ()
   "Add menu-bar item MuPAD in mupad-mode"
