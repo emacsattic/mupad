@@ -1122,12 +1122,14 @@ nil if point is at beginning of line."
 
 (defun sli-prop-renew (beg end props)
   "PROPS is '(sli-type head sli-ancestor 66) for instance."
-  (when (sli-prop-should-remove beg props)
-    (remove-text-properties beg end '(sli-type nil sli-ancestor nil sli-reverse-ancestor nil sli-time nil))
-    (when sli-prop-verbose
-      (princ "\n((sli-prop-renew) propertying ")(princ beg))
-    (add-text-properties beg end props)
-    (add-text-properties beg end (list 'sli-time (cadr (current-time))))))
+  (let ((old-buff-modp (buffer-modified-p)))
+    (when (sli-prop-should-remove beg props)
+      (remove-text-properties beg end '(sli-type nil sli-ancestor nil sli-reverse-ancestor nil sli-time nil))
+      (when sli-prop-verbose
+        (princ "\n((sli-prop-renew) propertying ")(princ beg))
+      (add-text-properties beg end props)
+      (add-text-properties beg end (list 'sli-time (cadr (current-time))))
+      (set-buffer-modified-p old-buff-modp))))
 
 (defsubst sli-prop-renew2 (full-key props)
   "Same as sli-prop-renew except that full-key replaces BEG END"
@@ -2069,6 +2071,7 @@ Or on line after if AFTERP is t."
           (old-buff-modp (buffer-modified-p)))
       (when sli-verbose
 	(princ "\n") (princ (list "(sli-insert-indent) indent for: " (point))))
+	(princ "\n") (princ (list "(sli-insert-indent) buffer-modifiedp: " old-buff-modp))
       (save-excursion
         (setq move-p (re-search-backward "[^ \t]" (line-beginning-position) t))
         (beginning-of-line)
@@ -2434,7 +2437,7 @@ and the syntax table should be ok."
           (setq sli-select-end-of-overlay-fn eoov))
         (set (make-local-variable 'indent-line-function) 'sli-electric-tab)
         (set (make-local-variable 'indent-region-function) 'sli-indent-region)
-        (setq sli-handles-sexp t sli-verbose nil sli-prop-verbose nil)
+        (setq sli-handles-sexp t sli-verbose t sli-prop-verbose nil)
         (setq sli-overlay-beg (make-overlay (point-min) (point-min)))
         (setq sli-overlay-end (make-overlay (point-min) (point-min)))
         (overlay-put sli-overlay-beg 'face 'show-paren-match-face)
