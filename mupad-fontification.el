@@ -199,7 +199,7 @@ commands export/unexport. This variable is used only by font-lock.")
       (((class color) (background light)) (:foreground "#DAA520"))
       (((class color) (background dark)) (:foreground "#DAA520"))
       (t (:bold t :italic t)))
-      "Face used in MuPAD to fontify info messages in *MuPAD* buffer.")
+      "Face used in MuPAD to fontify info messages buffer.")
     ('mupad-domain
      '((((class grayscale) (background light))
        (:foreground "DimGray" :bold t :italic t))
@@ -265,10 +265,10 @@ commands export/unexport. This variable is used only by font-lock.")
 
 (defconst mupad-script-fontification-keywords-1
   (purecopy
-   (list
-    (list 'mupad-find-def '(0 (if mupad-function-defp 'mupad-function-name 'mupad-global-var)))
-    '("\\(\\<userinfo\\>(\\)\\([^;]+\\));"  (2 mupad-info t t))
-    '(mupad-find-keywords (0 mupad-keyword))
+   '(
+    ("\\(\\<userinfo\\>(\\)\\([^;]+\\));"  (2 mupad-info t t))
+    (mupad-find-def (0 (if mupad-function-defp 'mupad-function-name 'mupad-global-var)))
+    (mupad-find-keywords (0 mupad-keyword))
    ))
   "Subdued level of fontification for mupad-mode.")
 
@@ -381,11 +381,11 @@ Default is `font-lock-builtin-face'.")))
   ;; to worry about the definitions we find to be within a comment.
   (if (re-search-forward "^\\([a-zA-Z_]\\(\\w\\|::\\)*\\)[ \t\n]*:=" limit 0)
       (let ((beg (match-beginning 1)) (end (match-end 1)))
-        ;; decide whether it is a proc/fun/func def :
-        (setq mupad-function-defp (looking-at "[ \t\n]*\\(proc\\|func?\\)[ \t\n]*("))
-        (set-match-data (list beg end))
-        t)
-      nil))
+	;; decide whether it is a proc/fun/func def :
+	(setq mupad-function-defp (looking-at "[ \t\n]*\\(proc\\|func?\\)[ \t\n]*("))
+	(set-match-data (list beg (goto-char end)))
+	t)
+    nil))
 
 (defun mupad-regexp-parser (my-regexp limit &optional level)
   ;; We skip comments, and that saves some time since comments typically
@@ -393,7 +393,7 @@ Default is `font-lock-builtin-face'.")))
   (unless level (setq level 0))
   (let ((has-been-foundp nil) (st (point)) (case-fold-search nil))
     (while (if (setq has-been-foundp
-                     (re-search-forward my-regexp limit t))
+                     (re-search-forward my-regexp limit 0)) ;;<<-- modified !!!!
                (progn
                  (goto-char (match-beginning level))
                  (mupad-skip-comments st limit))))
@@ -557,7 +557,7 @@ Used in mupad-update-fontification-buffers.")
             (colors-list (if (fboundp 'x-defined-colors)
                              (sort (x-defined-colors) 'string-lessp)
                              '("No colours found !!!"))))
-           (mupad-window-manager "*MuPAD Help*" 'mupad-beginning-temp)
+           (mupad-bus-window-manager "*MuPAD Help*" 'mupad-beginning-temp)
            (insert msg)
            (fill-region (point-min) (point-max) 'left)
            ;; Following taken from list-colors-display of facemenu.el:
@@ -640,10 +640,10 @@ things are fontified."
        (make-variable-buffer-local 'mupad-hash-parity)   ; not really required
        (define-key mupad-mode-map   "\C-l" (function mupad-force-update-fontification))
        (set (make-local-variable 'font-lock-defaults)
-	    (list (list mupad-script-fontification-keywords-1
-			mupad-script-fontification-keywords-2
-			mupad-script-fontification-keywords-3)
-		  nil nil nil 'mupad-get-safe-place))
+	    '((mupad-script-fontification-keywords-1
+	       mupad-script-fontification-keywords-2
+	       mupad-script-fontification-keywords-3)
+	      nil nil nil mupad-get-safe-place))
        (setq mupad-safe-place-regexp "^\\(//--+\\|/\\*-+-\\*/\\)$")
        (or (not mupad-hash-comment)
 	   (set (make-local-variable 'font-lock-syntactic-keywords)
