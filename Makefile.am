@@ -19,15 +19,27 @@ ELCFILES = \
 	mupad-cpl.elc mupad-fontification.elc mupad-run.elc \
 	sli-tools.elc
 
-EXTRA_DIST = $(PKG_DOC) config/mupad.m4 config/mupad.am config/cvs.am config/sourceforge.am config/packages.m4 config/packages.am config/packages.spec.in config/packages.info.in site-start.d/mupacs.el.in .cvsignore bootstrap
+EXTRA_DIST = $(PKG_DOC) config/mupad.m4 config/mupad.am config/cvs.am config/sourceforge.am config/packages.m4 config/packages.am config/packages.spec.in config/packages.info.in site-start.d/mupacs.el.in.in .cvsignore bootstrap test-indentation.mu
 DISTCLEANFILES = $(PKG_RPM_NAME).info $(PKG_RPM_NAME).spec -r packages/rpm
 
 #MAINTAINERCLEANFILES = $(shell cat packages/.cvsignore)
 
 install-data-local:
-	if test -d $(DESTDIR)/etc/emacs/site-start.d; then	\
-	  $(INSTALL_DATA) $(srcdir)/site-start.d/mupacs.el	\
-            $(DESTDIR)/etc/emacs/site-start.d;			\
+	@echo Finalizing the variable substitution in site-start.d/mupacs.el;
+	@sed site-start.d/mupacs.el.in -e 's,$${datadir},${datadir},' > site-start.d/mupacs.el
+	@found=no;							\
+	for dir in /etc/emacs/site-start.d				\
+		   /usr/share/emacs/site-lisp/site-start.d; do		\
+	  if test -d $$dir; then					\
+		found=yes;						\
+		echo Installing the emacs startup file site-start.d/mupacs.el in $$dir; \
+		$(INSTALL_DATA) $(srcdir)/site-start.d/mupacs.el $$dir;	\
+		break;							\
+	  fi;								\
+	done;								\
+	if [ $$found = no ]; then					\
+	    echo "WARNING: Emacs site-wide startup directory site-start.d not found.";\
+	    echo "You may want to add by hand the contents of site-start.d/mupacs.el to the site-wide emacs startup file site-start.el";				\
 	fi
 
 uninstall-local:
