@@ -1547,7 +1547,7 @@ and source-file directory for your debugger."
             ["Display Comments" mupad-display-comment :active t]
             ["/*...*/" mupad-star-comment :active t]
             "----------------------"
-            ["Fun to Proc" mupad-fun-to-proc :active t :key-sequence nil]
+            ["Fun to Proc" mupad-fun-to-proc :active t]
             ["Cleans" mupad-clean-script :active t :key-sequence nil]))
         (list "Indentation"
           ["Push Region" mupad-push-region :active mark-active]
