@@ -846,19 +846,19 @@ sli-special-head-offset-alist))
     (mapc
       (lambda (ph)
         (setq res (append res (car (sli-get-maid-alist-locally ph '())))))
-      sli-structures)
+      sli-structures)  ;(princ "\n") (princ (list "sli-get-automatic-maid-alist" res))
     (add-to-list 'res (cons block-comment-start block-comment-end))
     ; well, soft keys may correspond to different strong keys...
-    (mapc (lambda (co) (let ((to (sli-full-assoc co res)))
+    (mapcar (lambda (co) (let ((to (sli-full-assoc co res)))
                            (cons co (if (null (cdr to)) (car to)
-                                        (progn
-                                          (add-to-list 'sli-ambiguous-keys co)
-					  to)))))
-      (sli-compact-list (sort (mapcar 'car res) 'string-lessp)))))
+                                      (progn
+                                        (add-to-list 'sli-ambiguous-keys co)  to)))))
+          (sli-compact-list (sort (mapcar 'car res) 'string-lessp)))))
 
 (defun sli-get-maid-alist nil
   ;; First, create the list automatically:
   (setq sli-maid-alist (sli-get-automatic-maid-alist))
+  ;(princ "\n") (princ (list "sli-get-maid-alist" sli-maid-alist))
   ;; But now users may want something else. A typical example is
   ;; for-from-do-end_for where the proposed completion of "for"
   ;; is "do" because "from" is only a beacon.
@@ -867,7 +867,7 @@ sli-special-head-offset-alist))
   ;; from sli-maid-alist and then sli-maid-correction-alist
   ;; is added.
   (let ((new-lst '()) (correction-words (mapcar 'car sli-maid-correction-alist)))
-    (while sli-maid-alist
+    (while sli-maid-alist  ;(princ "\n")  (car sli-maid-alist)
       (unless (member (caar sli-maid-alist) correction-words)
         (setq new-lst (append new-lst (list (car sli-maid-alist)))))
       (setq sli-maid-alist (cdr sli-maid-alist)))
@@ -952,6 +952,7 @@ If beg1 = beg2= ... = begN, we answer (beg1 end1 end2 ... endN)."
                                       sli-end-keys)
 	sli-keys (append sli-keys-nomrelations sli-relation-keys)
         sli-max-keys-length (sli-get-max-keys-length sli-keys))
+  ;(princ "...done.\n")
   ;;regexps:
   ;(princ "\nPrecomputations: regexps")
   (setq sli-all-end-strong-regexp (sli-regexp-opt (append sli-end-keys sli-strong-keys))
@@ -968,6 +969,7 @@ If beg1 = beg2= ... = begN, we answer (beg1 end1 end2 ... endN)."
           (sli-regexp-opt (append sli-keys sli-separators sli-comment-starts
                                   sli-constructor-keys
                                   (list "\"" block-comment-start block-comment-end))))
+  ;(princ "...done.\n")
   ;; association lists:
   ;(princ "\nPrecomputations: alists")
   (setq sli-ends-head-alist (sli-get-ends-head-alist)
@@ -978,7 +980,7 @@ If beg1 = beg2= ... = begN, we answer (beg1 end1 end2 ... endN)."
         sli-soft-head-or-strong-alist (sli-get-soft-head-or-strong-alist)
 	sli-special-head-alist (sli-get-special-head-alist)
 	sli-special-head-heads-alist (sli-get-special-head-head-alist) ;; sli-special-head-previous-keys-alist is also created here
-        sli-relevant-alist (sli-get-relevant-alist)
+                   sli-relevant-alist (sli-get-relevant-alist)
         sli-ancestors-alist (sli-get-ancestors-alist)
 	;; offsets :
         sli-first-offset-alist (sli-get-first-offset-alist)
@@ -988,6 +990,7 @@ If beg1 = beg2= ... = begN, we answer (beg1 end1 end2 ... endN)."
         ;; the maid :
         sli-maid-alist (sli-get-maid-alist) ; sli-ambiguous-keys also is partly created there.
         )
+  ;(princ "...done.\n")
   )
 
 ;;;--------------------------------------------------------------------------------------
@@ -1098,7 +1101,7 @@ If beg1 = beg2= ... = begN, we answer (beg1 end1 end2 ... endN)."
                                (point) (line-end-position))))
                 (delete-char (- (line-end-position) (point))))
             (widen))
-        (error (princ "\n(sli-remove-trailing-spaces-previous-line): ") (princ err) nil)))))
+        (error (when sli-verbose (princ "\n(sli-remove-trailing-spaces-previous-line): ") (princ err)) nil)))))
 
 (defsubst sli-only-spacep (&optional pt)
   ;; t if the line contains only spaces.
@@ -2668,4 +2671,4 @@ are NOT regexp but simple strings."
         (sli-precomputations))
     (error (princ "\nSomething went wrong in sli-tools: ")(princ err) nil)))
 
-;;------------------ sli-tools ends here. 2595 lines ??
+;;------------------ sli-tools ends here. 2671 lines ??
