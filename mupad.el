@@ -76,23 +76,23 @@ and furthering of constructs"
 "Used for initializing `mupad-manual-command' and `mupad-help-tree'."
 :initialize 'custom-initialize-default
 :set 'mupad-set-mupad-directory
-:type 'string :group 'mupad)
+:type 'directory :group 'mupad)
 
 (defcustom mupad-manual-command
 ;"netscape file:/usr/local/MuPAD/mupad_html_help/Automated/index.html"
 (concat mupad-directory "/share/bin/manual")
 "The manual command. If you prefer the html documentation,
 put for instance \"netscape file:/usr/local/MuPAD/mupad_html_help/index.html\""
-:type 'string :group 'mupad)
+:type 'file :group 'mupad)
 
 (defcustom mupad-el-info "/home/ramare/mupacs/mupad.el-info"
 "Place of the mupad.el-info file."
-:type 'string :group 'mupad)
+:type 'file :group 'mupad)
 
 (defcustom mupad-temp-directory "/tmp/"
   "Directory in which to create temporary files."
 
-:type 'string :group 'mupad)
+:type 'directory :group 'mupad)
 
 (defcustom mupad-electric-p t
 "Non-nil means emacs will automatically insert closing braces, and so on.
