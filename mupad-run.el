@@ -1007,7 +1007,7 @@ Available special keys:
 ;;
 (defun mupad-run-filter (proc str)
   (mupad-run-debug-message 'filter
-			   (concat "mupad-run-filter: " str))
+			   (concat "MuPAD raw output: " str))
   (let
     ((output-index 0) output-type output-str brt (inhibit-read-only t)
      (brc (current-buffer)) (brb (process-buffer proc)))
@@ -1024,11 +1024,26 @@ Available special keys:
         (concat "MuPAD output: [" (number-to-string brt) "] " output-str))
 ; traiter les différents types de données renvoyées par mupad
       (cond
-        ((or (eq brt 2)   ; output
-	     (eq brt 61)) ; NT: debugger output MPRCmdb_output
+        ((eq brt 2)   ; output
           (mupad-run-print output-str
             'mupad-run-face-result
             (marker-position mupad-run-todo) brt nil))
+        ((eq brt 61) ; NT: debugger output MPRCmdb_output
+	 ;; Workaround: with MuPAD < 3.1.1 and the -E option, the file
+	 ;; line information is output via MPRCmdb_output (61) instead
+	 ;; of MPRCmdb_file_pos (34). The following code detects this,
+	 ;; strips away the information from output-str, and calls
+	 ;; mupad-run-debugger-display-line appropriately.  Hopefully,
+	 ;; there won't be false detections.
+	 (if (string-match "^\\(#[0-9]+	in.*\n\\)*\\(\\([0-9]+\\)[ 	]in \\(\\S-+\\)\n\\)$" output-str)
+	   (let ((file (match-string 4 output-str))
+		 (line (string-to-number (match-string 3 output-str))))
+	     (setq output-str (replace-match "" t t output-str 2))
+	     (mupad-run-debugger-display-line file line)))
+	 ;; Same treatment as for normal output (2) above
+	 (mupad-run-print output-str
+			  'mupad-run-face-result
+			  (marker-position mupad-run-todo) brt nil))
         ((eq brt 13) ; prompt 
            (setq mupad-run-prompt output-str)
            (set-marker mupad-run-last-prompt (1- mupad-run-todo))
@@ -1081,49 +1096,17 @@ Available special keys:
         ((or (eq brt 34)            ; MPRCmdb_file_pos
 ;	     (eq brt 41)
 	     (eq brt 66))           ; MPRCmdb_where
-         ; Extract this in a separate function
 ; debugger -> frontend: display file at position line no.
-
 	 (string-match "^\\(\\S-+\\)\n\\([0-9]+\\)" output-str)
-	 (let
-	     ((file (match-string 1 output-str))
-	      (line (string-to-number (match-string 2 output-str))))
-	   (setq gud-comint-buffer (current-buffer))
-	   (cond
-	    ((string-match "^\\(.*\\.tar\\)#\\(.*\\)$" file)
-	     ;; Special treatment for tar files:
-	     (let
-		 ((tarfile (match-string 1 file))
-		  (subfile (match-string 2 file)))
-	       (setq file tarfile)))
-	    ((string-match "^/tmp/debug[0-9]\\.[0-9]+$" file)
-             ;[:digit:]\\.[:digit:]+
-	     ;; Special treatment for debug files /tmp/debug*:
-	     ;;  - Opened read-only in MuPAD-mode
-	     ;;  - Reverted at each iteration
-	     (save-excursion
-	       ;(message (concat "Check for debug buffer" file))
-	       (if (get-file-buffer file)
-		   (set-buffer (get-file-buffer file))
-		 ;(message "Open buffer")
-		 (set-buffer (find-file-noselect file t))
-		 ;(message "Switch to mupad-mode")
-		 (mupad-mode))
-	       ;(message "Revert buffer")
-	       (revert-buffer t t t)
-	       ;(message "Set buffer read only")
-	       (setq buffer-read-only t)
-	       )))
-	   ;(message "Calling gud")
-	   (gud-display-line file line)
-	   ;(message "Setting file")
-	   (setq mupad-run-debugger-file file)
-	   (setq mupad-run-debugger-line line)
-	   ; Ask the kernel to display the variables MPRCmdb_disp_list
-	   (process-send-string mupad-run-process
-				(concat "\006" (string 35) "\007\n"))
-	   (setq mupad-run-state 'wait-display-list)
-	   ))
+	 (mupad-run-debugger-display-line
+	  (match-string 1 output-str)
+	  (string-to-number (match-string 2 output-str)))
+	 ;; Ask the kernel to display the variables MPRCmdb_disp_list
+	 ;; Maybe that should only be done with 34
+	 (process-send-string mupad-run-process
+			      (concat "\006" (string 35) "\007\n"))
+	 (setq mupad-run-state 'wait-display-list)
+	 )
 	((eq brt 62) ; prompt
 	 ; kernel has stopped and waits for the next debugger command
 	 (if (equal mupad-run-state 'wait-display-list)
@@ -1449,6 +1432,43 @@ Available special keys:
       (line-end-position) "" "Several completions available; type any key to erase the completion list")))))
       (t (message "Ne doit pas se produire")))
     (setq mupad-run-emacs-completion nil)) ; Could use mupad-run-state instead?
+
+
+
+(defun mupad-run-debugger-display-line (file line)
+  "Displays the file/line the debugger is running on in a separate buffer"
+  (setq gud-comint-buffer (current-buffer))
+  (cond
+   ((string-match "^\\(.*\\.tar\\)#\\(.*\\)$" file)
+    ;; Special treatment for tar files:
+    (let
+	((tarfile (match-string 1 file))
+	 (subfile (match-string 2 file)))
+      (setq file tarfile)))
+   ((string-match "^/tmp/debug[0-9]\\.[0-9]+$" file)
+					;[:digit:]\\.[:digit:]+
+    ;; Special treatment for debug files /tmp/debug*:
+    ;;  - Opened read-only in MuPAD-mode
+    ;;  - Reverted at each iteration
+    (save-excursion
+      ;; (message (concat "Check for debug buffer" file))
+      (if (get-file-buffer file)
+	  (set-buffer (get-file-buffer file))
+	;; (message "Open buffer")
+	(set-buffer (find-file-noselect file t))
+	;; (message "Switch to mupad-mode")
+	(mupad-mode))
+      ;; (message "Revert buffer")
+      (revert-buffer t t t)
+      ;; (message "Set buffer read only")
+      (setq buffer-read-only t)
+      )))
+  ;; (message "Calling gud")
+  (gud-display-line file line)
+  ;; (message "Setting file")
+  (setq mupad-run-debugger-file file)
+  (setq mupad-run-debugger-line line)
+  )
 ;; 
 ;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 ;;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
