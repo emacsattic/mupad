@@ -134,7 +134,8 @@
     mupad-run-itema mupad-run-itemb mupad-run-last-type
     mupad-run-output mupad-run-state mupad-run-time-start 
     mupad-run-hist-commands mupad-run-question-before-kill
-    mupad-run-save-buffer mupad-run-comp-begin mupad-run-prompt)))
+    mupad-run-save-buffer mupad-run-comp-begin mupad-run-prompt
+    mupad-run-rawcommand)))
 ;;
 (defvar mupad-run-process nil)
 
@@ -164,29 +165,29 @@
      (mupad-run-face-system-flag       "saddlebrown" "lightblue")
      (mupad-run-face-completion-flag   "darkgreen"   "lightblue")
      (mupad-run-face-error-flag        "black"       "lightblue"))
-   '((mupad-run-face-result            "lightblue"   "grey25"   ) 
-     (mupad-run-face-prompt            "red"         "grey25"   ) 
-     (mupad-run-face-local-prompt      "pink"        "grey25"   ) 
-     (mupad-run-face-last-input        "white"       "grey25"   ) 
-     (mupad-run-face-for-emacs         "grey50"      "grey25"   ) 
+   '((mupad-run-face-result            "lightblue"   "grey25"  ) 
+     (mupad-run-face-prompt            "red"         "grey25"  ) 
+     (mupad-run-face-local-prompt      "pink"        "grey25"  ) 
+     (mupad-run-face-last-input        "white"       "grey25"  ) 
+     (mupad-run-face-for-emacs         "grey50"      "grey25"  ) 
      (mupad-run-face-separator         "white"       "black"   ) 
-     (mupad-run-face-call-system       "firebrick"   "grey25"   ) 
-     (mupad-run-face-system            "saddlebrown" "grey25"   )
-     (mupad-run-face-completion        "lightgreen"  "grey25"   )
+     (mupad-run-face-call-system       "firebrick"   "grey25"  ) 
+     (mupad-run-face-system            "saddlebrown" "grey25"  )
+     (mupad-run-face-completion        "lightgreen"  "grey25"  )
      (mupad-run-face-error             "white"       "maroon"  )  
      (mupad-run-face-waiting-commands  "white"       "darkcyan") 
      (mupad-run-face-beginning-rem     "red"         "black"   ) 
      (mupad-run-face-beginning-waiting "red"         "darkcyan")
-     (mupad-run-face-result-flag       "lightblue"   "darkblue") 
-     (mupad-run-face-prompt-flag       "red"         "darkblue") 
-     (mupad-run-face-local-prompt-flag "pink"        "darkblue") 
-     (mupad-run-face-last-input-flag   "white"       "darkblue") 
-     (mupad-run-face-for-emacs-flag    "grey50"      "darkblue") 
-     (mupad-run-face-separator-flag    "white"       "darkblue") 
-     (mupad-run-face-call-system-flag  "firebrick"   "darkblue") 
-     (mupad-run-face-system-flag       "saddlebrown" "darkblue")
-     (mupad-run-face-completion-flag   "lightgreen"  "darkblue")
-     (mupad-run-face-error-flag        "white"       "darkblue"))))
+     (mupad-run-face-result-flag       "lightblue"   "blue") 
+     (mupad-run-face-prompt-flag       "red"         "blue") 
+     (mupad-run-face-local-prompt-flag "pink"        "blue") 
+     (mupad-run-face-last-input-flag   "white"       "blue") 
+     (mupad-run-face-for-emacs-flag    "grey50"      "blue") 
+     (mupad-run-face-separator-flag    "white"       "blue") 
+     (mupad-run-face-call-system-flag  "firebrick"   "blue") 
+     (mupad-run-face-system-flag       "brown"       "blue")
+     (mupad-run-face-completion-flag   "lightgreen"  "blue")
+     (mupad-run-face-error-flag        "white"       "blue"))))
 
 (defvar mupad-run-mode-map nil "Touches définies par mupad-run-mode.")
 (unless mupad-run-mode-map
@@ -399,7 +400,7 @@ Available special keys:
     (mapcar     
       (lambda (var) (make-local-variable var))
       '(mupad-help-method mupad-run-history-max mupad-run-system-trace 
-        mupad-run-system-exception mupad-run-process mupad-run-face 
+        mupad-run-system-exception mupad-run-process
         mupad-run-edit mupad-run-todo mupad-run-comp-edit 
         mupad-run-last-prompt mupad-run-hist-commands 
         mupad-run-output mupad-run-state 
@@ -420,14 +421,6 @@ Available special keys:
     (setq mupad-run-itema 1) 
     (setq mupad-run-itemb 1) 
     (setq mupad-run-last-type -1)
-; initialisation des couleurs
-    (mapcar
-      (lambda (a-face)
-        (make-face (car a-face))
-        (set-face-foreground (car a-face) (cadr a-face))
-        (set-face-background (car a-face) (car (cddr a-face)))
-	)
-      mupad-run-face)
 ; gestion de l'historique 
     (setq mupad-run-hist-commands (head-tail-void))
     (set-ptr-head mupad-run-hist-commands)
@@ -989,7 +982,7 @@ Available special keys:
 ;;
 (defun mupad-run-from-todo-to-output ()
   (save-excursion
-    (let (br br1 br2 br3 (brp (point)) (inhibit-read-only t))
+    (let (br br1 br2 br3 (brp (point)) (inhibit-read-only t) command arguments)
       (setq br (get-text-property mupad-run-todo 'item))
       (when (eq (car br) 'rem) ; commentaire : en premier effacer le prompt
         (goto-char mupad-run-todo)
@@ -1031,10 +1024,9 @@ Available special keys:
 	   (cond
 	   ((string= br2 "") mupad-run-rawcommand); Reuse previous command
 	   ((string-match "^\\s-*\\([a-zA-Z]\\)\\s-*\\(.*\\)$" br2)
-	    (let
-		((command (match-string 1 br2))
-		 (arguments (match-string 2 br2)))
-	      (cond
+	     (setq arguments (match-string 2 br2))
+             (setq command (match-string 1 br2))
+             (cond
 ; #define MPRCmdb_disp_list         35 // f -> k : request display list
 ; #define MPRCmdb_disp_list_begin   36 // begin tag
 ; #define MPRCmdb_disp_list_end     37 // end tag
@@ -1085,7 +1077,8 @@ Available special keys:
 	       (t
 		(message (concat "unknown debugger command:" br2))
 		nil)
-	       )))
+	       ))
+;	     )
 	   (t
 	    (message (concat "incorrect debugger command:" command))
 	    nil)))
@@ -1384,7 +1377,7 @@ Available special keys:
            (not 
              (string= str (substring brs 0 (min (length str) (length brs)))))))
       (ptr-to-tail mupad-run-hist-commands))
-    (when brt (aset mupad-run-hist-commands 2 br))
+;    (when brt (aset mupad-run-hist-commands 2 br))
 ; renvoie nil si le début de la chaîne n'est pas trouvé, la chaine sinon
     (and (not brt) brs)))
 ;; 
@@ -1393,7 +1386,7 @@ Available special keys:
 (defun mupad-run-get-next-command (str)
   (let (br brt brs) 
     (setq br (aref mupad-run-hist-commands 2))
-    (when (eq br 'tail) (ptr-to-head mupad-run-hist-commands))
+;    (when (eq br 'tail) (ptr-to-head mupad-run-hist-commands))
     (ptr-to-head mupad-run-hist-commands)
     (setq brt t)
     (while 
@@ -1405,14 +1398,13 @@ Available special keys:
            (not 
              (string= str (substring brs 0 (min (length str) (length brs)))))))
       (ptr-to-head mupad-run-hist-commands))
-    (when brt (aset mupad-run-hist-commands 2 br))
+;    (when brt (aset mupad-run-hist-commands 2 br))
     (and (not brt) brs)))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 (defun mupad-run-store-line (str)
   (cond 
-    ((string= "" str))
     ((and 
       (aref mupad-run-hist-commands 0) 
       (string= (aref (aref mupad-run-hist-commands 0) 0) str)))
@@ -1437,19 +1429,24 @@ Available special keys:
   (interactive)
   (when (>= (point) (marker-position mupad-run-edit))
     (let 
-      ( (br (buffer-substring mupad-run-edit (point-max))) br1 br2 br3
-        (brs (buffer-substring mupad-run-edit (point))) (brn (point)))
+      ( (br (buffer-substring mupad-run-edit (point-max))) 
+        (brs (buffer-substring mupad-run-edit (point))) (brn (point))
+        br1 br2 br3)
       (setq br2 (aref mupad-run-hist-commands 2))
       (setq br1 (mupad-run-get-previous-command brs))
       (setq br3 (aref mupad-run-hist-commands 2))
-      (unless br1 (error "end of history list"))
       (aset mupad-run-hist-commands 2 br2)
-      (mupad-run-store-line br)
+      (unless (string= brs br) (mupad-run-store-line br))
       (aset mupad-run-hist-commands 2 br3)
       (delete-region mupad-run-edit (point-max))
       (goto-char mupad-run-edit)
-      (insert br1) 
-      (goto-char brn))))
+      (cond 
+        ((not br1) 
+          (insert brs)
+          (error "end of history list"))
+        (t 
+          (insert br1) 
+          (goto-char brn))))))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -1462,14 +1459,17 @@ Available special keys:
       (setq br2 (aref mupad-run-hist-commands 2))
       (setq br1 (mupad-run-get-previous-command ""))
       (setq br3 (aref mupad-run-hist-commands 2))
-      (unless br1 (error "end of history list"))
       (aset mupad-run-hist-commands 2 br2)
-      (mupad-run-store-line br)
+      (unless (string= "" br) (mupad-run-store-line br))
       (aset mupad-run-hist-commands 2 br3)
       (delete-region mupad-run-edit (point-max))
       (goto-char mupad-run-edit)
-      (insert br1) 
-      (goto-char (min brn (point-max))))))
+      (cond 
+        ((not br1) 
+          (error "end of history list"))
+        (t 
+          (insert br1) 
+          (goto-char (min brn (point-max))))))))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -1477,18 +1477,24 @@ Available special keys:
   (interactive)
   (when (>= (point) (marker-position mupad-run-edit))
     (let 
-      ( (br (buffer-substring mupad-run-edit (point-max))) br1 br2 br3 
-        (brs (buffer-substring mupad-run-edit (point))) (brn (point)))
+      ( (br (buffer-substring mupad-run-edit (point-max))) 
+        (brs (buffer-substring mupad-run-edit (point))) (brn (point))
+        br1 br2 br3)
       (setq br2 (aref mupad-run-hist-commands 2))
       (setq br1 (mupad-run-get-next-command brs))
       (setq br3 (aref mupad-run-hist-commands 2))
-      (unless br1 (error "end of history list"))
       (aset mupad-run-hist-commands 2 br2)
-      (mupad-run-store-line br)
+      (unless (string= brs br) (mupad-run-store-line br))
       (aset mupad-run-hist-commands 2 br3)
       (delete-region mupad-run-edit (point-max))
-      (insert br1) 
-      (goto-char brn)))) 
+      (goto-char mupad-run-edit)
+      (cond 
+        ((not br1) 
+          (insert brs)
+          (error "end of history list"))
+        (t 
+          (insert br1) 
+          (goto-char brn))))))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -1501,13 +1507,17 @@ Available special keys:
       (setq br2 (aref mupad-run-hist-commands 2))
       (setq br1 (mupad-run-get-next-command ""))
       (setq br3 (aref mupad-run-hist-commands 2))
-      (unless br1 (error "end of history list"))
       (aset mupad-run-hist-commands 2 br2)
-      (mupad-run-store-line br)
+      (unless (string= "" br) (mupad-run-store-line br))
       (aset mupad-run-hist-commands 2 br3)
       (delete-region mupad-run-edit (point-max))
-      (insert br1) 
-      (goto-char (min brn (point-max))))))
+      (goto-char mupad-run-edit)
+      (cond 
+        ((not br1) 
+          (error "end of history list"))
+        (t 
+          (insert br1) 
+          (goto-char (min brn (point-max))))))))
 ;; 
 ;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 ;;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -1941,6 +1951,17 @@ Available special keys:
       mupad-run-mode-map
       "Menu-bar item used under mupad-run-mode"
       (mupad-run-menu-bar))))
+;;
+;;
+;; initialisation des couleurs
+;;
+(mapcar
+  (lambda (a-face)
+    (make-face (car a-face))
+    (set-face-foreground (car a-face) (cadr a-face))
+    (set-face-background (car a-face) (car (cddr a-face))))
+  mupad-run-face)
+;;
 ;;
 ;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 ;;=-= FIN du fichier mupad-run.el =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
