@@ -86,7 +86,7 @@ and furthering of constructs"
 put for instance \"netscape file:/usr/local/MuPAD/mupad_html_help/index.html\""
 :type 'string :group 'mupad)
 
-(defcustom mupad-el-info "/home/ramare/lisp/MuPAD/mupad.el-info"
+(defcustom mupad-el-info "/home/ramare/mupacs/mupad.el-info"
 "Place of the mupad.el-info file."
 :type 'string :group 'mupad)
 
@@ -145,6 +145,10 @@ See `mupad-describe-this-proc' and `mupad-user-mail-address'."
 "Indentation for case statements."
 :type 'integer :group 'mupad-indentation)
 
+(defcustom mupad-domain-indent 2
+"Indentation for domain, category and axiom statements."
+:type 'integer :group 'mupad-indentation)
+
 (defun mupad-set-and-recompute-indentation (sym val)
 "Used to set things dynamically in some customizable variable."
   (set sym val)
@@ -192,16 +196,18 @@ See `mupad-describe-this-proc' and `mupad-user-mail-address'."
      (["option" special-head 7 ";"])
      ["begin"    strong mupad-indent-level]
      ["end_proc" end])
-    (["category" head '(absolute . 2)]
-     ["begin" strong mupad-indent-level] ; should be the same as above !!
+    (["category" head mupad-domain-indent]
+     (["domain" special-head 10 ";"])
+     (["axiom" special-head 10 ";"])
+     ["begin" strong mupad-domain-indent] ; should be the same as above !!
      ["end_category" end])
-    (["domain" head '(absolute . 2)]
+    (["domain" head mupad-domain-indent]
      (["category" special-head 10 ";"])
      (["axiom" special-head 10 ";"])
-     ["begin" strong mupad-indent-level] ; should be the same as above !!
+     ["begin" strong mupad-domain-indent] ; should be the same as above !!
      ["end_domain" end])
-    (["axiom" head '(absolute . 2)]
-     ["begin" strong mupad-indent-level] ; should be the same as above !!
+    (["axiom" head mupad-domain-indent]
+     ["begin" strong mupad-domain-level] ; should be the same as above !!
      ["end_axiom" end])
     (["repeat"     head 7]
      ["until"      strong 6]

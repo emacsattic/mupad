@@ -44,7 +44,7 @@
 
 ;; We use "" and  \" for strings.
 
-(defvar sli-verbose nil "A true value gives (debugging) infos")
+(defvar sli-verbose t "A true value gives (debugging) infos")
 
 (defvar sli-structures nil
   "List of lists. Each item is a vector or a list which we call a STRUCTURE
@@ -1011,7 +1011,8 @@ Supports imbedded comments. Answer nil if not found."
             ;; Out of imbedded comments. Now word is in RELEVANT.
             ((not (member word relevant))
              (setq foundp t ans nil))
-            ((member word sli-special-head-keys)
+            ((sli-is-a-special-head (point) word)
+             ;; crossed recursivity ... But point is going backward !
              (unless (or (sli-separator-directly-afterp
                           pt (cdr (assoc word sli-special-head-alist)))
                          (sli-in-one-line-comment))
@@ -1034,7 +1035,6 @@ Supports imbedded comments. Answer nil if not found."
     (sli-find-matching-key pt (sli-get-previous-keys word) (sli-get-relevant word)))
    (t (member word sli-special-head-keys))))
    
-
 (defun sli-get-first-non-end-key (pt &optional nomrelation) ; goes backward
 "Find first non-end-key before PT outside comment
 or string which is not matched by an end-key.
@@ -1302,7 +1302,7 @@ Or on line after if AFTERP is t."
 		 (consp (setq the-indent (sli-indent-after (car appui))))
 		 (eq (car the-indent) 'absolute))
         (when sli-verbose
-          (princ "\n") (princ (list "sli-indent) Absolute indent. Indent resting on: " (car appui))))
+          (princ "\n") (princ (list "(sli-indent) Absolute indent. Indent resting on: " (car appui))))
 	(throw 'indent (+ (cdr the-indent)
 			  (sli-get-shift (car appui) (car first-stuff)))))
       ; see whether heredity applies:
@@ -1315,7 +1315,8 @@ Or on line after if AFTERP is t."
           (when (member (vector (car head) (car first-stuff)) sli-no-heredity-list)
             (setq appui head))))
       (when sli-verbose
-	(princ "\n") (princ (list "(sli-tell-indent) indentation of this line and not in comment")))
+	(princ "\n((sli-tell-indent) indentation Of this line and not in comment)")
+	(princ "\n") (princ (list "                  Resting on: " (car appui))))
       (throw 'indent (if (null appui) 0
                        (+ (sli-get-shift (car appui) (car first-stuff))
                           (sli-indent-at (cdr appui))))))

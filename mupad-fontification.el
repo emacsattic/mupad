@@ -202,7 +202,6 @@ commands export/unexport. This variable is used only by font-lock.")
                                 mupad-color-scheme-alist))
 :group 'mupad-font-lock)
 
-
 (defun mupad-precomputes-locally (limit)
   (mupad-reads-mupad-loaded-libraries)
   (when mupad-fontify-function-names
@@ -323,9 +322,10 @@ when used and `mupad-fontify-global-vars' is t.
 Default is `font-lock-builtin-face'.")))
 
 (defsubst mupad-default-face (face default-face doc)
-  (when (not (facep face))
+  (if (not (null (get face 'saved-face)))
+      (custom-declare-face face (get 'saved-face default-face) doc)
     (copy-face default-face face)
-    (set-face-doc-string face doc)))
+    (set-face-documentation face doc)))
 
 (defun mupad-face-spec-set (face spe doc)
   (face-spec-set face spe)
