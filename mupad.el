@@ -1559,8 +1559,8 @@ and source-file directory for your debugger."
 (defun mupad-environment-menu nil
   (list
    (list "Environment"
-	["Set DIGITS..." mupad-bus-set-digits :active (processp mupad-run-process)]
-	["Adapt TEXTWIDTH" mupad-bus-adapt-textwidth :active (processp mupad-run-process)]
+	["Set DIGITS..." mupad-bus-set-digits :active (buffer-live-p "*MuPAD*")]
+	["Adapt TEXTWIDTH" mupad-bus-adapt-textwidth :active (buffer-live-p "*MuPAD*")]
 	"--------------------"
 	["Exchange Keys" mupad-toggle :active t]
 	["Customize" mupad-customize-mupad-group :active t :key-sequence nil])))
