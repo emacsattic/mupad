@@ -175,7 +175,7 @@ CLOSING-STATEMENT can be \";\". See `mupad-region' for more information."
   (interactive)
   (mupad-bus-visible-command 
     (concat "DIGITS:=" (read-string "New Value: ") ":") nil
-    (if (eq major-mode 'mupad-run)
+    (if (eq major-mode 'mupad-run-mode)
         (buffer-name)
       "*MuPAD*")))
 
@@ -184,7 +184,7 @@ CLOSING-STATEMENT can be \";\". See `mupad-region' for more information."
   (mupad-bus-visible-command
     (concat "TEXTWIDTH:=" (number-to-string (1- (window-width))) ":")
     '(not-save textwidth)
-    (if (eq major-mode 'mupad-run)
+    (if (eq major-mode 'mupad-run-mode)
         (buffer-name)
       "*MuPAD*")))
 
@@ -192,7 +192,7 @@ CLOSING-STATEMENT can be \";\". See `mupad-region' for more information."
   (interactive)
   (mupad-bus-visible-command
    "PRETTYPRINT:=not PRETTYPRINT;" nil
-   (if (eq major-mode 'mupad-run)
+   (if (eq major-mode 'mupad-run-mode)
        (buffer-name)
      "*MuPAD*")))
 
