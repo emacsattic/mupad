@@ -1402,7 +1402,6 @@ Available special keys:
       ;; or nil if there is none
       (if (string= "\010\007" completions)
 	  (setq completions nil)
-	(print completions)
 	(setq completions
 	      (or (split-string completions ", ")
 		  (list (concat mupad-run-completion-prefix
