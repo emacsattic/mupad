@@ -696,7 +696,6 @@ Available special keys:
 	     ((file (match-string 1 output-str))
 	      (line (string-to-number (match-string 2 output-str))))
 	   (setq gud-comint-buffer (current-buffer))
-	   (window-configuration-to-register next)
 	   (gud-display-line file line)
 	   (setq mupad-run-debugger-file file)
 	   (setq mupad-run-debugger-line line)
