@@ -967,7 +967,18 @@ Available special keys:
              'mupad-run-face-prompt 
              (marker-position mupad-run-todo) brt nil)
            (set-marker mupad-run-last-prompt (1+ mupad-run-last-prompt))
-           (setq mupad-run-state 'wait-input))
+           (setq mupad-run-state 'wait-input)
+	   ;; Conservatively reset the undo list to make sure that the
+	   ;; user will not revert inadvertently the insertion of the
+	   ;; prompt, as this would invalidate the marker positions
+	   ;;
+	   ;; Warning: the user will loose undo information if he is
+	   ;; editing a command when the prompt is inserted; I don't
+	   ;; know if/how one can disable selectively the undoing of
+	   ;; the insertion of the prompt without disabling all the
+	   ;; previous undo information.
+	   (setq buffer-undo-list nil)
+	   )
         ((or (eq brt 9)   ; error message
 	     (eq brt 63)) ; NT: debugger error message
           (mupad-run-print output-str 
@@ -1025,7 +1036,7 @@ Available special keys:
 		 ;(message "Set buffer read only")
 		 (setq buffer-read-only t)
 		 ;(message "Switch to mupad-mode")
-		 (mupad-mode))
+		 (mupad-mode)		 (setq buffer-read-only t))
 	       ;(message "Revert buffer")
 	       (revert-buffer t t t)
 	       )))
@@ -1503,6 +1514,10 @@ Available special keys:
            'item (cons 'cmd mupad-run-itema))
          (set-marker mupad-run-edit br1)))
       (goto-char (point-max))
+      ;; Reset the undo list to make sure that the user will not
+      ;; revert inadvertently the insertion of the todo stuff, as this
+      ;; would invalidate the marker positions
+      (setq buffer-undo-list nil)
       (mupad-run-debug-message 'edit-to-todo  "FIN : edit-to-todo"))))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

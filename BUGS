@@ -1,7 +1,21 @@
 ------------------------------------------------------------------------------
+mupad-run-mode got confused if undo was called enough times to revert
+the insertion of the last mupad output (the markers mupad-run-todo and
+such probably become incoherent).
+
+Fix: the undo list is now flushed after each command is inserted in
+the todo list, and after each insertion of a prompt. See the comments
+in the code. Any other places where we should do that?
+
+------------------------------------------------------------------------------
+The example in ?system does not work: since MuPAD is called with the
+-R option, system calls are delegated to the interface and are not
+synchronized (that's a MuPAD bug which also appears in xmupad).
+
+Work around: use 'shell::system' from the `shell' dynamic module.
+------------------------------------------------------------------------------
 customizing mupad-directory does not reset mupad-help-file-name-tar
 accordingly
-
 ------------------------------------------------------------------------------
 mupad300;
 
