@@ -112,6 +112,18 @@
 (provide 'sli-tools)
 
 ;;------------------------------------------------------
+;; Definition of missing functions in "old" versions of
+;; emacs
+;;------------------------------------------------------
+
+;; emacs < 20.7 ?
+(if (not (symbolp 'mapc))
+    (defun mapc (fct seq)
+      "Lisp implementation of mapc for emacsen that miss it as builtin.
+Provided by sli-tools."
+      (mapcar fct seq) seq))
+
+;;------------------------------------------------------
 ;; Variables that defines how indentation should occur.
 ;; See mupad.el for an example.
 ;;------------------------------------------------------
