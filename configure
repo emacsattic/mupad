@@ -6,7 +6,11 @@ LISP_INSTALL_DIR=`pwd`
 
 echo "Lisp files installed in $LISP_INSTALL_DIR"
 
-MUPAD_EXE=`which mupad`
+MUPAD_EXE=`which mupad`  #Beware ! Suse installs a script called mupad
+                         # in /usr/bin. This script doesn't support any
+                         # variables !
+                         # So simply replace the line "/opt/MuPAD/share/bin/mupad"
+                         #                         by "/opt/MuPAD/share/bin/mupad $1"
 
 MUPAD_INSTALL_DIR_SHARE_BIN=`dirname $MUPAD_EXE`
 
@@ -114,10 +118,10 @@ if test -f mupad-help.el; then
    mv mupad-help-bis.el mupad-help.el
 
    #Variable mupad-help-method:
-   if [ `mupad -V` = 2.5.1 ]; then
+   if [ `$MUPAD_EXE -V` = 2.5.1 ]; then
       sed -e "s|(defvar mupad-help-method 'mupad-help-from-file-to-buffer)|(defvar mupad-help-method 'mupad-help-from-toc-to-buffer)|" -e "s|^(require 'mupad-xemacs)|;(require 'mupad-xemacs)|" mupad-run.el > mupad-run-bis.el
-   else
-      sed -e "s|(defvar mupad-help-method 'mupad-help-from-file-to-buffer)|(defvar mupad-help-method 'mupad-help-from-toc-to-buffer)|" -e "s|^(require 'mupad-xemacs)|;(require 'mupad-xemacs)|" mupad-run.el > mupad-run-bis.el
+   else 
+       sed -e "s|(defvar mupad-help-method 'mupad-help-from-file-to-buffer)|(defvar mupad-help-method 'mupad-help-from-toc-to-buffer)|" -e "s|^(require 'mupad-xemacs)|;(require 'mupad-xemacs)|" mupad-run.el > mupad-run-bis.el
    fi
 
    rm mupad-run.el
@@ -129,7 +133,6 @@ else
    echo "- File mupad-help.el NOT found:"
    echo "  Online help NOT allowed."
 fi
-
 
 #file mupad-run.el-info in mupad-run.el:
 if test -f mupad-run.el; then
@@ -149,20 +152,20 @@ if test -f mupad-run.el; then
    #To handle option of the mupad process:
    echo ""
    echo "Options for MuPAD process:"
-   if [ `mupad -V` = 2.5.1 ]; then
+   if [ `$MUPAD_EXE -V` = 2.5.1 ]; then
       echo "Your MuPAD version is 2.5.1"
 
       sed 's|'\''("-E" "-U" "EMACS")|'\''("-R" "-U" "EMACS")|' mupad-run.el > mupad-run-bis.el
 
       rm mupad-run.el
       mv mupad-run-bis.el mupad-run.el
-   else
-      echo "Your MuPAD version is assumed to be 3.0"
-
-      sed 's|'\''("-R" "-U" "EMACS")|'\''("-E" "-U" "EMACS")|' mupad-run.el > mupad-run-bis.el
-
-      rm mupad-run.el
-      mv mupad-run-bis.el mupad-run.el
+   else 
+       echo "Your MuPAD version is assumed to be 3.0"
+       
+       sed 's|'\''("-R" "-U" "EMACS")|'\''("-E" "-U" "EMACS")|' mupad-run.el > mupad-run-bis.el
+       
+       rm mupad-run.el
+       mv mupad-run-bis.el mupad-run.el
    fi  
 
 else

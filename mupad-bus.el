@@ -113,7 +113,6 @@ of \\([a-zA-Z_0-9]\\|::\\). Returns point."
    (or buff-to-select "*MuPAD*") 'mupad-beginning 'mupad-run-mode)
   ; in case of a new process, start mode and adapt textwidth
     (unless mupad-run-process
-      (mupad-run-ask-pgm-opt)
       (mupad-run-mode)
       (setq mupad-bus-my-mupad-run-process mupad-run-process)
       (mupad-bus-adapt-textwidth)))

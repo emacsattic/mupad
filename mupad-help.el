@@ -31,7 +31,7 @@
     (setq  mupad-help-tree (concat mupad-directory "/share/doc/"))))
 
 ;; This variable should be set by a CONFIGURE if it ever exists...
-(defcustom mupad-directory "/usr/local/src/MuPAD/"
+(defcustom mupad-directory "//"
 "Used for initializing `mupad-manual-command' and `mupad-help-tree'."
 :initialize 'custom-initialize-default
 :set 'mupad-set-mupad-directory

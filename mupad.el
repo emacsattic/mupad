@@ -72,7 +72,7 @@ and furthering of constructs"
     (setq  mupad-help-tree (concat mupad-directory "/share/doc/"))))
 
 ;; This variable should be set by a CONFIGURE if it ever exists...
-(defcustom mupad-directory "/usr/local/src/MuPAD/"
+(defcustom mupad-directory "//"
 "Used for initializing `mupad-manual-command' and `mupad-help-tree'."
 :initialize 'custom-initialize-default
 :set 'mupad-set-mupad-directory
@@ -85,7 +85,7 @@ and furthering of constructs"
 put for instance \"netscape file:/usr/local/MuPAD/mupad_html_help/index.html\""
 :type 'string :group 'mupad)
 
-(defcustom mupad-el-info "/home/ramare/lisp/first-look/MuPAD/mupad.el-info"
+(defcustom mupad-el-info "/home/ramare/lisp/MuPAD/mupad.el-info"
 "Place of the mupad.el-info file."
 :type 'string :group 'mupad)
 
