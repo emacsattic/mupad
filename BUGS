@@ -1,20 +1,91 @@
+==============================================================================
+Known bugs
+==============================================================================
+
+The installation procedure, and in particular the rpm, does not always
+find properly the emacs site-start.d directory to put mupacs.el
+inside. The problem is that this changes from distribution to
+distribution.
+
+Redhat/Fedora:	/usr/share/emacs/site-lisp/site-start.d
+Mandrake:	/etc/emacs/site-start.d ?
+
+Some other distributions do not have a site-start.d directory anyway,
+so we need to modify directly the site-start.el file ...
+
+------------------------------------------------------------------------------
+Fontification of medium to large MuPAD files is slooooowwww ...
+------------------------------------------------------------------------------
+vcam does not redraw a 3d scene after a rotation
+The same thing occurs with the text-mode MuPAD
+------------------------------------------------------------------------------
+To follow the usual convention, mupad-mode should toggle on and off
+the mupad-mode, unless an argument t is given.
+------------------------------------------------------------------------------
+(2004/04/19)
+MuPAD 3.0.0 never yields back the hand after:
+system("ls -l troc");
+------------------------------------------------------------------------------
+The example in ?system does not work: since MuPAD is called with the
+-R option, system calls are delegated to the interface and are not
+synchronized (that's a MuPAD bug which also appears in xmupad).
+
+Work around: use 'shell::system' from the `shell' dynamic module.
+------------------------------------------------------------------------------
+customizing mupad-directory does not reset mupad-help-file-name-tar
+accordingly
+
+==============================================================================
+Bugs with unknown status
+==============================================================================
+
 Sending this multiline input to the debugger hangs it.
 
 proc()
 begin
 1
 end
+Could not reproduce (3.2.2 2004/12/01)
 ------------------------------------------------------------------------------
-Make sure that the in-buffer completion list is always completely visible;
-There are cases where there seems to be a conflict with the recentering heuristic,
-and all the completion lists is below the last visible line ...
+res TAB says no completion available ?
+could not reproduce (3.2.2 2004/12/01)
+------------------------------------------------------------------------------
+There are cases where the name of the program is ignored?
+------------------------------------------------------------------------------
+(probably fixed by a bugfix with sexps)
+Dans un fichier bla.mu contenant les lignes suivantes; partir du ";" à
+la fin du map, effacer tout avec backspace jusqu'au "m: dom" compris,
+puis essayer de revenir en arrière avec undo. Chez-moi il affiche "No
+further undo information" avant d'avoir remis tout le "map ..." en
+place.
+------------------------------------------------------------------------------
+(fixed? 3.2.3 2004/12/01)
+Make sure that the in-buffer completion list is always completely
+visible; There are cases where there seems to be a conflict with the
+recentering heuristic, and all the completion lists is below the last
+visible line ...
+------------------------------------------------------------------------------
+?_power
+Where is the problem? (3.2.3 2004/12/01)
+------------------------------------------------------------------------------
+mupad300;
+debug(combinat::compositions(4)) ; s s s s s s  mêne à un MuPAD dans les chous
+Est-ce du au modifications récentes pour la gestion de /tmp/debug*
+Works for me (mupad-3.1.0 2.2.3 2004/12/01)
 
+==============================================================================
+Fixed bugs
+==============================================================================
+(fixed 3.2.3 2004/12/01)
+mupad-run-commandline could not be customized to an arbitrary user string
 ------------------------------------------------------------------------------
-(2004-04-19)
-MuPAD 3.0.0 never yields back the hend after:
-system("ls -l troc");
+(fixed 3.2.3 2004/12/01)
+Those options should be set by default when the user has no
+mupad-run-mode-hook:
+(custom-add-option 'mupad-run-mode-hook 'mupad-help-init)
 ------------------------------------------------------------------------------
-mapc is missing in emacs < 20.7 (fixed: 2003/01/29)
+(fixed: 2003/01/29)
+mapc is missing in emacs < 20.7 
 There remains some error about wd. To be investigated.
 ------------------------------------------------------------------------------
 (fixed: 3.2.2 2003/10/27)
@@ -47,27 +118,6 @@ the todo list, and after each insertion of a prompt. See the comments
 in the code. Any other places where we should do that?
 
 ------------------------------------------------------------------------------
-The example in ?system does not work: since MuPAD is called with the
--R option, system calls are delegated to the interface and are not
-synchronized (that's a MuPAD bug which also appears in xmupad).
-
-Work around: use 'shell::system' from the `shell' dynamic module.
-------------------------------------------------------------------------------
-customizing mupad-directory does not reset mupad-help-file-name-tar
-accordingly
-------------------------------------------------------------------------------
-mupad300;
-
-debug(combinat::compositions(4)) ; s s s s s s  mêne à un MuPAD dans les chous
-Est-ce du au modifications récentes pour la gestion de /tmp/debug*
-
-------------------------------------------------------------------------------
-res TAB says no completion available ?
-
-------------------------------------------------------------------------------
-There are cases where the name of the program is ignored?
-
-------------------------------------------------------------------------------
 (fixed)
 Hitting backspace right after the xx in the line below in MuPAD mode
 seems to run into some infinite loop:
@@ -78,15 +128,9 @@ Same thing when erasing with backspace starting right before the i
 	[ [ m[k][i] ] ]
 
 ------------------------------------------------------------------------------
-(probably fixed by a bugfix with sexps)
-Dans un fichier bla.mu contenant les lignes suivantes; partir du ";" à
-la fin du map, effacer tout avec backspace jusqu'au "m: dom" compris,
-puis essayer de revenir en arrière avec undo. Chez-moi il affiche "No
-further undo information" avant d'avoir remis tout le "map ..." en
-place.
-------------------------------------------------------------------------------
+(fixed: 3.2.3 2004/07/07)
 P and D are non-functionnal under the debugger
-
+P was not implemented in the kernel < 3.1.0!
 ------------------------------------------------------------------------------
 (fixed: 3.2.3 15/12/2003)
 Le commentaire a l'air de poser problème dans mupad-run
@@ -99,14 +143,3 @@ begin
 	return(a)
     end_if
 end_proc:
-------------------------------------------------------------------------------
-?_power
-
-------------------------------------------------------------------------------
-vcam does not redraw a 3d scene after a rotation
-
-The same thing occurs with the text-mode MuPAD
-
-------------------------------------------------------------------------------
-To follow the usual convention, mupad-mode should toggle on and off
-the mupad-mode, unless an argument t is given.

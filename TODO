@@ -11,19 +11,21 @@ Should mupad-run get dynamically the version, proper flags and the path
 to the help ? not quite sure.
 
 ------------------------------------------------------------------------------
-How to avoid the recentering ? That is, except at the very beginning,
-I would like the bottom of the buffer to be displayed at the bottom of
-the window. (improved; test if the heuristic is ok!)
-
-------------------------------------------------------------------------------
-Allow for deleting blocs of input/output
+Allow for deleting blocks of input/output
 
 ------------------------------------------------------------------------------
 Add a init.mu file to the MuPAD directory for vcam ?
 Ou demander `a mupad-bus d'envoyer les commandes qui vont bien à MuPAD ?
 
 ------------------------------------------------------------------------------
-Set by default C-up/down to mupad-run-previous-history-search
+Option so that the cursor occurs just after the prompt without newline
 
 ------------------------------------------------------------------------------
-Option so that the cursor occurs just after the prompt without newline
+(done 3.2)
+How to avoid the recentering ? That is, except at the very beginning,
+I would like the bottom of the buffer to be displayed at the bottom of
+the window. (improved; test if the heuristic is ok!)
+
+------------------------------------------------------------------------------
+(done 3.2.3)
+Set by default C-up/down to mupad-run-previous-history-search
