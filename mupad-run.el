@@ -156,9 +156,11 @@ should be present."
 	      (const edit-to-todo)
 	      (const todo-to-output))
   :group 'mupad-run)
+
 (defun mupad-run-debug-message (item str)
   (if (memq item mupad-run-debug-level) (message str)))
 
+(defun mupad-run-error (str) (ding) (message str))
 
 (defun mupad-run-set-system-trace (sym val)
   (set sym val)
@@ -679,7 +681,7 @@ Available special keys:
   (setq mupad-run-last-type -1)
 ; gestion de l'historique 
   (setq mupad-run-hist-commands (head-tail-void))
-  (set-ptr-head mupad-run-hist-commands)
+  (ptr-to-head mupad-run-hist-commands)
 ; lancement du programme 
   (setq mupad-run-output "")
   (setq mupad-run-state 'beginning)
@@ -963,7 +965,8 @@ Available special keys:
 		 ((tarfile (match-string 1 file))
 		  (subfile (match-string 2 file)))
 	       (setq file tarfile)))
-	    ((string-match "^/tmp/debug[0-9]\\.[0-9]+$" file);[:digit:]\\.[:digit:]+
+	    ((string-match "^/tmp/debug[0-9]\\.[0-9]+$" file)
+             ;[:digit:]\\.[:digit:]+
 	     ;; Special treatment for debug files /tmp/debug*:
 	     ;;  - Opened read-only in MuPAD-mode
 	     ;;  - Reverted at each iteration
@@ -1021,6 +1024,32 @@ Available special keys:
 ; raccourcissement de la chaîne à traiter à la fin de la boucle 
   (setq mupad-run-output (substring mupad-run-output output-index))
 ; maj de l'affichage en début de session
+;    ;; NT: Hack to scroll the current buffer so that we do not see
+;    ;; past the end. Simply calling (recenter -1) does not work,
+;    ;; because it recenters the active buffer
+;      ;(message (concat "bla" str))
+;      (when (and
+;	     (eq (point) (point-max))
+;	     (get-buffer-window (current-buffer)))
+;	(let ((buffer (current-buffer))
+;	      (old-buffer (window-buffer)))
+;	  ;(message "bla1")
+;	  (unless (eq buffer old-buffer)  (get-buffer-window "*MuPAD*" t)
+;	    (pop-to-buffer buffer t))
+;	  ;(message "bla2")
+;	  (bury-buffer buffer)
+;	  ;(message "bla3")
+;	  (recenter -1)
+;	  ;(message "bla4")
+;	  (unless (eq buffer old-buffer)
+;	    (pop-to-buffer old-buffer))))))
+  (when    
+    (and 
+      (eq (point) (point-max))
+      (get-buffer-window (current-buffer) t))
+    (switch-to-buffer brb)
+    (recenter -2)) 
+; FMy 
 ; (when (and (equal brb brc) (<= (count-lines 1 (point)) 20)) (recenter -4))
 ; the proper buffer!
   (set-buffer brc)))
@@ -1094,26 +1123,7 @@ Available special keys:
       (put-text-property pos (point) 'rear-nonsticky t)
       (put-text-property pos (point) 'front-sticky t)
       (put-text-property pos (point) 'read-only t)
-      (add-text-properties pos (point) ajout)
-    ;; NT: Hack to scroll the current buffer so that we do not see
-    ;; past the end. Simply calling (recenter -1) does not work,
-    ;; because it recenters the active buffer
-      ;(message (concat "bla" str))
-      (when (and
-	     (eq (point) (point-max))
-	     (get-buffer-window (current-buffer)))
-	(let ((buffer (current-buffer))
-	      (old-buffer (window-buffer)))
-	  ;(message "bla1")
-	  (unless (eq buffer old-buffer)
-	    (pop-to-buffer buffer t))
-	  ;(message "bla2")
-	  (bury-buffer buffer)
-	  ;(message "bla3")
-	  (recenter -1)
-	  ;(message "bla4")
-	  (unless (eq buffer old-buffer)
-	    (pop-to-buffer old-buffer))))))
+      (add-text-properties pos (point) ajout)))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -1835,11 +1845,18 @@ Available special keys:
 ;;
 ;; structure des données doublement chainée avec un point d'accès 
 ;; intermédiaire, sous forme d'un tableau :
-;; coordonnées générale
+;; coordonnées générales
 ;;   0 = liste directe - 1 = liste inverse - 2 = particulier - 3 = longueur.
 ;; L'accès aux éléments de la liste est aussi un tableau dont la valeur des 
 ;;   coordonnées est 
 ;; 0 = valeur - 1 = terme suivant - 2 = terme précédent
+;; primitives : 
+;;   head-tail-void crée une structure vide
+;;   add-head / add-tail ajoute un élément en tête / en queue
+;;   remove-head / tail enlève l'élément en tête / en queue
+;;   list-head / list-tail construit la liste à l'endroit / à l'envers
+;;   ptr-to-head / ptr-to-tail avance / recule le pointeur courant
+;;   struct renvoie la liste et la valeur du pointeur courant
 ;;
 (defun head-tail-void ()
   (let ((res (make-vector 4 nil)))
@@ -1890,15 +1907,9 @@ Available special keys:
     (while tmp (setq res (cons (aref tmp 0) res)) (setq tmp (aref tmp 2)))
     res))
 
-(defun set-ptr-head (A) 
-  (if (aref A 1) (aset A 2 (aref A 0)) (aset A 2 'head)))
-
-(defun set-ptr-tail (A) 
-  (if (aref A 1) (aset A 2 (aref A 1)) (aset A 2 'tail)))
-
 (defun ptr-to-tail (A)
   (cond 
-    ((not (aref A 2)) (error "pointeur vide"))
+    ((not (aref A 2)) (aset A 2 'tail))
     ((eq (aref A 2) 'tail))
     ((eq (aref A 2) 'head) (or (aset A 2 (aref A 0)) (aset A 2 'tail)))
     ((not (aref (aref A 2) 1)) (aset A 2 'tail))
@@ -1907,19 +1918,23 @@ Available special keys:
 
 (defun ptr-to-head (A)
   (cond 
-    ((not (aref A 2)) (error "pointeur vide"))
+    ((not (aref A 2)) (aset A 2 'head))
     ((eq (aref A 2) 'head))
     ((eq (aref A 2) 'tail)  (or (aset A 2 (aref A 1)) (aset A 2 'head)))
     ((not (aref (aref A 2) 2)) (aset A 2 'head))
     (t (aset A 2 (aref (aref A 2) 2))))
   A)
+
+(defun struct (A) 
+  (cons 
+    (list-head A) 
+    (if (vectorp (aref A 2)) (aref (aref A 2) 0) (aref A 2))))
 ;; 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 (defun mupad-run-get-previous-command (str)
-  (let (brt brs (br (aref mupad-run-hist-commands 2)))
+  (let ((brt t) brs)
     (ptr-to-tail mupad-run-hist-commands)
-    (setq brt t)
     (while 
       (and 
          brt 
@@ -1930,18 +1945,14 @@ Available special keys:
            (not 
              (string= str (substring brs 0 (min (length str) (length brs)))))))
       (ptr-to-tail mupad-run-hist-commands))
-;       (ptr-to-head mupad-run-hist-commands))
-;    (when brt (aset mupad-run-hist-commands 2 br))
 ; renvoie nil si le début de la chaîne n'est pas trouvé, la chaine sinon
     (and (not brt) brs)))
 ;; 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 (defun mupad-run-get-next-command (str)
-  (let (brt brs (br (aref mupad-run-hist-commands 2)))
-;    (when (eq br 'tail) (ptr-to-head mupad-run-hist-commands))
+  (let ((brt t) brs)
     (ptr-to-head mupad-run-hist-commands)
-    (setq brt t)
     (while 
       (and 
          brt 
@@ -1951,7 +1962,6 @@ Available special keys:
            (not 
              (string= str (substring brs 0 (min (length str) (length brs)))))))
       (ptr-to-head mupad-run-hist-commands))
-;    (when brt (aset mupad-run-hist-commands 2 br))
     (and (not brt) brs)))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1977,63 +1987,70 @@ Available special keys:
   (when (>= (length str) 3)
     (add-head str mupad-run-hist-commands)
     (aset mupad-run-hist-commands 2 'head)))
-
+;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
 (defun mupad-run-replace-edit-zone (str pos)
-  ; Replace the text in the edit zone by the string str, and
-  ; put the cursor at position pos (or at the end of buffer
-  ; if pos is past the end of buffer)
+; Replace the text in the edit zone by the string str, and put the cursor 
+; at position pos (or at the end of buffer if pos is past the end of buffer)
   (delete-region mupad-run-edit (point-max))
   (goto-char mupad-run-edit)
   (insert str)
-  (save-excursion (goto-char (point-max)) (recenter -1))
+;  (save-excursion (goto-char (point-max)) (recenter -1))
   (goto-char (min pos (point-max))))
-
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 (defun mupad-run-previous-history-search ()
-  (interactive)
-  (when (>= (point) (marker-position mupad-run-edit))
-    (let 
-      ( (br (buffer-substring mupad-run-edit (point-max))) 
-        (brs (buffer-substring mupad-run-edit (point)))
-	(brn (point))
-        br1 br2 br3)
-      (setq br2 (aref mupad-run-hist-commands 2))
-      (setq br1 (mupad-run-get-previous-command brs))
-      (setq br3 (aref mupad-run-hist-commands 2))
-      (aset mupad-run-hist-commands 2 br2)
-      (unless (string= brs br) (mupad-run-store-line br))
-      (aset mupad-run-hist-commands 2 br3)
-      (unless br1
-	(error "End of history list")
-	(setq br1 brs))
-      (mupad-run-replace-edit-zone br1 brn))))
-
-;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;
-(defun mupad-run-previous-history ()
+; Search and display the previous command with the same beginning of line.
   (interactive)
   (mupad-run-delete-windows "*MuPAD Completions*")
   (when (>= (point) (marker-position mupad-run-edit))
     (let 
-      ( (br (buffer-substring mupad-run-edit (point-max))) br1 br2 br3
-        (brn (point)))
-      (setq br2 (aref mupad-run-hist-commands 2))
+      ( (br (buffer-substring mupad-run-edit (point-max))) 
+        (brs (buffer-substring mupad-run-edit (point))) 
+        (brn (point))
+        (brold 
+          (if (vectorp (aref mupad-run-hist-commands 2))
+            (aref (aref mupad-run-hist-commands 2) 0)))
+        br1)
+      (unless brold (setq brold brs))
+      (setq br1 (mupad-run-get-previous-command brs))
+      (unless br1 
+        (aset mupad-run-hist-commands 2 'head)
+        (mupad-run-error "End of history list")
+        (setq br1 brs))
+      (unless (or (string= brs br) (string= brold br))
+        (mupad-run-store-line br))
+      (mupad-run-replace-edit-zone br1 brn))))
+;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+(defun mupad-run-previous-history ()
+; Display the previous command.
+  (interactive)
+  (mupad-run-delete-windows "*MuPAD Completions*")
+  (when (>= (point) (marker-position mupad-run-edit))
+    (let 
+      ( (br (buffer-substring mupad-run-edit (point-max)))
+        (brn (point))
+        (brold 
+          (if (vectorp (aref mupad-run-hist-commands 2))
+            (aref (aref mupad-run-hist-commands 2) 0)))
+        br1)
+      (unless brold (setq brold ""))
       (setq br1 (mupad-run-get-previous-command ""))
-      (setq br3 (aref mupad-run-hist-commands 2))
-      (aset mupad-run-hist-commands 2 br2)
-      (unless (string= "" br) (mupad-run-store-line br))
-      (aset mupad-run-hist-commands 2 br3)
-      (unless br1
-	(error "End of history list")
-	(setq br1 ""))
+      (unless br1 
+        (aset mupad-run-hist-commands 2 'head)
+        (mupad-run-error "End of history list")
+        (setq br1 ""))
+      (unless (string= brold br) (mupad-run-store-line br))
       (mupad-run-replace-edit-zone br1 brn))))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 (defun mupad-run-next-history-search ()
+; Search and display the next command with the same beginning of line.
   (interactive)
   (mupad-run-delete-windows "*MuPAD Completions*")
   (when (>= (point) (marker-position mupad-run-edit))
@@ -2041,36 +2058,41 @@ Available special keys:
       ( (br (buffer-substring mupad-run-edit (point-max))) 
         (brs (buffer-substring mupad-run-edit (point)))
 	(brn (point))
-        br1 br2 br3)
-      (setq br2 (aref mupad-run-hist-commands 2))
+        (brold 
+          (if (vectorp (aref mupad-run-hist-commands 2))
+            (aref (aref mupad-run-hist-commands 2) 0)))
+        br1)
+      (unless brold (setq brold brs))
       (setq br1 (mupad-run-get-next-command brs))
-      (setq br3 (aref mupad-run-hist-commands 2))
-      (aset mupad-run-hist-commands 2 br2)
-      (unless (string= brs br) (mupad-run-store-line br))
-      (aset mupad-run-hist-commands 2 br3)
-      (unless br1
-	(error "End of history list")
-	(setq br1 brs))
+      (unless br1 
+        (aset mupad-run-hist-commands 2 'tail)
+        (mupad-run-error "End of history list")
+        (setq br1 brs))
+      (unless (or (string= brs br) (string= brold br))
+        (mupad-run-store-line br))
       (mupad-run-replace-edit-zone br1 brn))))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 (defun mupad-run-next-history ()
+; Display the next command.
   (interactive)
   (mupad-run-delete-windows "*MuPAD Completions*")
   (when (>= (point) (marker-position mupad-run-edit))
     (let 
-      ( (br (buffer-substring mupad-run-edit (point-max))) br1 br2 br3 
-        (brn (point)))
-      (setq br2 (aref mupad-run-hist-commands 2))
+      ( (br (buffer-substring mupad-run-edit (point-max)))
+        (brn (point))
+        (brold 
+          (if (vectorp (aref mupad-run-hist-commands 2))
+            (aref (aref mupad-run-hist-commands 2) 0)))
+        br1)
+      (unless brold (setq brold ""))
       (setq br1 (mupad-run-get-next-command ""))
-      (setq br3 (aref mupad-run-hist-commands 2))
-      (aset mupad-run-hist-commands 2 br2)
-      (unless (string= "" br) (mupad-run-store-line br))
-      (aset mupad-run-hist-commands 2 br3)
-      (unless br1
-	(error "End of history list")
-	(setq br1 ""))
+      (unless br1 
+        (aset mupad-run-hist-commands 2 'tail)
+        (mupad-run-error "End of history list")
+        (setq br1 ""))
+      (unless (string= brold br) (mupad-run-store-line br))
       (mupad-run-replace-edit-zone br1 brn))))
 ;; 
 ;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -2121,7 +2143,7 @@ Available special keys:
         (when (not (string= (substring br -5) "-flag"))
           (mupad-run-put-face brb (1+ brb) (intern (concat br "-flag"))))
         (delete-region bra brb)
-        (recenter -1)))))
+        (recenter)))))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -2138,8 +2160,7 @@ Available special keys:
       (when (not (cdr br1))
         (mupad-run-put-face (point) (1+ (point))
           (intern (substring br2 0 (- (length br2) 5)))))
-      ;(recenter -1) ; NT: ???
-      )))
+      (recenter))))
 
 (defun mupad-run-move-flag-up (pt)
   (let ( (inhibit-read-only t) 
@@ -2534,3 +2555,4 @@ Available special keys:
 ;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 ;;=-= FIN du fichier mupad-run.el =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 ;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
