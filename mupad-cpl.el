@@ -1,5 +1,7 @@
  
-;; This files refers to MuPAD 2.5 and is used by mupad.el.
+;; This files refers to MuPAD 2.5 and is used by mupad.el. 3.0
+
+(defvar mupad-cpl-version "3.00")
 
 (defconst mupad-all-completions ; anames(All) minus anames(DOM_DOMAIN)
 '("*" "+" "-" "/" "<" "=" ">" "D" "E" "I" "O" "**" "^" "<=" "<>" ">="

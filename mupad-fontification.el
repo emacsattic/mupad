@@ -1,8 +1,10 @@
 ;;; mupad-fontification.el --- part of mupad.el dedicated to
 ;;;                            font-lock stuff.
 
-;; Corresponds to mupad2-0.el
+;; Corresponds to 3.0
 (provide 'mupad-fontification)
+
+(defvar mupad-fontification-version "3.00")
 
 (defgroup mupad-font-lock nil
 "MuPAD customization subgroup concerning colors and completion"

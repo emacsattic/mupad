@@ -49,7 +49,7 @@
 ;; défini l'extension mupad-run, et sa version
 ;;
 (provide 'mupad-run)
-(defconst mupad-run-mode-version "2.00" "Version of `mupad-run.el'.")
+(defconst mupad-run-mode-version "3.00" "Version of `mupad-run.el'.")
 ;;
 ;; Variables de configuration
 ;; 

@@ -4,6 +4,8 @@
 
 (provide 'mupad-bus)
 
+(defvar mupad-bus-version "3.00")
+
 (defvar mupad-bus-my-mupad-run-process nil
 "The process started from mupad script.")
 

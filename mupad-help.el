@@ -14,7 +14,7 @@
 
 (provide 'mupad-help)
 (require 'mupad-bus)
-(defconst mupad-help-mode-version "2.00" "Version of `mupad-help.el'.")
+(defconst mupad-help-mode-version "3.00" "Version of `mupad-help.el'.")
 
 (defun mupad-set-mupad-directory (sym val)
   (set sym val)

@@ -37,7 +37,7 @@
 ;;----------------------------------------------------
 ;; Part I   : Variables and Constants, except Keymaps.
 ;;----------------------------------------------------
-(defconst mupad-mode-version "2.00" "Version of `mupad.el'.")
+(defconst mupad-mode-version "3.00" "Version of `mupad.el'.")
 ;;----------------------------------------------------
 ;; USER DEPENDENT VARIABLES AND CONSTANTS:
 
