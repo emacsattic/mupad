@@ -9,7 +9,7 @@
 # Initialization of autoconf and automake
 ##############################################################################
 
-AC_INIT(mupacs, 3.2, nthiery@users.sf.net)
+AC_INIT(mupacs, 3.2.1, nthiery@users.sf.net)
 AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_SRCDIR(mupad.el)
 AM_INIT_AUTOMAKE([gnu check-news 1.5c])
@@ -70,7 +70,7 @@ AC_CONFIG_FILES([
 	README
 	index.html
 	Makefile
-	site-start.d/mupacs.el
+	site-start.d/mupacs.el.in
 ])
 
 ##############################################################################
