@@ -77,6 +77,10 @@ Works for me (mupad-3.1.0 2.2.3 2004/12/01)
 ==============================================================================
 Fixed bugs
 ==============================================================================
+(fixed 3.2.3-4 2005/01/21)
+Missing dependency of mupad-run on mupad (for mupad-start-manual)
+------------------------------------------------------------------------------
+
 (fixed 3.2.3 2004/12/15)
 With the -E protocol and MuPAD < 3.1.1, mupad-run does not display the
 file/line the debugger is running on.

@@ -55,6 +55,7 @@
 ;;
 (require 'mupad-bus)
 (require 'mupad-help)
+(require 'mupad) ; for mupad-start-manual
 (require 'gud)
 (require 'advice)
 ;(require 'mupad-xemacs)
