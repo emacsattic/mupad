@@ -6,6 +6,7 @@ New mupad-run-arrow-behaviour options: Usual-Search and MuPAD-Style
 New customization variable: mupad-run-completion-strip-prefix
 Support for D and P in the debugger
   (P requires a recent MuPAD kernel and the -E option)
+Fixed rpm (missing mupacs.el initialization file)
 
 Overview of changes in mupacs 3.2.2:
 ====================================
