@@ -403,6 +403,12 @@ Available special keys:
     (setq mupad-run-time-start (current-time))
 ; la barre de menu
     (mupad-run-init-menu-bar)  
+    (add-hook 'menu-bar-update-hook
+	      '(lambda nil
+		 (when (eq major-mode 'mupad-mode)
+		   (easy-menu-add-item MuPAD-menu-map nil
+				       ["quit"   mupad-run-end]
+				       "Send file to MuPAD..."))))
 ; configuration du mode majeur et évaluation du hook
     (setq major-mode 'mupad-run-mode) 
     (setq mode-name "MuPAD-run")
@@ -411,11 +417,18 @@ Available special keys:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 (defun mupad-run-end () 
-  (interactive) 
+  "Kill the first buffer in mupad-run-mode"
+  (interactive)
 ; kill-process est superflu car il attaché au tampon
-  (kill-buffer (current-buffer))
-  (sleep-for 0.1)
-  (setq mupad-run-process nil))
+  (let ((bfl (buffer-list)))
+    (save-excursion
+      (while bfl
+	(set-buffer (pop bfl))
+	(when (eq major-mode 'mupad-run-mode)
+	  (kill-buffer (current-buffer))
+	  (sleep-for 0.1)
+	  (setq mupad-run-process nil)
+	  (setq bfl nil))))))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -1608,6 +1621,7 @@ Available special keys:
       mupad-run-mode-map
       "Menu-bar item used under mupad-run-mode"
       (mupad-run-menu-bar))))
+
 ;;
 ;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 ;;=-= FIN du fichier mupad-run.el =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-

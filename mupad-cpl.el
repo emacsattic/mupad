@@ -159,8 +159,9 @@
 (defconst mupad-libraries-list ;; all libraries except Types
 ;;stdlib::LIBRARIES ; 36 ;; ont disparu : piecewise domains O Pref misc
 ;;pourquoi pas misc ??  ;; ajoute : ode ?? n'existe pas !  
+;; SURTOUT OTER stdlib !!!
 '("student"
-"specfunc" "stdlib" "Cat" "prog" "linopt" "Type" "RGB" "Dom" "Ax" "fp"
+"specfunc" "Cat" "prog" "linopt" "Type" "RGB" "Dom" "Ax" "fp"
 "property" "combinat" "module" "adt" "numlib" "detools" "matchlib"
 "polylib" "output" "transform" "Series" "generate" "stats" "Network"
 "orthpoly" "stringlib" "solvelib" "intlib" "numeric" "listlib"

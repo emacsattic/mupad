@@ -295,6 +295,7 @@ commands export/unexport. This variable is used only by font-lock.")
     '(mupad-find-simple-loaded-primitive-name (0 mupad-primitive-name))
     '(mupad-find-composed-primitive-name (0 mupad-primitive-name))
     '(eval . (cons mupad-prefix-regexp '(0 mupad-domain)))
+    '("\\<stdlib\\>" (0 mupad-domain))
     '(mupad-find-ops (0 mupad-keyword append t))
     )))
 
@@ -424,25 +425,22 @@ Default is `font-lock-builtin-face'.")))
 (defun mupad-find-composed-primitive-name (limit)
   ;; The time saving idea is that few contruct of the shape lib::fn
   ;; will be used.
-  (let ((has-been-foundp nil) beg (st (point)) (case-fold-search nil))
-    (while (if (setq has-been-foundp
-                     (if (re-search-forward (concat mupad-prefix-regexp "::") limit t)
-                         (progn
-                           (setq beg (match-end 0))
-                           (goto-char (match-beginning 0))
-                           (re-search-forward
-                             (nth 1 (assoc (buffer-substring-no-properties
-                                                  (match-beginning 0) (- beg 2))
-                                           mupad-primitive-regexp-prefix-alist))
-                             limit t))))
-               (progn
-                 (goto-char (match-beginning 1))
-                 (mupad-skip-comments st))))
-    (if has-been-foundp
-        (progn (set-match-data (list beg (goto-char (match-end 1)))) t)
-        ;; End of parsing:
-        nil)))
-
+  (let ((fn-has-been-foundp nil) (st (point)) (case-fold-search nil))
+    (save-restriction
+      (unwind-protect
+	  (progn
+	    (narrow-to-region st limit)
+	    (while (if (re-search-forward (concat mupad-prefix-regexp "::") nil t)
+		       (not (setq fn-has-been-foundp
+				  (looking-at
+				   (nth 1 (assoc (buffer-substring-no-properties
+						  (match-beginning 0) (- (match-end 0) 2))
+						 mupad-primitive-regexp-prefix-alist)))))
+		     nil))
+	    (goto-char (match-end 0))
+	    fn-has-been-foundp)
+	(widen)))))
+ 
 (defun mupad-find-user-fn (limit)
   "A fontification parser."
   (let ((case-fold-search nil))
@@ -520,14 +518,14 @@ Used in mupad-update-fontification-buffers.")
 
 (defun mupad-update-fontification-buffers nil
 "  Update hilighting/unhilighting on all the buffers
-   that are in mupad-mode or in mupad-shell-mode."
+   that are in mupad-mode."
   (interactive)
   (condition-case err
       (save-excursion
         (mapcar
          (lambda (abuffer)
            (set-buffer abuffer)
-           (when (memq major-mode '(mupad-shell-mode mupad-mode))
+           (when (memq major-mode '(mupad-mode))
 	     (if mupad-can-fontify
 		 (progn
 		   (setq font-lock-set-defaults nil)
