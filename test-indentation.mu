@@ -9,7 +9,7 @@
 
 /**
  * 2004/01/11 Bug: the indentation of axiom and bla below is incorrect
- * See email discussion of 12/01/2004
+ * See email discussion of 12/01/2004 fixed 2004-???
  **/
 domain bla
   category ble, bli;
