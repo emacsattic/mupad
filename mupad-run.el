@@ -490,7 +490,7 @@ should be present."
 ;;   un tampon de nom *MuPAD*                               
 ;;   un processus pointé                                 [ mupad-run-process ]
 ;;   l'état du programme mupad (attente ou calcul)         [ mupad-run-state ]
-;;   valeurs possibles: 'beginning 'wait-input 'wait-debugger-input 'running
+;;   valeurs : 'beginning 'wait-input 'wait-debugger-input 'running 'run-debug
 ;;   la chaîne de caractères résultat                     [ mupad-run-output ]
 ;;   l'instant de lancement de la dernière commande   [ mupad-run-time-start ]
 ;;   les commandes associées au clavier                 [ mupad-run-mode-map ]
@@ -706,24 +706,20 @@ Available special keys:
 (defun mupad-run-reset () 
   (interactive) 
   (let 
-    ( (br (buffer-name (current-buffer))) (brc mupad-run-hist-commands) 
-      br1 (mupad-run-save-except 'reset) (inhibit-read-only t))
+    ( br1 (br (buffer-name (current-buffer))) (brc mupad-run-hist-commands) 
+      (mupad-run-save-except 'reset) (brd default-directory)
+      (inhibit-read-only t))
     (mupad-run-store-line (buffer-substring mupad-run-edit (point-max)))
     (mupad-run-save)
     (setq br1 mupad-run-last-session)
     (when (processp mupad-run-process)
-;      (setq br1 (mupad-run-save-br))
-;      (setq mupad-run-process nil)
-;      (setq br1 
-;     (let (mupad-run-last-session) (kill-buffer br) mupad-run-last-session))
       (setq mupad-run-save-except 'kill)
       (kill-buffer br)
       (switch-to-buffer (set-buffer (get-buffer-create br)))
+      (setq default-directory brd)
       (mupad-run-mode)
       (setq mupad-run-last-session br1)
       (setq mupad-run-hist-commands brc)
-;      (insert-buffer br1)
-;      (kill-buffer br1)
       (goto-char (point-max)))))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -868,6 +864,7 @@ Available special keys:
      (brc (current-buffer)) (brb (process-buffer proc)))
      (set-buffer brb)
      (setq mupad-run-output (concat mupad-run-output str))
+; (message mupad-run-output)
 ; tant-qu'il y a des données complètes à traiter, le faire
     (while (setq output-type (mupad-run-output-complete-data output-index))
       (setq output-str     
@@ -908,10 +905,12 @@ Available special keys:
            (apply mupad-help-method (list output-str))
            (error (message "%s" (error-message-string err))))
           (set-buffer brb))
-;        ((eq brt 32) (mupad-run-output-completion output-str))
-        ((eq brt 32) (mupad-run-emacs-completion output-str))
-;        ((eq brt 33) (mupad-run-output-end-comp output-str))
-        ((eq brt 33) (mupad-run-emacs-end-comp output-str))
+         ((eq brt 32) (mupad-run-output-completion output-str))
+;         ((eq brt 32) (mupad-run-emacs-partial-comp output-str))
+;         ((eq brt 32) (mupad-run-emacs-completion output-str))
+        ((eq brt 33) (mupad-run-output-end-comp output-str))
+;         ((eq brt 33) (mupad-run-emacs-end-part-comp output-str))
+;         ((eq brt 33) (mupad-run-emacs-end-comp output-str))
 ; Début des modifications NT 04/11/2002 
         ((or (eq brt 34)            ; MPRCmdb_file_pos
 ;	     (eq brt 41)
@@ -959,11 +958,9 @@ Available special keys:
       (memq mupad-run-state '(wait-input wait-debugger-input)))
     (mupad-run-from-todo-to-output))
 ; raccourcissement de la chaîne à traiter à la fin de la boucle 
-; (when (not in-completion)
-(setq mupad-run-output (substring mupad-run-output output-index))
-;  (setq in-completion nil))
-; trop contraignant 
-;  (when (equal brb brc) (recenter -4))
+  (setq mupad-run-output (substring mupad-run-output output-index))
+; maj de l'affichage en début de session
+  (when (and (equal brb brc) (<= (count-lines 1 (point)) 20)) (recenter -4))
   (set-buffer brc)))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1053,7 +1050,7 @@ Available special keys:
 (defun mupad-run-tab () 
   "Search last word completion"
   (interactive)
-  (when (not (eq mupad-run-state 'wait-input))
+  (when (not (memq mupad-run-state '(wait-input wait-debugger-input)))
     (error "MuPAD computes - completion impossible"))
   ;; NT: TODO: modify to allow for completion in debugger commands
   ;; see also mupad-run-output-end-comp for this
@@ -1071,7 +1068,11 @@ Available special keys:
             (buffer-substring (1+ br) mupad-run-comp-edit))
           "\007\n"))
         (goto-char mupad-run-comp-edit)
-        (setq mupad-run-state 'running))))
+        (if (eq mupad-run-state 'wait-input)
+          (setq mupad-run-state 'running)
+          (setq mupad-run-state 'run-debug)))))
+
+; (process-send-string mupad-run-process "\006\037S co\007\n")
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -1125,14 +1126,14 @@ Available special keys:
 ;; 
 ;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 ;; 
-(defun mupad-run-emacs-completion (str)
+(defun mupad-run-emacs-partial-comp (str)
   (if (not mupad-run-emacs-completion) 
     (setq mupad-run-emacs-completion str) 
     (setq mupad-run-emacs-completion (concat mupad-run-emacs-completion str))))
 ;; 
 ;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 ;; 
-(defun mupad-run-emacs-end-comp (str)
+(defun mupad-run-emacs-end-part-comp (str)
   (let (br) 
     (setq mupad-run-state 'wait-input)
     (if (= (point) (marker-position mupad-run-comp-edit))
@@ -1148,7 +1149,7 @@ Available special keys:
             "Sorry, no completion available for `" 
             mupad-run-comp-begin "' !")))
       (mupad-run-emacs-completion ; éliminer le cas de completion vide
-        (mupad-run-completion-br)
+        (mupad-run-part-comp-br)
         (delete-region (point) (- (point) (length mupad-run-comp-begin)))
         (if (= (point) (marker-position mupad-run-comp-edit))
           (insert br)
@@ -1158,7 +1159,7 @@ Available special keys:
 ;; 
 ;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 ;; 
-(defun mupad-run-completion-br ()
+(defun mupad-run-part-comp-br ()
   (with-output-to-temp-buffer "*Completions*"
     (display-completion-list 
       (split-string mupad-run-emacs-completion ", ")))
@@ -1176,6 +1177,45 @@ Available special keys:
           nil nil mupad-run-comp-begin nil mupad-run-comp-begin)
         (quit mupad-run-comp-begin)))
   (delete-windows-on "*Completions*"))
+;; 
+;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+;; 
+(defun mupad-run-emacs--completion (str) (mupad-run-partial-comp (str)))
+;; 
+;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+;; 
+;; tab ouvre une completion
+;;    dans la fenêtre complétion, la fenêtre mupad ou le minibuffer
+;; fenêtre de complétion fermée : 
+;;    après que mupad répond / seule complétion
+;;    après 5 secondes de non utilisation
+;; dans la fenêtre : le premier tab complète et maj la complétion
+;;    le suivant fait tourner la fenètre de complétion RAZ 
+;;    de la durée de fermeture de la fenètre de complétion
+;;            
+(defun mupad-run-emacs-end-comp (str)
+  (let (br) 
+    (setq mupad-run-state 'wait-input)
+    (if (= (point) (marker-position mupad-run-comp-edit))
+       (insert str)
+       (save-excursion (goto-char mupad-run-comp-edit) (insert str)))
+    (setq mupad-run-comp-begin (concat mupad-run-comp-begin str))
+    (cond
+      ((string= "" mupad-run-emacs-completion)
+        (message "Complete identifier"))
+      ((string= "\010\007" mupad-run-emacs-completion) 
+        (message 
+          (concat 
+            "Sorry, no completion available for `" 
+            mupad-run-comp-begin "' !")))
+      (mupad-run-emacs-completion ; éliminer le cas de completion vide
+        (mupad-run-part-comp-br)
+        (delete-region (point) (- (point) (length mupad-run-comp-begin)))
+        (if (= (point) (marker-position mupad-run-comp-edit))
+          (insert br)
+          (save-excursion (goto-char mupad-run-comp-edit) (insert br))))
+      (t (message "Ne doit pas se produire")))
+    (setq mupad-run-emacs-completion nil)))
 ;; 
 ;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 ;;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -1393,34 +1433,35 @@ Available special keys:
 	     (concat "MuPAD input: ["
                (number-to-string (car mupad-run-rawcommand)) "] "
 	       (nth 1 mupad-run-rawcommand)))
-	  (process-send-string
-	   mupad-run-process
-	   (concat "\006"
-		   (string (car mupad-run-rawcommand))
-		   (nth 1 mupad-run-rawcommand)
-		   "\007\n"))
+	  (process-send-string mupad-run-process
+            (concat "\006"
+		    (string (car mupad-run-rawcommand))
+		    (nth 1 mupad-run-rawcommand)
+		    "\007\n"))
           (setq br mupad-run-state)
-	  (setq mupad-run-state 'running))
-        (delete-region mupad-run-todo br1)
-        (setq br3 (1- (marker-position mupad-run-todo)))
-        (setq brp (- br3 (length mupad-run-prompt)))
-        (mupad-run-print br2
-          'mupad-run-face-last-input (1- mupad-run-todo) 'cmd 
-          (and (eq br 'wait-debugger-input) '(not-save debug-command)))
-        (goto-char br3)
-        (forward-line)
-        (while (< (point) mupad-run-todo)
-          (setq br3 (point))
-          (insert mupad-run-prompt)
-          (mupad-run-put-face br3 (point) 'mupad-run-face-local-prompt)
-          (put-text-property br3 (point) 'rear-nonsticky t)
-          (put-text-property br3 (point) 'front-sticky t)
-          (put-text-property br3 (point) 'read-only t)
+          (if (= (car mupad-run-rawcommand) 1)
+            (setq mupad-run-state 'running)
+            (setq mupad-run-state 'run-debug))
+          (delete-region mupad-run-todo br1)
+          (setq br3 (1- (marker-position mupad-run-todo)))
+          (setq brp (- br3 (length mupad-run-prompt)))
+          (mupad-run-print br2
+            'mupad-run-face-last-input (1- mupad-run-todo) 'cmd 
+            (and (eq br 'wait-debugger-input) '(not-save debug-command)))
+          (goto-char br3)
           (forward-line)
-          (beginning-of-line))
-        (put-text-property brp (point) 'item mupad-run-itemb)
-        (setq mupad-run-last-type 'end-cmd))))
-        (mupad-run-message-debug 'todo-to-output "MIL : todo-to-output"))
+          (while (< (point) mupad-run-todo)
+            (setq br3 (point))
+            (insert mupad-run-prompt)
+            (mupad-run-put-face br3 (point) 'mupad-run-face-local-prompt)
+            (put-text-property br3 (point) 'rear-nonsticky t)
+            (put-text-property br3 (point) 'front-sticky t)
+            (put-text-property br3 (point) 'read-only t)
+            (forward-line)
+            (beginning-of-line))
+          (put-text-property brp (point) 'item mupad-run-itemb)
+          (setq mupad-run-last-type 'end-cmd))))
+          (mupad-run-message-debug 'todo-to-output "MIL : todo-to-output")))
 
 (defun mupad-run-from-todo-to-output-debug (br2)
   (cond 
@@ -1492,10 +1533,18 @@ Available special keys:
 	((string= command "g") (list 69 args)) ; MPRCmdb_goto_proc
 ; non standard shortcut in the mupad text debugger:
 	((string= command "L") (list 70 args)) ; MPRCmdb_proc_level
-	(t (message 
+	(t 
+          (delete-region 
+            (marker-position mupad-run-todo)
+            (+ (marker-position mupad-run-todo) (length br2) 1))
+          (message 
             (concat "Undefined debugger command: \"" command "\". Try \"h\"."))
 	nil))))
-   (t (message (concat "Incorrect debugger command: \"" br2 "\". Try \"h\"."))
+   (t 
+     (delete-region 
+        (marker-position mupad-run-todo)
+        (+ (marker-position mupad-run-todo) (length br2) 1))
+     (message (concat "Incorrect debugger command: \"" br2 "\". Try \"h\"."))
      nil)))
 ;;
 ;; 
