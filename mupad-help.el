@@ -47,6 +47,16 @@ Used to set `mupad-help-file-name-tar' and `mupad-help-file-name-toc'."
 "Hook corresponding to help in mupad(-run)-mode."
 :type 'hook :group 'mupad)
 
+(defcustom mupad-help-examples-comment
+  "///------ [extrait de l'aide en ligne]\n"
+  "A string that is inserted first when an example is sent from the MuPAD help buffer to the MuPAD run buffer"
+  :type 'string :group 'mupad-run)
+
+(defcustom mupad-help-examples-execute
+  nil
+  "If non nil, the examples sent from the MuPAD help buffer to the MuPAD run buffer are immediately executed"
+  :type 'boolean :group 'mupad-run)
+
 (defvar mupad-help-file-name-tar      (concat mupad-help-tree "ascii.tar"))
 (defvar mupad-help-file-name-indextty "ascii/.mupadhelpindextty")
 (defvar mupad-help-file-name-toc      (concat mupad-help-tree "ascii.toc"))
@@ -76,8 +86,8 @@ Used to set `mupad-help-file-name-tar' and `mupad-help-file-name-toc'."
     (define-key map "\C-c\C-i" (function mupad-help-emacs-ask))
     (define-key map [mouse-2] (function mupad-help-mouse-2))
     (define-key map "\M-o" (function mupad-restore-wind-conf))
-    (define-key map [(control left)] (function mupad-help-previous-exemple))
-    (define-key map [(control right)] (function mupad-help-next-exemple))
+    (define-key map [(control left)] (function mupad-help-previous-example))
+    (define-key map [(control right)] (function mupad-help-next-example))
     (define-key map [(control ?c) ?0]  (function mupad-help-reset))
     (setq mupad-help-mode-map map)))
 
@@ -91,7 +101,7 @@ Used to set `mupad-help-file-name-tar' and `mupad-help-file-name-toc'."
 ;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 ;;
 ;;  Fonctions de l'aide en ligne 
-;;    (y compris en cours de saisie, et recopie d'exemples)
+;;    (y compris en cours de saisie, et recopie d'examples)
 ;;
 ;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 ;;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -166,7 +176,6 @@ Used to set `mupad-help-file-name-tar' and `mupad-help-file-name-toc'."
 ; création d'un tampon d'aide et remise à zéro s'il existe déjà.
     (mupad-bus-window-manager "*MuPAD Help*" 'mupad-show-help)
     (set-buffer "*MuPAD Help*")
-    (mupad-help-mode)
     (setq buffer-read-only nil)
     (erase-buffer)
 ; insertion de l'aide en ligne
@@ -174,10 +183,24 @@ Used to set `mupad-help-file-name-tar' and `mupad-help-file-name-toc'."
         (concat 
          "head -c" (cdr br) " " mupad-help-file-name-tar
          "| tail +" (number-to-string (+ (string-to-number (car br)) 1)) "c"))
+; bascule en mode mupad-help
+      (mupad-help-mode)
+  ))
+
+(defun mupad-help-mode ()
+  "Major mode version `mupad-help-mode-version' for searching in Mupad help.
+\\<mupad-help-mode-map>
+The main work is to read mupad help files.
+
+Available special keys:
+\\{mupad-help-mode-map}"
+  (interactive)
+  (kill-all-local-variables)
+; interprétation des codes de contrôles ANSI
+  (let (br br1 bra brp br3 brm)
       (goto-char 1)
       (setq brp 0)
       (setq br 1)
-; interprétation des codes de contrôles ansi
       (while (setq br1 (re-search-forward "\033\\[.m" nil t))
        (setq bra (buffer-substring (- br1 2)(1- br1)))
        (delete-region (- br1 4) br1)
@@ -201,17 +224,7 @@ Used to set `mupad-help-file-name-tar' and `mupad-help-file-name-toc'."
     (goto-char 1)
     (setq buffer-read-only t)
     (use-local-map mupad-help-mode-map)
-    (mupad-help-info-mode)))
-
-(defun mupad-help-mode ()
-  "Major mode version `mupad-help-mode-version' for searching in Mupad help.
-\\<mupad-help-mode-map>
-The main work is to read mupad help files.
-
-Available special keys:
-\\{mupad-help-mode-map}"
-  (interactive)
-  (kill-all-local-variables)
+    (mupad-help-info-mode))
 ; initialisation du tampon et du clavier
   (use-local-map mupad-help-mode-map)
 ; la barre de menu
@@ -268,61 +281,69 @@ Available special keys:
   (interactive)
   (mupad-bus-window-manager "*MuPAD Help*" 'mupad-remove-help-now))
 
-(defun mupad-help-next-exemple ()
+(defun mupad-help-next-example ()
   (interactive)
   (if (< (point) (point-max)) (forward-char 1))
   (if (re-search-forward "^ *>> " nil t) 
     (forward-char -3)
     (goto-char (point-max))))
 
-(defun mupad-help-previous-exemple ()
+(defun mupad-help-previous-example ()
   (interactive)
-  (unless (re-search-backward "^ *>> " nil t) (goto-char (point-min))))
+  (if (re-search-backward "^ *>> " nil t)
+    (progn ; This ensures that the cursor is under the first >
+      (re-search-forward "^ *>> " nil t)
+      (forward-char -3))
+    (goto-char (point-min))))
 
 (defun mupad-help-return ()
   (interactive)
+  ; To be coherent with the previous functions, it might be better to
+  ; test whether the current line starts by "^ *>> ", and if so, whether
+  ; the cursor is in this portion of the line.
   (cond 
     ((string= (buffer-substring (point) (min (+ (point) 3)(point-max))) ">> ")
-       (mupad-help-select-exemple))
+       (mupad-help-select-example))
     ((string= 
-       (buffer-substring (max (1-(point)) 0) (min (+ (point) 2)(point-max)))
+       (buffer-substring (max (- (point) 1) 0) (min (+ (point) 2)(point-max)))
        ">> ")
        (backward-char 1)
-       (mupad-help-select-exemple))
+       (mupad-help-select-example))
     ((string= 
        (buffer-substring (max (- (point) 2) 0) (min (+ (point) 1)(point-max)))
        ">> ")
        (backward-char 2)
-       (mupad-help-select-exemple))
+       (mupad-help-select-example))
     (t (mupad-help-emacs-search))))
 
-(defun mupad-help-select-exemple ()
-  (let ((brp (point)) brs brp2 br br2)
+(defun mupad-help-select-example ()
+  (interactive)
+  (save-excursion
+    (let ((brp (point)) brs brp2 br br2)
+      ; Get the text of the example from the *MuPAD Help* buffer
       (beginning-of-line)
       (goto-char brp)
-      (setq br (re-search-forward "\012 *\012"))
+      (re-search-forward "\012\\s *\012\\s *\012")
+      (setq br (match-beginning 0))
       (setq brs (buffer-substring-no-properties (+ brp 3) br))
-      (set-buffer "*MuPAD*") 
+      ; Go to the end of the MuPAD buffer, and make sure it ends by a newline
+      (set-buffer "*MuPAD*")
       (goto-char (point-max))
       (unless (string= (buffer-substring (1-(point-max)) (point-max)) "\n")
-        (insert "\n")) 
-      (insert "///------ [extrait de l'aide en ligne]\n")
+	(insert "\n"))
+      ; Insert the text of the example
+      (insert mupad-help-examples-comment)
       (setq brp2 (point))
       (insert brs)
-      (backward-char 1) 
+      ; Remove the extra indentation
       (goto-char brp2)
-      (next-line 1)
-      (beginning-of-line) 
-      (while (< (point) (- (point-max) 4))
-        (delete-char 4) (setq br (- br 4)) (next-line 1))
-      (when (< (point) (point-max)) (delete-char 1))
-      (setq br2 (point))
-      (while (memq (char-before br2) '(?\n ?\t ?\ )) (setq br2 (1- br2)))
-      (when (not (memq (char-before br2) '(?\: ?\;)))
-        (goto-char br2) (insert " ;"))
-      (goto-char (point-max))
+      (while (re-search-forward "^    " nil t) (replace-match ""))
+      ; Execute the example (optional)
+      (when mupad-help-examples-execute
+	(mupad-run-return))
       (when (setq br2 (get-buffer-window "*MuPAD*"))
-        (set-window-point br2 (point-max)))))
+	(set-window-point br2 (point-max)))
+      )))
 
 ;-------------------------------------------------------------------------
 (defun mupad-help-completion (question)
