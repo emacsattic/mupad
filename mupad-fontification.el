@@ -322,6 +322,7 @@ when used and `mupad-fontify-global-vars' is t.
 Default is `font-lock-builtin-face'.")))
 
 (defsubst mupad-default-face (face default-face doc)
+  "Use custom-declare-face to ensure face declaration."
   (if (not (null (get face 'saved-face)))
       (custom-declare-face face (get 'saved-face default-face) doc)
     (copy-face default-face face)
