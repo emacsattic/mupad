@@ -133,9 +133,10 @@
   '(mupad-run-edit mupad-run-todo mupad-run-comp-edit mupad-run-last-prompt
     mupad-run-itema mupad-run-itemb mupad-run-last-type
     mupad-run-output mupad-run-state mupad-run-time-start 
-    mupad-run-hist-commands mupad-run-question-before-kill mupad-run-debug 
+    mupad-run-hist-commands mupad-run-save-except mupad-run-debug 
     mupad-run-save-buffer mupad-run-comp-begin mupad-run-prompt
-    mupad-run-rawcommand mupad-run-debugger-file mupad-run-debugger-line)))
+    mupad-run-rawcommand mupad-run-debugger-file mupad-run-debugger-line
+    mupad-run-last-session)))
 ;;
 (defvar mupad-run-process nil)
 
@@ -211,6 +212,7 @@
     (define-key map "\C-c\C-w" (function mupad-run-save))
     (define-key map "\C-ck" (function mupad-run-end))
     (define-key map "\C-c0" (function mupad-run-reset))
+    (define-key map "\C-c1" (function mupad-run-insert-last-session))
     (define-key map [f5] (function mupad-help-emacs-search))
     (define-key map "\C-c\C-h" (function mupad-help-emacs-search))
     (define-key map [f6] (function mupad-help-emacs-ask))
@@ -323,6 +325,7 @@
 ;;   l'historique des commandes                        [ mupad-hist-commands ]
 ;;   la dernière commande d'entrée envoyée à mupad    [ mupad-run-rawcommand ]
 ;;   affichage de messages de debug                          [mupad-run-debug]
+;;        mupad-run-last-session mupad-run-save-except
 ;;
 ;; fonctions principales : 
 ;;   lancement du mode mupad-run dans un nouveau tampon          [ mupad-run ]
@@ -407,7 +410,8 @@ Available special keys:
         mupad-run-output mupad-run-state 
         mupad-run-itema mupad-run-itemb mupad-run-last-type 
         mupad-run-time-start mupad-run-comp-begin mupad-run-prompt
-        mupad-run-question-before-kill 	mupad-run-debug
+        mupad-run-save-except mupad-run-debug
+        mupad-run-last-session 
 ; NT 04/11/2002 added for the debugger
         mupad-run-rawcommand
 	mupad-run-debugger-file	mupad-run-debugger-line
@@ -446,7 +450,6 @@ Available special keys:
 ; configuration du mode majeur et évaluation du hook
     (setq major-mode 'mupad-run-mode) 
     (setq mode-name "MuPAD-run")
-    (setq mupad-run-question-before-kill t)
 ; affichage de messages de debug
     (setq mupad-run-debug ())
 ; the last raw command sent to MuPAD:
@@ -473,6 +476,8 @@ Available special keys:
       (set-buffer (car bfl))
       (when (eq major-mode 'mupad-run-mode)
 ; kill-process est superflu car il attaché au tampon
+        (when (not mupad-run-save-except)
+          (setq mupad-run-save-except 'end))
         (kill-buffer (current-buffer))
         (setq mupad-run-process nil)
         (setq bfl nil))))))
@@ -483,17 +488,35 @@ Available special keys:
   (interactive) 
   (let 
     ( (br (buffer-name (current-buffer))) (brc mupad-run-hist-commands) 
-      br1 (mupad-run-question-before-kill nil))
+      br1 (mupad-run-save-except 'reset))
+    (mupad-run-store-line (buffer-substring mupad-run-edit (point-max)))
+    (mupad-run-save)
+    (setq br1 mupad-run-last-session)
     (when (processp mupad-run-process)
-      (setq br1 (mupad-run-save-br))
-      (setq mupad-run-process nil)
+;      (setq br1 (mupad-run-save-br))
+;      (setq mupad-run-process nil)
+;      (setq br1 
+;      (let (mupad-run-last-session) (kill-buffer br) mupad-run-last-session))
+      (setq mupad-run-save-except 'kill)
       (kill-buffer br)
       (switch-to-buffer (set-buffer (get-buffer-create br)))
       (mupad-run-mode)
+      (setq mupad-run-last-session br1)
       (setq mupad-run-hist-commands brc)
-      (insert-buffer br1)
-      (kill-buffer br1)
+;      (insert-buffer br1)
+;      (kill-buffer br1)
       (goto-char (point-max)))))
+;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+(defun mupad-run-insert-last-session ()
+  "Insert the last MuPAD session"
+  (interactive)
+  (when mupad-run-last-session  
+    (goto-char (point-max))
+    (unless (eq (char-before (point)) ?\n) (insert "\n"))
+    (insert mupad-run-last-session)))
+    
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -546,28 +569,47 @@ Available special keys:
   brn))
 
 (defun mupad-run-save ()
-   "Saves the MuPAD commands"
+  "Saves the MuPAD commands"
   (interactive)
-  (let ((brb (current-buffer)) (brn (mupad-run-save-br)))
-    (set-buffer brn)
-    (unwind-protect (save-buffer) (kill-buffer brn))))
+  (let ((brb (current-buffer)) brn) 
+; mupad-run-save-except 'reset 'end ou nil (lors des sauvegardes 'save)
+; 'kill pour ne rien faire 
+    (cond 
+      ((not mupad-run-save-except)
+        (setq brn (mupad-run-save-br))
+        (unwind-protect (save-buffer) (kill-buffer brn))
+        (kill-buffer brn)
+        (set-buffer brb))
+      ((eq mupad-run-save-except 'reset)
+         (setq brn (mupad-run-save-br))
+         (set-buffer brb)
+         (setq mupad-run-last-session 
+           (prog2 (set-buffer brn) (buffer-string) (set-buffer brb)))
+         (kill-buffer brn))
+      ((eq  mupad-run-save-except 'end)
+         (when          
+           (not 
+             (yes-or-no-p 
+               "Mupad-run buffer not saved.  Quit without save ? "))
+          (setq brn (mupad-run-save-br))
+          (unwind-protect (save-buffer) 
+            (progn (kill-buffer brn) (set-buffer brb)))
+          (kill-buffer brn)
+          (set-buffer brb))))))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 (defun mupad-run-before-kill () 
   (when (eq major-mode 'mupad-run-mode) 
     (switch-to-buffer (current-buffer))
-    (when
-      (and 
-        mupad-run-question-before-kill
-        (not (yes-or-no-p 
-          "Mupad-run buffer not saved.  Quit without save ? ")))
-      (mupad-run-save))
+    (when (not mupad-run-save-except)
+      (setq mupad-run-save-except 'end))
+    (mupad-run-save)
     (when 
-      (and 
+;      (and 
         (processp mupad-run-process) 
-        (eq (process-status mupad-run-process) 'run))
-      (kill-process mupad-run-process))
+ ;       (eq (process-status mupad-run-process) 'run))
+      (delete-process mupad-run-process))
     (setq mupad-run-process nil))
   t)
 ;; 
