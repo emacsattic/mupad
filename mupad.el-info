@@ -1,0 +1,570 @@
+########################################################################
+##  INFO  INFO  INFO  INFO  INFO  INFO  INFO  INFO  INFO  INFO  INFO  ##
+########################################################################
+
+PACKAGE:    mupad.el
+CONTENTS:   A MuPAD programming mode for emacs
+MAINTAINER: Olivier Ramare <ramare@agat.univ-lille1.fr>
+INSTALLED:  27.03.1998
+
+VERSION:       2.0
+Last Modified: 16-Dec-2001 by Olivier Ramare.
+REQUIRES: sli-tools > 0.92
+
+Purpose of this package
+-----------------------
+
+If you want to do more than computing single statements with MuPAD, e.g. 
+writing whole programs for it, then mupad.el is for you.
+
+The package is a plugin for notorious text editor emacs. It makes
+writing MuPAD-programs more comfortable by providing
+
+  - different windows for writing (input) and running (output) programs
+    which we shall most often call scripts.
+  - standard editing-features of emacs, including such important
+    features like auto-save and highlighting of chosen patterns.
+
+mupad.el was originally converted from maple.el and modified with the
+help of Henning von Bargen, Jürgen Billing, Michel Quercia, Nicolas Thiery,
+Winfried Trümper, Olivier Ramare and Paul Zimmermann. It now also
+incorporates a good deal of pari.el as well as genuinely mupad-specific
+functions.
+
+Made for MuPAD 1.4.2, supports some features of MuPAD 2.5 but not all
+of them, see in particular the section concerning comments. 
+
+A Rapid Installation
+--------------------
+
+We describe rapidly how to set this package in use so that you may follow
+the description of this file through some examples.
+
+(1)  The four files 'mupad.el', 'sli-tools.el', 'mupad.el-info' and 'mupad-cpl.el'
+have to be copied in a directory, where "emacs" is  aware of it (ask your
+sys-admin for that); an appreciate place could  be /usr/local/lib/emacs/site-lisp/
+or /etc/site-lisp/. Version of sli-tools should be higher than 0.92.
+If you have recovered a file named 'mupad-cpl-1-4-2.el', copy it to
+'mupad-cpl.el' or even better, make the latter a symbolic link to the former.
+
+(2)  After that, you should add some lines in one of the files  ~/.emacs
+(personal configuration) or /usr/lib/emacs/site-lisp/site-start.el
+(global configuration): this is the files emacs tries to read whenever
+starting a session. First
+
+----- 8< ----- cut here ----- 8< -----
+(autoload 'mupad-mode "mupad" "MuPAD editing mode" t)
+(setq auto-mode-alist (cons '("\\.mu$" . mupad-mode) auto-mode-alist))
+----- 8< ----- cut here ----- 8< -----
+
+As a result, all files ending with .mu are recognized as MuPAD-files
+and emacs will automagically switch into MuPAD-mode. The symbol
+MuPAD-mode is an alias for mupad-mode. Some user may prefer the .MU
+suffix, and it is easily fixed above.
+
+(3)  Finally the name of the executables of mupad (mupad itself, manual
+and vcam) should be set as follows:
+
+----- 8< ----- cut here ----- 8< -----
+     (setq mupad-mode-hook
+       (function (lambda nil
+           ;; The general place:
+           (setq mupad-directory "/usr/local/MuPAD/share/")
+           ;; Which manual:
+           (setq mupad-manual-command "/usr/local/MuPAD/share/bin/manual")
+               ;; the default is file /bin/manual in mupad-directory.
+           ;; Which vcam:
+           )))
+----- 8< ----- cut here ----- 8< -----
+
+If the default suits you (and we hope it will), simply don't mention the
+corresponding line (If you do not set these variables and the default is
+wrong, mupad-mode will still work quite nicely). The shortest way is thus:
+
+----- 8< ----- cut here ----- 8< -----
+ (setq mupad-mode-hook
+   (function (lambda nil (setq mupad-directory "/usr/local/MuPAD/share/"))))
+----- 8< ----- cut here ----- 8< -----
+
+(4)  After this stage, usage should be essentially self-explanatory. So
+explore and come back to this file when you want to know more precise
+things.
+
+
+Main Features
+-------------
+
+  This package provides the definition of two major-modes, namely
+mupad-mode for editing scripts and mupad-shell-mode for running a
+mupad-process. Here is a summary of what these modes do:
+
+  (1) Editing MuPAD script:
+        Automatic indentation / Automatic braces.
+        Universal furthering of constructs (via "ctrl-c ctrl-e").
+        Ready-made shapes (like while-, for- or if- contructs).
+        Commenting / Excluding areas.
+  (2) Fontifying MuPAD scripts.
+      Several structures are recognised and coloured. They are:
+        Comments (starting by "//", enclosed in "#"--"#", enclosed in
+                  "/*"--"*/").
+        Strings.
+        Keywords (all operators, even starting by "&", punctuation,
+                  words from the list mupad-keywords-list)
+        Primitive-names (like "hold", the "transpose" of "linalg::transpose").
+        Options.
+        Domains (like "AxiomConstructor" or "groebner")
+        Types (all starting with "DOM_").
+        Info (starting with "userinfo(").
+        Function names (definitions of user defined ones).
+        Global variable names (definitions of user defined ones).
+        User defined things (function names and/or global variables
+                             whenever they are used).
+  (3) Removed feature: rewriting of MuPAD scripts.
+  (5) Fontifying a running session of MuPAD.
+      Several structures are recognised and coloured. They are:
+        Prompts (the two of them ">>" and "&>").
+        Inputs. Well, in fact, it hasn't been put in practice...
+  (6) Getting help in several forms:
+        Asking for a command name (can be a user's definition provided
+          such a definition has been fed to the MuPAD process). For
+          simplicity of maintenance, this help goes through MuPAD, and
+          thus will not be available if it is not possible to start a
+          MuPAD process.
+        Starting a graphical manual, HyTEX or html.
+        Reading this file.
+        Scanning inputs and outputs and trying to mend what is wrong.
+          At this moment, it starts Vcam when MuPAD answers it cannot do
+          it itself, extends the completion system whenever an export
+          command is found and takes care of inserted eLisp commands.
+  (7) Completion mecanism:
+        All the standard command names of MuPAD can be used for completion.
+        Like for the help-mechanism, this one goes through a mupad-process
+        at the beginning. See the corresponding section below.
+  (9) Starting the debugger.
+
+
+Usage
+-----
+
+The version of emacs for X11 has a menu entry, which lists most of the
+features of the new mode.
+
+Keys/functions available in mupad-mode:
+---------------------------------------
+  We added to this list some key bindings that are not defined in mupad.el
+but are available since the corresponding packages are loaded by mupad.el.
+
+The prefix "C-" means you should keep the Control key pressed and press
+on the following key: "C-g" means press the Control key and the g key
+simultaneously. RET is the return-enter key. The prefix "M-" stands for
+the meta-character which is usually denoted "Alt"(eration): use this key
+like the "C-" one. In case, you do not have such a key, you can use
+ESC (the escape key) which you should *release* before typing the
+next character. To access a function without resorting to its shortname
+(well it may have none like mupad-mode), you can use either the
+menu-bar where this item are recalled, either type in this case:
+  
+    M-x mupad-mode
+
+followed by RET. This is for instance the only way to set a buffer in
+mupad-mode if it has not been done magically. If you do so, you may
+have to use `M-l' to refontify the buffer properly.
+  As it turns out, some other commands are available, but they depend
+on each installation and are easily got through the menu-bar: they are
+commands for getting examples and changing the colors.
+
+We do not mention key bindings that are recalled on the menu-bar.
+
+KEY     eLisp-name            Brief Description
+---     ----------            -----------------
+C-c F   mupad-fun-to-proc     Converts a fun definition into a (()->(...)).
+                              Point should be after the fun definition.
+                              Such a construct is compatible with MuPAD 2.0
+                              while fun's are not recognized any more.
+C-c C-c comment-region        Comments out a whole marked region.
+C-u C-c C-c
+        C-u comment-region    Uncomments a whole marked region.
+M-o     mupad-restore-wind-conf
+                              Emacs will quite often split your window to
+                              present some help. When you want to get rid
+                              of this window, the general (and global) key
+                              M-o strives to restore the previous setting.
+                              You may have to repeat the operation once
+                              or twice (at most ... 19 times !).
+M-i     mupad-complete        Emacs will try to complete the word under the
+                              cursor and display all possible completions
+                              if more than one are possible that do not have
+                              any common kernel. Otherwise this common part
+                              is inserted.
+C-i/TAB sli-electric-tab      Indents current line.
+
+The two keys RET and M-RET are special.
+Together they command the introduction of a newline,
+with some indentation. The action are as follows:
+        newline               Inserts a newline, but do *not* redo
+                              the indentation.
+        sli-newline           Inserts a newline and indents next line.
+        sli-electric-terminate-line
+                              Indents line properly, inserts a newline
+                              and indents next-line.
+Which key does what is controlled by the variables
+mupad-auto-indent and mupad-electric-p:
+  mupad-auto-indent is t   and mupad-electric-p is t (default behaviour)
+    RET   is sli-electric-terminate-line
+    M-RET is newline
+  mupad-auto-indent is nil and mupad-electric-p is t
+    RET   is newline
+    M-RET is sli-terminate-newline
+  mupad-auto-indent is t   and mupad-electric-p is nil
+    RET   is sli-newline
+    M-RET is newline
+  mupad-auto-indent is nil and mupad-electric-p is nil
+    RET   is newline
+    M-RET is sli-newline
+  
+
+################
+##  HOOKS     ##
+################
+
+There are five hooks that the user can set, and which are
+  mupad-mode-hook             : common to both modes.
+     mupad-script-mode-hook   : special for scripts.
+  mupad-input-filter-hook     : to interpret some eLisp commands in a
+                                 mupad-script.
+  mupad-mdx-mode-hook         : to specify behaviour of the mdx-debugger.
+
+For the time being, users should only use mupad-mode-hook and forget
+about mupad-script-mode-hook and mupad-shell-mode-hook. We shall describe
+the other two hooks in the section relative to eLisp programs for one and
+in the section devoted to mdx for the other.
+
+First note that many of these variables takes boolean values, which in
+eLisp are denoted by t (for true) and nil (for false). Secondly, as far
+as possible, use emacs customization via the menu-bar item
+[MuPAD/Environnement/Customize]. This is the universal way of doing.
+But you may want to set variables correctly in your site-start file.
+
+Here is a general pattern for mupad-mode-hook:
+     (setq mupad-mode-hook
+       (function (lambda nil
+           ;; The general place:
+           (setq mupad-directory "/usr/local/MuPAD/share/")
+           ;; Which manual:
+           (setq mupad-manual-command "/usr/local/MuPAD/share/bin/hypage")
+               ;; the default is file /bin/hypage in mupad-directory.
+               ;; You can use the value
+               ;; "netscape file:/usr/local/MuPAD/mupad_html_help/index.html"
+               ;; if you want to see the html doc via netscape.
+               ;; Modify the path suitably.
+           )))
+These are the four system variables. Everything else is local and
+should be left to the user. Here is the list of additionnal variables
+the user can use to tune his/her own session:
+  mupad-electric-p
+  mupad-auto-indent                 mupad-tab-always-indent
+  mupad-no-closed-braces            mupad-no-fontify
+  mupad-fontify-function-names      mupad-fontify-global-var
+  mupad-no-hash-comment             
+  mupad-shell-historyp              mupad-save-sessionp
+  mupad-javadoc-stylep              mupad-user-mail-address
+  mupad-temp-directory
+  mupad-indent-level                mupad-case-indent
+  mupad-el-info
+And of course, colors are also customizable.
+
+#################
+# CUSTOMISATION #
+#################
+
+Environment variables should be set via the menu-bar, via the two menu-bar
+items [MuPAD/Environment/Customize] and [MuPAD/Colors Completion/Customize].
+
+Within  the customization-window, you should save these values for them
+to become valid. Note that the variables having something to do with the
+menu-bar or font-lock-faces will affect only next session since they are
+computed at the beginning of each session. The same applies to mupad-no-hilit
+since it is only used at the beginning of the session to set mupad-can-hilit
+which is in fact the relevant variable.
+
+The variable mupad-el-info is quite special. It refers to this file, but
+is aimed at people who haven't read it, so haven't read how to set it...
+Typically on a network installation. If the mupad-el-info file doesn't exist
+emacs will look at some other place.
+
+############
+# DEBUGGER #
+############
+
+To start the debugger, just type:
+  
+	M-x mdx
+
+You get a new MuPAD session, with the -g option enabled. You can
+run the debugger on any expression by using:
+
+	>> debug(my_expression);
+
+This gives you a new prompt:
+
+	mdx>
+
+You can now type various commands to go through the execution of the
+expression. Emacs will show in another buffer the file and the
+position of the expression being debugged. Here is a very short
+extract of the available commands:
+
+Command  Emacs shortcut		Brief description
+
+?        			Internal help of the debugger
+n	 C-c C-n		Next line (skip OVER calls)
+s	 C-c C-s		Step one line (step INTO calls)
+c	 C-c C-r		Continue execution
+	 C-c C-c		Interrupt running  computation
+S	 C-c C-b		Set breakpoint at current file and line
+q                  		Interrupt current computation and quit mdx
+
+This uses gud, which is a generic debugging environment under emacs
+for various debuggers such as gdb, perldb, ... To get help on this
+environment, type:
+
+	M-h m
+
+The debugger is customized via the hook mupad-mdx-mode-hook.
+
+BUGS:
+
+There are some limitations due to MuPAD's debugger. I quote:
+
+      You can't debug  functions/libraries  that are already loaded
+      on their original source code, but only on the internal data.
+      Activate  debugger on startup to debug on the original source
+      code. For example, use option -g on Unix systems.
+
+Well, even with -g on startup this does not work (MuPAD 1.4).
+
+The internal commands of MuPAD's debugger are not perfectly standard
+(S, ...). This should be fixed with MuPAD 1.5.
+
+Some shortcuts of Emacs are not yet implemented and do not send the
+correct command to MuPAD's debugger.
+
+#################
+# FONTIFICATION #
+#################
+
+If you're using X Windows on a color monitor, Emacs will use different
+colors to display various parts when in mupad-shell-mode or in
+mupad-mode. The colors chosen for fontification can be modified and
+customised through the menu-bar; They are then stored in your .emacs
+file. In fact you can also chose whether the letters should in italic,
+in bold face, underlined or in inverse-video. The collection of these
+informations makes a 'face' rather than a color. The usual language also
+says that we 'fontify' a buffer when we apply selected the faces to it,
+or that we 'hilight' stuff.
+
+The present version of mupad.el uses font-lock and no more hilit19, which
+results in a number of changes. First lazy-lock-mode is turned on in
+mupad-mode only if the buffer is less than 500 lines long
+(***except if global-font-lock-mode is t which it often is !!***)
+and fontification goes through M-l. If you want automatic fontification, you
+can use the menu-bar item [MuPAD/Colors Completion/Automatic] to start
+lazy-lock-mode. However in mupad-shell-mode, font-lock is turned on
+automatically (such buffers are usually not very large and fontification
+there is quite simple).
+
+Troubles may occur with "}". A "}" followed by a newline indicates the
+end of a function definition (starting with a "}"). Spaces ot tab-characters
+are *not* allowed there. So if you use "}" in a string, simply don't
+have it followed by a newline --- and mupad.el won't get confused.
+
+NOTE: in order to set the colours, emacs has to be in charge from the
+moment you send a command until MuPAD outputs an answer. When a command
+which takes a long time for MuPAD to process, you can hit C-g at any time,
+which will not affect MuPAD (like C-c would), but will let you back in
+control of emacs. The output of this specific command will then not be
+fontified: you can refontify the buffer by M-l.
+
+  You should customize the setting through the menu-bar, the proper lines
+will then be added to your .emacs file. Note that there is two levels of
+customization: font-lock-mode defines some default values and it is good
+policy than to use these defaults. You may however decide otherwise and set
+local (differing) value. For instance, default value to color function
+names is font-lock-function-name-face while local one is mupad-function-name.
+If you do not change the latter, it will equal the former. If you want to
+go back to default setting, erase the corresponding line in your .emacs
+file.
+
+  An actual face (font shape + color) is associated to all patterns belonging
+to a group. See the variable x-colors of for valid color names.
+
+  For global variables to recognised as global variables, the syntax should
+be as follows:
+
+my_variable := 33:
+
+where there should not be any space in front of `my_variable'. The same
+applies to procedures or functions. That's why inner procedure definitions
+are not fontified ! That's not quite true, since if you write:
+
+f:=proc(t)
+local x,g;
+begin
+g:=proc() begin end_proc:
+x:=t^2;
+end_proc;
+
+then `x' will be declared global by font-lock, and `g' a function definition !
+This is so in order to save time. 
+
+############
+# COMMENTS #
+############
+
+Emacs supports usually two kind of comments, namely //...till-end-of-line
+and /*...*/. The hash comments #...# are badly supported. Some support is
+offered, but they will behave badly with respect to indentation and
+fontification. So avoid them and set the variable mupad-no-hash-comment
+to t.
+
+You can use the menu-bar item [MuPAD/Shapes/Cleans] to replace hash-comments
+by C-style ones and fun by ()->(...) definitions.
+
+###############
+# INDENTATION #
+###############
+
+For indentation, you need to have the file sli-tools.el (version 0.9 most
+probably) which provides the feature 'sli-tools.
+Here is an example of predefined style:
+
+ConnectedCompo:=
+  proc(G)
+  /* Le resultat est une liste de graphes : les composantes connexes. */
+    local list_graph, base, aux, NextCompo;
+  begin
+    NextCompo:= proc(G, list_v)
+                  local aux, new_set, new_edges, old_set;
+                begin
+                  new_set:=list_v;
+                  repeat old_set:=new_set;
+                         for aux in G[2] do
+                           if nops(new_set intersect {op(aux)}) = 1 then
+                             new_set:=new_set union {op(aux)}
+                           else
+                             /* don't do a thing */
+                           end_if
+                         end_for
+                  until nops(new_set) = nops(old_set) end_repeat;
+                  new_edges:=[];
+                  for aux in G[2] do
+                    if nops(new_set intersect {op(aux)})=nops({op(aux)}) then
+                      new_edges:=append(new_edges, aux)
+                    end_if
+                  end_for;
+                  return([new_set, new_edges])
+                end_proc;
+
+    list_graph:=[];
+    while (nops(G[1])>0) do
+      list_graph:=linsert(list_graph,[NextCompo(G,{op(G[1],1)})],0);
+      G[1]:=G[1] minus list_graph[1][1];
+      base:=[];
+      for aux in G[2] do
+        if contains(list_graph[1][2],aux)=0
+          then base:=append(base,aux);
+        end_if;
+      end_for;
+      G[2]:=base;
+    end_while;
+    return(list_graph)
+  end_proc:
+
+It is quite tricky to explain exactly what happens, but here is a shortcut:
+"begin" is aligned with "proc" and "end_proc" with "begin", and the same happens
+with the couples "for"/"end_for" (or "end"), "while"/"end_while" and so on.
+Indentation *after* is what is defined in mupad-structures, and is set in most
+cases to mupad-indent-level. Between "while" and "do" we use the indentation
+mentionned for "while" (default is 6). The "proc" keyword features in the list
+mupad-fixed-keys-alist meaning that if it is the first word of a line, it will
+be preceded by the number of spaces signified in this list (and default is
+mupad-indent-level). "end_case" is aligned on "case", "of" is aligned on "of"
+if present, and shifted from "case" by mupad-case-indent. Look at the file
+sli-tools.el for further explanations and finer tuning. If indentation is not
+good at first sight, asking for indentation after the line is written corrects
+things up, like for "begin". If mupad-auto-indent is t, the RET is enough
+to reindent the line properly and to set the cursor at a probably good
+place on the line below. MARKERS described below constrain indentation.
+New style keywords like `2=3 will most probably confuse indentation a bit.
+
+###########
+# MARKERS #
+###########
+
+If your script if long, eLisp may have to scan the whole program
+to determine whether point is within a comment, or a function
+definition and so on, which tends to slow things down if your script
+is more than say 500 lines. You can then introduce some markers
+that indicates safe places outside a comment or a function definition.
+The two predefined markers are `//--' (followed in fact by as many
+`-' as you wish) and `/*--*/' (with at least 2 `-' signs). Such a
+pattern should be placed at the beginning of a line and followed by an
+end of line.
+Markers are used for fontification and indentation.
+
+###################
+# HELP/COMPLETION #
+###################
+
+Completion as well as hilighting depends on which version of MuPAD
+you have. In any case you need the proper file "mupad-cpl.el" which
+contains several lists of keywords. You should copy this file
+under the name "mupad-cpl.el" (or better, defined "mupad-cpl.el"
+as a link to the proper version) in a directory where emacs will
+automatically scan (your site-lisp directory for instance).
+This file provides the mupad-cpl feature.
+
+If you export some package, for instance "numeric", you will want the
+completion system to know about it and to complete "quad" to "quadrature".
+As soon as a file containing "export("numeric")" is send to the
+mupad-process via emacs, it will be so. If you want it to be so without
+sending the whole file to MuPAD, simply select the region in which the
+string above appears (maybe in a comment) and send to MuPAD. Nothing more
+will be done than extending the completion system. In case of a program,
+You can also add the line "  Exported Libraries: " followed on a single
+line by the list of libraries you want to export. It'll be taken in
+account when the buffer is re-fontified.
+
+You can finally add your own function names (resp. global variables names)
+to the completion array: this is done via customisation, in the subgroup
+mupaf-font-lock. The words thus added will then be fontified whenever they
+are used with the face `mupad-user-def', except at definition point. This face
+is the same for functions and variables. To avoid this fontification,
+set the variables mupad-fontify-function-names (resp. mupad-fontify-global-var)
+to nil, the default.
+
+#########
+# NOTES #
+#########
+
+(1) This version has been built for emacs 20.3 at least. It should also work
+with Xemacs.
+
+(2) javadoc-style has not yet been properly implemented.
+
+(3) You may be dazed by the way emacs treats indentation at first.
+Just leave it alone, and you'll soon see what happens.
+
+(4) I've also introduced the imenu feature, but it is self-explanatory.
+
+########################################################################
+########################################################################
+
+
+Last Modified: 16-Dec-2001 by Olivier Ramare.
+VERSION:       2.0
+
+;; mupad.el-info ends here
+ 
+ 
+ 
