@@ -925,7 +925,7 @@ Available special keys:
       (if (eq mupad-run-state 'wait-input) (mupad-run-from-todo-to-output)))
     ((memq (get-text-property (point) 'face)
       '(mupad-run-face-prompt       mupad-run-face-prompt-flag
-        mupad-run-face-local-prompt mupad-run-face-prompt-flag
+        mupad-run-face-local-prompt mupad-run-face-local-prompt-flag
         mupad-run-face-last-input   mupad-run-face-result-last-input))
       (mupad-run-copy-cmd))
     (t (mupad-run-insert-comment))))
@@ -1260,6 +1260,19 @@ Available special keys:
           (memq br1 '(mupad-run-face-prompt mupad-run-face-prompt-flag))
           (not (eolp)))
         (beginning-of-line) (mupad-run-insert-comment-br (point) ""))
+; au debut d'une zone de completion, d'un prompt ou d'un commentaire
+      ((and 
+        (not (eq (point) 1))
+        (bolp)
+        (not 
+          (eq 
+            (get-text-property (point) 'item)  
+            (get-text-property (1- (point)) 'item)))
+        (memq (get-text-property (point) 'face)
+          '(mupad-run-face-prompt mupad-run-face-prompt-flag 
+            mupad-run-face-separator mupad-run-face-separator-flag 
+            mupad-run-face-completion mupad-run-face-completion-flag)))
+         (mupad-run-insert-comment-br (point) ""))
 ; à la fin d'une ligne de saisie (face = prompt)
       ((memq br1 '(mupad-run-face-prompt mupad-run-face-prompt-flag))
         (mupad-run-right) (mupad-run-insert-comment))
@@ -1269,20 +1282,20 @@ Available special keys:
         (mupad-run-insert-comment-br (point) ""))
 ; dans un commentaire, sur l'un des caractères de ///---
       ((and 
-           (memq br1 
-               '(mupad-run-face-separator mupad-run-face-separator-flag))
+         (memq br1 
+           '(mupad-run-face-separator mupad-run-face-separator-flag))
            (< (- (point) (progn (beginning-of-line) (point))) 6))
-         (forward-char 6) (mupad-run-insert-comment))
+       (forward-char 6) (mupad-run-insert-comment))
 ; dans un commentaire, au milieu
       ((and 
-           (goto-char br)
-           (memq br1 
-               '(nil mupad-run-face-separator mupad-run-face-separator-flag)))
-         (end-of-line)
-         (setq br2 (buffer-substring br (point)))
-         (delete-region br (point))
-         (forward-char 1)
-         (mupad-run-insert-comment-br (point) br2))
+         (goto-char br)
+         (memq br1 
+           '(nil mupad-run-face-separator mupad-run-face-separator-flag)))
+       (end-of-line)
+       (setq br2 (buffer-substring br (point)))
+       (delete-region br (point))
+       (forward-char 1)
+       (mupad-run-insert-comment-br (point) br2))
 ; dans la zone todo (sauf commentaires traités ci-dessus)
       (( >= (point) (marker-position mupad-run-todo))
         (mupad-run-right) (mupad-run-insert-comment))
