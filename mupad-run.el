@@ -277,7 +277,7 @@
 (defun mupad-end ()
    (interactive)
   (let ((br))
-   (when (setq br (get-buffer "*MuPAD*"))
+   (when (setq br (get-buffer "*MuPAD*")) 
      (switch-to-buffer br) (mupad-run-end))))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -367,7 +367,7 @@ Available special keys:
   (interactive) 
 ; kill-process est superflu car il attaché au tampon
   (kill-buffer (current-buffer))
-  (sleep-for 0.4)
+  (sleep-for 0.1)
   (setq mupad-run-process nil))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -390,8 +390,11 @@ Available special keys:
         brp1 brp2 brp3)
     (setq brp1 (marker-position mupad-run-todo))
     (setq brp2 (marker-position mupad-run-edit))
-    (setq brp3 
-      (+ (marker-position mupad-run-last-prompt) (length mupad-run-prompt) 2))
+    (if (marker-position mupad-run-last-prompt)
+      (setq brp3 
+        (+ 
+          (marker-position mupad-run-last-prompt) 
+          (length mupad-run-prompt) 2)))
     (setq brn (generate-new-buffer-name "tmp_mupad_file"))
     (setq brn (get-buffer-create brn))
     (set-buffer brn)
@@ -400,7 +403,7 @@ Available special keys:
       (goto-char brp2) (insert "///--- commandes en cours de saisie\n"))
     (when (< brp1 brp2) 
       (goto-char brp1) (insert "///--- commandes non encore évaluées\n"))
-    (when (<= brp3 brp1)
+    (when (and brp3 (<= brp3 brp1))
       (goto-char (- brp3 2))
       (insert "///--- commandes en cours d'évaluation\n"))
     (goto-char (point-min))
@@ -435,8 +438,13 @@ Available special keys:
     (switch-to-buffer (current-buffer))
     (if (yes-or-no-p "This mupad-run buffer will be killed, save it ? ")
       (mupad-run-save))
-    (if (processp mupad-run-process) (kill-process mupad-run-process))
-    (setq mupad-run-process nil))
+    (if 
+      (and 
+        (processp mupad-run-process) 
+        (eq (process-status mupad-run-process) 'run))
+      (kill-process mupad-run-process))
+    (setq mupad-run-process nil)
+    (sleep-for 0.1))
   t)
 ;; 
 ;; 
