@@ -55,7 +55,7 @@ and furthering of constructs"
 :group 'mupad :prefix "mupad-")
 
 ;; This variable should be set by a CONFIGURE if it ever exists...
-(defvar mupad-directory "/usr/local/src/MuPAD/share/"
+(defvar mupad-directory "/usr/local/src/MuPAD"
 "Used for initializing some variables below.")
 
 (defcustom mupad-manual-command
@@ -65,7 +65,7 @@ and furthering of constructs"
 put for instance \"netscape file:/usr/local/MuPAD/mupad_html_help/index.html\""
 :type 'string :group 'mupad)
 
-(defcustom mupad-el-info "/usr/share/emacs/site-lisp/mupad.el-info"
+(defcustom mupad-el-info "/mupad.el-info"
 "Place of the mupad.el-info file."
 :type 'string :group 'mupad)
 
@@ -336,7 +336,7 @@ after 'end_proc' and so on. See `sli-more-maidp'."
         (fset 'easy-menu-define nil))))
 
 (mupad-setup)
-(eval-when-compile
+(eval-when-compile  ;; Carefull !! the shell script toinstall uses strict syntax here.
   ; for developpement:
   ;(setq byte-compile-warnings '(free-vars unresolved callargs redefine obsolete))
   ; for users:

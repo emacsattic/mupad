@@ -80,7 +80,7 @@
   "Command to run mupad"
   :type 'string :group 'mupad-run)
 
-(defcustom mupad-run-info  "/usr/local/share/emacs/mupad-run.el-info"
+(defcustom mupad-run-info  "/mupad-run.el-info"
   "Indique où est le fichier de présentation de mupad-run"
   :type 'string :group 'mupad-run)
 
@@ -89,7 +89,7 @@
 
 (defun mupad-run-set-options (sym val)
   (set sym val)
-  (cond ((eq val '("-R" "-U" "EMACS"))
+  (cond ((eq val '("-E" "-U" "EMACS"))
           (setq mupad-help-method 'mupad-help-from-toc-to-buffer))
         ((eq val '("-E" "-U" "EMACS"))
           (setq mupad-help-method 'mupad-help-from-file-to-buffer))))
