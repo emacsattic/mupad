@@ -453,6 +453,17 @@ should be present."
   :set 'mupad-run-set-arrow-behaviour
   :group 'mupad-run)
 
+(defcustom mupad-run-recenter-on-history nil
+  "Non-nil means recenter agressively the window after a history
+lookup to show as many lines of the command as possible, without
+showing empty lines after it."
+  :type 'boolean :group 'mupad-run)
+
+(defcustom mupad-run-recenter-bottom-margin 1
+  "Maximum number of empty lines left at the bottom of the buffer on
+recentering."
+  :type 'integer :group 'mupad-run)
+
 (defconst mupad-run-automate-exception
   '((( 0 . ?\n) .  1) (( 0 . ?\\) .  2) (( 0 . ?\") . 10) (( 0 . ?\/) .  3) 
     (( 0 . ?\*) .  5)
@@ -1024,31 +1035,33 @@ Available special keys:
 ; raccourcissement de la chaîne à traiter à la fin de la boucle 
   (setq mupad-run-output (substring mupad-run-output output-index))
 ; maj de l'affichage en début de session
-;    ;; NT: Hack to scroll the current buffer so that we do not see
-;    ;; past the end. Simply calling (recenter -1) does not work,
-;    ;; because it recenters the active buffer
-;      ;(message (concat "bla" str))
-;      (when (and
-;	     (eq (point) (point-max))
-;	     (get-buffer-window (current-buffer)))
-;	(let ((buffer (current-buffer))
-;	      (old-buffer (window-buffer)))
-;	  ;(message "bla1")
-;	  (unless (eq buffer old-buffer)  (get-buffer-window "*MuPAD*" t)
-;	    (pop-to-buffer buffer t))
-;	  ;(message "bla2")
-;	  (bury-buffer buffer)
-;	  ;(message "bla3")
-;	  (recenter -1)
-;	  ;(message "bla4")
-;	  (unless (eq buffer old-buffer)
-;	    (pop-to-buffer old-buffer))))))
-  (when    
-    (and 
-      (eq (point) (point-max))
-      (get-buffer-window (current-buffer) t))
-    (switch-to-buffer brb)
-    (recenter -2)) 
+
+  ;; NT: Hack to scroll the current *MuPAD* buffer so that we do not
+  ;; see past the end of the buffer. Simply calling (recenter -1) does
+  ;; not work, because it recenters the active buffer
+  ;;
+  ;; J'hésite quant à l'option -t dans get-buffer-window. J'aurais
+  ;; tendance à penser que si le buffer de MuPAD est dans plusieurs
+  ;; fenêtres à la fois, il vaut mieux ne recentrer que celui qui
+  ;; apparaît dans la fenêtre courante, mais je ne suis pas sûr.
+  (when (and
+	 (eq (point) (point-max))
+	 (get-buffer-window (current-buffer)))
+    (let ((buffer (current-buffer))
+	  (old-buffer (window-buffer)))
+      (unless (eq buffer old-buffer)  (get-buffer-window "*MuPAD*" t)
+	      (pop-to-buffer buffer t))
+      ;; Do we really need this?
+      (bury-buffer buffer)
+      (recenter (- (+ mupad-run-recenter-bottom-margin 1)))
+      (unless (eq buffer old-buffer)
+	(pop-to-buffer old-buffer))))
+;  (when    
+;    (and 
+;      (eq (point) (point-max))
+;      (get-buffer-window (current-buffer) t))
+;    (switch-to-buffer brb)
+;    (recenter -2)) 
 ; FMy 
 ; (when (and (equal brb brc) (<= (count-lines 1 (point)) 20)) (recenter -4))
 ; the proper buffer!
@@ -1996,7 +2009,16 @@ Available special keys:
   (delete-region mupad-run-edit (point-max))
   (goto-char mupad-run-edit)
   (insert str)
-;  (save-excursion (goto-char (point-max)) (recenter -1))
+  (when mupad-run-recenter-on-history
+    (save-excursion
+      (cond
+       ((<= (+ (count-screen-lines mupad-run-edit (point-max)) 1)
+	    (window-height))
+	(goto-char (point-max))
+	(recenter (- (+ mupad-run-recenter-bottom-margin 1))))
+       (t
+	(goto-char (min pos (point-max)))
+	(recenter 1)))))
   (goto-char (min pos (point-max))))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
