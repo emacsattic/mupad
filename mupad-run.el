@@ -515,6 +515,13 @@ recentering."
   :type '(radio (const inline) (const temporary-buffer))
   :group 'mupad-run)
 
+(defcustom mupad-run-input-terminator " ;"
+  "The string that is appended to those input that do not readilly end
+by a ';' or ';'. The purpose of this feature is to make the session
+rereadable by MuPAD."
+  :type '(string)
+  :group 'mupad-run)
+
 (defconst mupad-run-automate-exception
   '((( 0 . ?\n) .  1) (( 0 . ?\\) .  2) (( 0 . ?\") . 10) (( 0 . ?\/) .  3) 
     (( 0 . ?\*) .  5)
@@ -1593,8 +1600,8 @@ Available special keys:
                (and (> br2 (marker-position mupad-run-todo))
                     (not (memq (char-before br2) '(?\: ?\;))))
                (goto-char br2) 
-               (insert " ;")
-               (setq br1 (+ br1 2)))
+               (insert mupad-run-input-terminator)
+               (setq br1 (+ br1 (length mupad-run-input-terminator))))
             (setq br2 (buffer-substring mupad-run-todo (1- br1)))
             (setq mupad-run-rawcommand (list 1 br2)))
           ((eq mupad-run-state 'wait-debugger-input) ; Debugger input
@@ -2278,7 +2285,7 @@ Available special keys:
       (and (> br (marker-position mupad-run-edit))
            (not (memq (char-before br) '(?\: ?\;))))
       (goto-char br)
-      (insert " ;"))
+      (insert mupad-run-input-terminator))
     (goto-char (point-max))
     (if (not (bolp)) (insert "\n"))
     (insert (buffer-substring bra brb))
