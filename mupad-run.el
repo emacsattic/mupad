@@ -66,7 +66,7 @@
 :type 'string :group 'mupad-run)
 
 (defcustom mupad-run-info  "/usr/local/share/site-lisp/mupad-run.el-info"
-"Ou on trouve mupad-run.alire"
+"Ou on trouve mupad-run.el-info"
 :type 'string :group 'mupad-run)
 
 (defvar mupad-help-method 'mupad-help-from-toc-to-buffer) ; pour l'option -R 
@@ -271,6 +271,8 @@
    (interactive)
    (switch-to-buffer "*MuPAD*")
    (mupad-run-mode))
+
+(defalias 'mupad-run 'run-mupad)
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -1439,7 +1441,7 @@ Available special keys:
 ;    (defun mupad-restore-wind-conf nil)))
 
 (defun mupad-run-show-mupad-info nil
-  "Show mupad-run.alire on another window."
+  "Show mupad-run.el-info on another window."
   (interactive)
   (condition-case err
     (let 
@@ -1454,7 +1456,7 @@ Available special keys:
       (mapcar 
         (lambda (afile) (if (file-exists-p afile) (setq where-it-is afile)))
         (mapcar 
-          (lambda (apath) (expand-file-name (concat apath "/mupad-run.alire")))
+          (lambda (apath) (expand-file-name (concat apath "/mupad-run.el-info")))
           (append to-be-tested load-path)))
       (if (and mupad-run-info (file-exists-p mupad-run-info))
         (setq where-it-is mupad-run-info))
