@@ -537,12 +537,15 @@ should be present."
 (defun mupad-run-ask-pgm-opt nil
   (unless mupad-run-less-questions
     (let ((cmd-to-start
-	   (read-from-minibuffer
-	    "Command to start mupad: "
-	    (concat mupad-run-pgm " "
-		    (mapconcat (lambda (wd) wd) mupad-run-pgm-opt " ")))))
+	   (split-string
+	    (read-from-minibuffer
+	     "Command to start mupad: "
+	     (concat mupad-run-pgm " "
+		     (mapconcat (lambda (wd) wd) mupad-run-pgm-opt " ")))
+	    " ")))
       (mupad-run-set-options
-       'mupad-run-pgm-opt (cdr (split-string cmd-to-start " "))))))
+       'mupad-run-pgm-opt (cdr cmd-to-start))
+      (setq mupad-run-pgm (car cmd-to-start)))))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -1062,17 +1065,23 @@ Available special keys:
   (let 
     ((br (posix-search-backward "[^a-zA-Z0-9_:\\.]" (1- mupad-run-edit) t)))
     (when br
-      (process-send-string 
-        mupad-run-process 
-        (concat 
-          "\006\037"   
+      (progn
+	  (mupad-run-message-debug 'edit-to-todo
+				   (concat "MuPAD input: ["
+					   (number-to-string 37) "] "
+					   (setq mupad-run-comp-begin 
+						 (buffer-substring (1+ br) mupad-run-comp-edit))))
+	(process-send-string 
+	 mupad-run-process 
+	 (concat 
+          "\006" (string 31)
           (setq mupad-run-comp-begin 
-            (buffer-substring (1+ br) mupad-run-comp-edit))
+		(buffer-substring (1+ br) mupad-run-comp-edit))
           "\007\n"))
         (goto-char mupad-run-comp-edit)
         (if (eq mupad-run-state 'wait-input)
-          (setq mupad-run-state 'running)
-          (setq mupad-run-state 'run-debug)))))
+	    (setq mupad-run-state 'running)
+          (setq mupad-run-state 'run-debug))))))
 
 ; (process-send-string mupad-run-process "\006\037S co\007\n")
 ;;
