@@ -8,6 +8,17 @@
 //////////////////////////////////////////////////////////////////////////////
 
 /**
+ * 2004/01/11 Bug: the indentation of axiom and bla below is incorrect
+ **/
+domain bla
+  category ble, bli;
+  axiom bla;
+  
+  bla;
+begin
+end_domain;
+
+/**
  * 2003/09/19 Bug: the indentation of axiom and bla below is incorrect
  * 2004/01/10 Seems to be fixed, though I don't known when.
  **/
