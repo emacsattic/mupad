@@ -33,9 +33,12 @@ synchronized (that's a MuPAD bug which also appears in xmupad).
 
 Work around: use 'shell::system' from the `shell' dynamic module.
 ------------------------------------------------------------------------------
+system should only block the *MuPAD* buffer not all of emacs; in fact
+the *MuPAD* buffer should behave as when it is waiting for a MuPAD
+computation.
+------------------------------------------------------------------------------
 customizing mupad-directory does not reset mupad-help-file-name-tar
 accordingly
-
 ==============================================================================
 Bugs with unknown status
 ==============================================================================
