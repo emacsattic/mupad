@@ -1,3 +1,12 @@
+Support for file-name completion in >> read("....
+
+------------------------------------------------------------------------------
+At some point, all the English documentation should be either in
+the QuickInstall file or in the modes description.
+The French documentation should be gathered in a single file with
+a sensible name.
+
+------------------------------------------------------------------------------
 On error, use the "debugger pointer" to show where the error occured.
 
 ------------------------------------------------------------------------------
