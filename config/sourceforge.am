@@ -6,7 +6,7 @@ SFPACKAGE=$(shell echo $(PACKAGE) | awk '{print tolower($$0)}' )
 # directory of the package on sourceforge: /home/groups/p/pr/project/htdocs
 SFDIR= /home/groups/$(shell echo $(PACKAGE) | awk -F '' '{print $$1"/"$$1$$2}')/$(SFPACKAGE)/htdocs 
 
-SFweb: lib $(PKG_DOC) doc Papers
+SFweb: $(PKG_DOC)
 	rsync -raz $^ --rsh "ssh -v1" $(SFPACKAGE).sourceforge.net:$(SFDIR)
 
 SFrelease:
