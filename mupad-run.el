@@ -521,7 +521,7 @@ Available special keys:
 ;; 6 : largeur de l'affichage (en ascii) 33 : fin de l'énumération 
 ;; 7 : type d'affichage (prettyprint)   255 : perte de synchro. (par emacs)
 ;; 8 : aide en ligne 
-;; 
+;;
 (defun mupad-run-filter (proc str) 
   (let 
     ((output-index 0) output-type output-str brt (inhibit-read-only t)
@@ -1089,6 +1089,24 @@ Available special keys:
         (setq brp (= (marker-position mupad-run-todo) brp))
         (set-marker mupad-run-todo (point)))
       (if brp (goto-char mupad-run-todo)))))
+
+(defun mupad-run-call-vcam (str)
+  (let ((muplot (substring str 5)) brp br)
+      (save-excursion (print muplot)
+        (goto-char mupad-run-todo)
+        (setq br (point))
+        (start-process-shell-command "vcam" nil (concat "vcam -xmupad " muplot))
+        (put-text-property br (point) 'face 'mupad-run-face-system)
+        (put-text-property br (point) 'rear-nonsticky t)
+        (put-text-property br (point) 'front-sticky t)
+        (put-text-property br (point) 'read-only t)
+        (if 
+          (= (marker-position mupad-run-todo) 
+             (marker-position mupad-run-edit))
+          (set-marker mupad-run-edit (point)))
+        (setq brp (= (marker-position mupad-run-todo) brp))
+        (set-marker mupad-run-todo (point)))
+      (if brp (goto-char mupad-run-todo))))
 ;;
 ;; 
 ;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
