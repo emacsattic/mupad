@@ -680,7 +680,7 @@ Answers nil if no comment has been skipped."
   (interactive "e")
   (funcall 'mouse-choose-completion event)
   ;; 'mouse-choose-completion comes from the standard file "mouse.el".
-  (mupad-restore-wind-conf) (mupad-bus-forward-extended-mupadword))
+  (mupad-restore-wind-conf))
 
 
 ;;-------------------------------------------

@@ -114,9 +114,9 @@ if test -f mupad-help.el; then
 
    #Variable mupad-help-method:
    if [ `mupad -V` = 2.5.1 ]; then
-      sed "s|(defvar mupad-help-method 'mupad-help-from-file-to-buffer)|(defvar mupad-help-method 'mupad-help-from-toc-to-buffer)|" mupad-run.el > mupad-run-bis.el
-   else
       sed "s|(defvar mupad-help-method 'mupad-help-from-toc-to-buffer)|(defvar mupad-help-method 'mupad-help-from-file-to-buffer)|" mupad-run.el > mupad-run-bis.el
+   else
+      sed "s|(defvar mupad-help-method 'mupad-help-from-file-to-buffer)|(defvar mupad-help-method 'mupad-help-from-toc-to-buffer)|" mupad-run.el > mupad-run-bis.el
    fi
 
    rm mupad-run.el

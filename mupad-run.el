@@ -81,25 +81,25 @@
   "Command to run mupad"
   :type 'string :group 'mupad-run)
 
-; modifié par la configuraiton automatique
+; modifié par la configuration automatique
 (defcustom mupad-run-info 
   "/home/ramare/lisp/first-look/MuPAD/mupad-run.el-info"
   "Indique où est le fichier de présentation de mupad-run"
   :type 'string :group 'mupad-run)
 
-(defvar mupad-help-method 'mupad-help-from-toc-to-buffer)
-; mupad-help-from-toc-to-buffer  --> valable pour l'option -R 
-; mupad-help-from-file-to-buffer --> valable pour l'option -E
+(defvar mupad-help-method 'mupad-help-from-file-to-buffer)
+; mupad-help-from-toc-to-buffer  --> valable pour l'option -E
+; mupad-help-from-file-to-buffer --> valable pour l'option -R
 
 (defun mupad-run-set-options (sym val)
   (set sym val)
   (cond ((eq val '("-E" "-U" "EMACS"))
           (setq mupad-help-method 'mupad-help-from-toc-to-buffer))
-        ((eq val '("-E" "-U" "EMACS"))
+        ((eq val '("-R" "-U" "EMACS"))
           (setq mupad-help-method 'mupad-help-from-file-to-buffer))))
 
 (defcustom mupad-run-pgm-opt
-  '("-E" "-U" "EMACS")
+  '("-R" "-U" "EMACS")
   "Options given to the mupad process"
   :type '(choice (const ("-R" "-U" "EMACS")) (const ("-E" "-U" "EMACS")))
   :initialize 'custom-initialize-default
