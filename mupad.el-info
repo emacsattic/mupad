@@ -12,147 +12,6 @@ Last Modified: 14-Oct-2002 by Olivier Ramare.
 REQUIRES: sli-tools > 0.92
 $Id$
 
-Purpose of this package
------------------------
-
-If you want to do more than computing single statements with MuPAD, e.g. 
-writing whole programs for it, then mupad.el is for you.
-
-The package is a plugin for notorious text editor emacs. It makes
-writing MuPAD-programs more comfortable by providing
-
-  - different windows for writing (input) and running (output) programs
-    which we shall most often call scripts.
-  - standard editing-features of emacs, including such important
-    features like auto-save and highlighting of chosen patterns.
-
-mupad.el was originally converted from maple.el and modified with the
-help of Henning von Bargen, Jürgen Billing, Michel Quercia, Nicolas Thiery,
-Winfried Trümper, Olivier Ramare and Paul Zimmermann. It now also
-incorporates a good deal of pari.el as well as genuinely mupad-specific
-functions.
-  This version steams more precisely from the work of Francois Maltey
-(mupad-run/mupad-help), Nicolas Thiery (debugger) and Olivier Ramare
-(mupad.el).
-
-It supports most features of MuPAD 2.5 but not all of them, see in particular
-the section concerning comments. 
-
-A Rapid Installation
---------------------
-
-We describe rapidly how to set this package in use so that you may follow
-the description of this file through some examples.
-
-(1)  The nine files
-     'mupad.el'                --> main file to edit mupad scripts
-     'mupad.el-info'           --> this file
-     'mupad-cpl.el'            --> file of special words of MuPAD 2.5
-     'mupad-fontification.el'  --> colors for mupad scripts.
-     'mupad-bus.el'            --> link between mupad.el and mupad-run.el
-     'mupad-help.el'           --> online help
-     'mupad-run.el'            --> main file to run a MuPAD session
-     'sli-tools.el'            --> an indentation engine used by mupad.el
-     'mupad-run.alire'         --> the info file of mupad-run.el and mupad-help.el.
-have to be copied in a directory, where "emacs" is  aware of it (ask your
-sys-admin for that); an appreciate place could  be /usr/local/lib/emacs/site-lisp/
-or /etc/site-lisp/. Version of sli-tools should be higher than 0.92.
-there is some independance in the files above and the two main ones are
-'mupad.el' and 'mupad-run.el'. This later is described more fully in
-'mupad-run.alire' so we shall concentrate on 'mupad.el'
-
-(2)  After that, you should add some lines in one of the files  ~/.emacs
-(personal configuration) or /usr/lib/emacs/site-lisp/site-start.el
-(global configuration): this is the files emacs tries to read whenever
-starting a session. First
-
------ 8< ----- cut here ----- 8< -----
-(autoload 'mupad-mode "mupad" "MuPAD editing mode" t)
-(setq auto-mode-alist (cons '("\\.mu$" . mupad-mode) auto-mode-alist))
------ 8< ----- cut here ----- 8< -----
-
-As a result, all files ending with .mu are recognized as MuPAD-files
-and emacs will automagically switch into MuPAD-mode. The symbol
-MuPAD-mode is an alias for mupad-mode. Some user may prefer the .MU
-suffix, and it is easily fixed above.
-
-You may want to add the following shortcuts as wel
-
------ 8< ----- cut here ----- 8< -----
-(add-hook 'mupad-run-mode-hook (lambda ()
-           (local-set-key [f5] 'mupad-help-emacs-search)
-           (local-set-key [f6] 'mupad-help-emacs-ask)))
------ 8< ----- cut here ----- 8< -----
-
-
-(3)  Finally the name of the executables of mupad (mupad itself, manual
-and vcam) should be set as follows:
-
------ 8< ----- cut here ----- 8< -----
-     (setq mupad-mode-hook
-       (function (lambda nil
-           ;; The general place:
-           (setq mupad-directory "/usr/local/MuPAD/share/")
-           ;; Which manual:
-           (setq mupad-manual-command "/usr/local/MuPAD/share/bin/manual")
-               ;; the default is file /bin/manual in mupad-directory.
-           )))
------ 8< ----- cut here ----- 8< -----
-
-If the default suits you (and we hope it will), simply don't mention the
-corresponding line (If you do not set these variables and the default is
-wrong, mupad-mode will still work quite nicely). The shortest way is thus:
-
------ 8< ----- cut here ----- 8< -----
- (setq mupad-mode-hook
-   (function (lambda nil (setq mupad-directory "/usr/local/MuPAD/share/"))))
------ 8< ----- cut here ----- 8< -----
-
-(4)  After this stage, usage should be essentially self-explanatory. So
-explore and come back to this file when you want to know more precise
-things.
-
-
-Main Features
--------------
-
-  This package provides the definition of two major-modes, namely
-mupad-mode for editing scripts and mupad-shell-mode for running a
-mupad-process. Here is a summary of what these modes do:
-
-  (1) Editing MuPAD script:
-        Automatic indentation / Automatic braces.
-        Universal furthering of constructs (via "ctrl-c ctrl-e").
-        Ready-made shapes (like while-, for- or if- contructs).
-        Commenting / Excluding areas.
-  (2) Fontifying MuPAD scripts.
-      Several structures are recognised and coloured. They are:
-        Comments (starting by "//", enclosed in "#"--"#", enclosed in
-                  "/*"--"*/").
-        Strings.
-        Keywords (all operators, even starting by "&", punctuation,
-                  words from the list mupad-keywords-list)
-        Primitive-names (like "hold", the "transpose" of "linalg::transpose").
-        Options.
-        Domains (like "AxiomConstructor" or "groebner")
-        Types (all starting with "DOM_").
-        Info (starting with "userinfo(").
-        Function names (definitions of user defined ones).
-        Global variable names (definitions of user defined ones).
-        User defined things (function names and/or global variables
-                             whenever they are used).
-  (3) Removed feature: rewriting of MuPAD scripts.
-  (4) Getting help in several forms:
-        Asking for a command name.
-        Starting a graphical manual.
-        Reading this file.
-  (5) Completion mecanism:
-        All the standard command names of MuPAD can be used for completion.
-        Like for the help-mechanism, this one goes through a mupad-process
-        at the beginning. See the corresponding section below.
-  (6) Starting the debugger.
-
-
 Usage
 -----
 
@@ -240,7 +99,7 @@ mupad-auto-indent and mupad-electric-p:
 ################
 
 There are two hooks that the user can set, and which are
-  mupad-mode-hook             
+  mupad-mode-hook
   mupad-mdx-mode-hook         : to specify behaviour of the mdx-debugger.
 
 We shall describe the second hook in the section devoted to mdx for the other.
@@ -265,6 +124,11 @@ Here is a general pattern for mupad-mode-hook:
                ;; Modify the path suitably.
            )))
 
+----- 8< ----- cut here ----- 8< -----
+(add-hook 'mupad-run-mode-hook (lambda ()
+           (local-set-key [f5] 'mupad-help-emacs-search)
+           (local-set-key [f6] 'mupad-help-emacs-ask)))
+----- 8< ----- cut here ----- 8< -----
 
 #################
 # CUSTOMISATION #
@@ -284,63 +148,6 @@ The variable mupad-el-info is quite special. It refers to this file, but
 is aimed at people who haven't read it, so haven't read how to set it...
 Typically on a network installation. If the mupad-el-info file doesn't exist
 emacs will look at some other place.
-
-############
-# DEBUGGER #
-############
-
-To start the debugger, just type:
-  
-	M-x mdx
-
-You get a new MuPAD session, with the -g option enabled. You can
-run the debugger on any expression by using:
-
-	>> debug(my_expression);
-
-This gives you a new prompt:
-
-	mdx>
-
-You can now type various commands to go through the execution of the
-expression. Emacs will show in another buffer the file and the
-position of the expression being debugged. Here is a very short
-extract of the available commands:
-
-Command  Emacs shortcut		Brief description
-
-?        			Internal help of the debugger
-n	 C-c C-n		Next line (skip OVER calls)
-s	 C-c C-s		Step one line (step INTO calls)
-c	 C-c C-r		Continue execution
-	 C-c C-c		Interrupt running  computation
-S	 C-c C-b		Set breakpoint at current file and line
-q                  		Interrupt current computation and quit mdx
-
-This uses gud, which is a generic debugging environment under emacs
-for various debuggers such as gdb, perldb, ... To get help on this
-environment, type:
-
-	M-h m
-
-The debugger is customized via the hook mupad-mdx-mode-hook.
-
-BUGS:
-
-There are some limitations due to MuPAD's debugger. I quote:
-
-      You can't debug  functions/libraries  that are already loaded
-      on their original source code, but only on the internal data.
-      Activate  debugger on startup to debug on the original source
-      code. For example, use option -g on Unix systems.
-
-Well, even with -g on startup this does not work (MuPAD 1.4).
-
-The internal commands of MuPAD's debugger are not perfectly standard
-(S, ...). This should be fixed with MuPAD 1.5.
-
-Some shortcuts of Emacs are not yet implemented and do not send the
-correct command to MuPAD's debugger.
 
 #################
 # FONTIFICATION #
@@ -552,6 +359,3 @@ Last Modified: 14-Oct-2002 by Olivier Ramare.
 VERSION:       2.0
 
 ;; mupad.el-info ends here
- 
- 
- 

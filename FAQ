@@ -1,7 +1,10 @@
 ;; $Id$
 
-(1) Does these scripts work with xemacs ? Not yet.
+(1) Does these scripts work with xemacs ? 
+    Not yet.
+
 (2) How to replace xmupad by emacs + mupad-run.el ?
+
     use the following trivial script:
     -----------------------------------------------
     #!/bin/sh -f
@@ -14,11 +17,9 @@
     executable. If you are under windows, get linux ...
     No, get cygwin, it should be enough or ask
     a windows forum how to achieve that.
-(3) configure does not work: emacs complains it cannot
-    find some files.
-    Maybe some files are in your local installation
-    and since configure compile in batch, the .emacs
-    file is not read. So you can uncomment the line
-    #echo -e "\n(load-file \"~/.emacs.el\")" >> "configure-to-compile-mupad-el-and-all"
-    in the configure script (i.e. erase the '#').
+
+(3) How do I tell emacs that files ending with .MU are MuPAD files?
+
+    Add the following to your .emacs file:
+    (setq auto-mode-alist (cons '("\\.MU$" . mupad-mode) auto-mode-alist))
 

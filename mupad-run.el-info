@@ -256,46 +256,45 @@ Le passage d'une fenêtre à l'autre est fait par la saisie de C-xo
 La saisie de C-g interrompt une commande d'emacs déjà lancée.
 L'annulation des dernières modifications dans un tampon est obtenue  par C-_
 
-III. Installation et configuration
-----------------------------------
+II.i. Debugger
+--------------
 
-Fichiers concernés : 
-  mupad-run.el, ~/.emacs, ~/.mupad/userinit.mu, ascii.toc, ascii.tar /tmp
+From a buffer running mupad, you can run the debugger on any
+expression by using:
 
-Par exemple recopier le fichier mupad-run.el dans /usr/local/share/emacs
-ou d'en n'importe quel répertoire contenu dans la variable load-path 
-d'emacs. 
-La valeur de cette variable s'obtient sous emacs par C-hv load-path[return].
+	>> debug(my_expression);
 
-Ajouter dans le fichier ~/.emacs de configuration 
-(autoload 'mupad-run "mupad-run.el" "To start a MuPAD session" t)
+This gives you a new prompt:
 
-Ensuite modifier éventuellement les variables suivantes du fichier
-mupad-run.el.  Pour cela utiliser le menu
-MuPAD/environnement/customize, modifier le fichier mupad-run.el ou
-affecter par setq la variable dans ~/.emacs.
+	mdx>
 
-(setq mupad-run-pgm "mupad")  ;; comment lancer mupad : par la commande mupad
+You can now type various commands to go through the execution of the
+expression. Emacs will show in another buffer the file and the
+position of the expression being debugged. For a list of available
+commands, type '?'
 
-(setq mupad-run-opt '("-R" "-U" "EMACS"))
-;; option de la ligne de commande d'emacs 
-;;   -E pour la version 3
-;;   -R pour la version 2.5 - mais accès à l'aide en ligne modifié
-;; -U permet de tester dans userinit.mu si mupad a été lancé par emacs 
+BUGS:
 
-Et dans le fichier mupad-help.el
-(setq mupad-help-tree "/usr/local/src/MuPAD/share/doc/")
+There are some limitations due to MuPAD's debugger. I quote:
 
-Ensuite lancer mupad par mupad-run.
+      You can't debug  functions/libraries  that are already loaded
+      on their original source code, but only on the internal data.
+      Activate  debugger on startup to debug on the original source
+      code. For example, use option -g on Unix systems.
 
-Comment mupad -R et mupad -E gèrent les graphiques ?
-----------------------------------------------------
+Well, even with -g on startup this does not always work (MuPAD 1.4).
 
-Sur certaines version de mupad (mais l'auteur n'est pas sûr que ce soit
-toujours le cas) mupad -E et mupad -R lancent le programme vcam pour 
-visualiser un graphe ;  ceci demande de configurer mupad pour savoir
-dans quel fichier il place le graphe à tracer, fichier qui sera lu par
-vcam.
+The internal commands of MuPAD's debugger are not perfectly standard
+(S, ...). This should be fixed with MuPAD 1.5.
+
+II.j Comment mupad -R et mupad -E gèrent les graphiques ?
+---------------------------------------------------------
+
+Sur certaines version de mupad (mais l'auteur n'est pas sûr que ce
+soit toujours le cas) mupad -E et mupad -R lancent le programme vcam
+pour visualiser un graphe ; ceci demande de configurer mupad pour
+savoir dans quel fichier il place le graphe à tracer, fichier qui sera
+lu par vcam.
 
 Les lignes suivantes placées dans ~/.mupad/userinit.mu modifient comme
 il faut la commande plot.  Celle-ci sauvegarde le graphe dans

@@ -6,6 +6,10 @@ unpacking, ./configure, make, make check, make install. This file
 describes this with some more details. See the file INSTALL for
 generic information on the use of configure.
 
+Note: you can install mupacs in your own account if you don't have
+root access. See --prefix and lispdir options below.
+
+
 1.  Unpacking:
 
 	gunzip mupacs-*.tar.gz
@@ -28,6 +32,8 @@ generic information on the use of configure.
 	MUPADdir:	The root directory of MuPAD (i.e. MUPAD_ROOT_PATH)
 	MUPADbindir:	The directory containing MuPAD's programs
 			Default: $MUPADdir/share/bin
+	lispdir:	The directory where to install the lisp files
+			Default: /usr/local/share/emacs/site-lisp/
 
 3.  Compilation
 
@@ -37,30 +43,48 @@ generic information on the use of configure.
 
 	make check
 
-    Actually, there is no testsuite yet ...
+    Actually, there is no testsuite yet. Shame on us.
 
 5. Installation:
 
 	make install
 
-    By default mupacs gets installed in /usr/local/share/emacs/site-lisp
+    By default mupacs gets installed in /usr/local/share/emacs/site-lisp/
 
-    If emacs is installed in /usr/bin/emacs, you may need to install
-    mupacs in /usr/share/emacs/site-lisp instead:
+    If emacs is installed in /usr/bin/emacs, it's recommended to
+    install mupacs in /usr/share/emacs/site-lisp instead:
 
 	configure --prefix=/usr
 
     Type 'configure --help' for details.
 
-6. Usage:
+6. Testing the installation:
 
-    Start emacs. If the installation went properly, mupacs should be
-    directly available by autoload.
+    Start emacs, and open a file ending with .mu. If mupacs was
+    installed at the default place, and the installation went
+    properly, mupacs should load automatically.
 
-    To start mupad inside emacs: M-x mupad-run
+    Otherwise, just add the following line to your ~/.emacs file, or
+    to the site-wide emacs initialization file (typically
+    /usr/share/emacs/site-lisp/site-start.el, or
+    /etc/emacs/site-start.el on Linux Mandrake):
+
+	(load "<path-to-mupacs>/site-start.d/mupacs.el>")
+
+
+7. Usage:
+
     To change the major mode of a buffer to MuPAD: M-x mupad-mode
-    To customize mupacs: M-x customize-group mupad
+    To start mupad inside emacs:		   M-x mupad-run
+    To customize mupacs: 			   M-x customize-group mupad
 
-7. Getting help:
+    After this stage, usage should be essentially
+    self-explanatory. So, explore, and see the files mupad.el-info and
+    mupad-run.el-info when you want to know more precise things.
 
-8.  That's all folks!
+8. Getting help:
+
+    For support in French, send an e-mail to mupad@aful.org.
+    Otherwise, contact directly the authors (see file AUTHORS)
+
+9.  That's all folks!
