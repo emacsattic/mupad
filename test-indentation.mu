@@ -8,6 +8,16 @@
 //////////////////////////////////////////////////////////////////////////////
 
 /**
+ * 2003/09/01 Bug: the indentation of inherits and bla below is incorrect
+ **/
+domain HSGA
+  category CatAlgebraWithBasis();
+  inherits experimental::AlgebraWithBasis();
+
+  bla;
+end_domain;
+
+/**
  * Bug: the indentation of bla below is incorrect (fixed 2003/08/29)
  **/
 domain bla
