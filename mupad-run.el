@@ -8,7 +8,7 @@
 ;; sans aucun support ni garantie de la part de l'auteur. 
 ;; L'utilisateur est donc conscient qu'il le teste à ses risques et périls.
 ;;
-;; Présentation dans le fichier mupad-run.alire.
+;; Présentation dans le fichier mupad-run.el-info.
 ;; 
 ;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 ;;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -65,7 +65,7 @@
 "Command to run mupad"
 :type 'string :group 'mupad-run)
 
-(defcustom mupad-run-info  "/usr/local/share/emacs/mupad-run.alire"
+(defcustom mupad-run-info  "/usr/local/share/site-lisp/mupad-run.el-info"
 "Ou on trouve mupad-run.alire"
 :type 'string :group 'mupad-run)
 
