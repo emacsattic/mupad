@@ -10,6 +10,39 @@
 ;; sli-tell-indent is the main engine. They are two cases
 ;; either we want to indent the line the cursor is on,
 ;; or we want determine the indent of the next line.
+;; See also sli-forward-sexp.
+
+;;   BASICS FROM SLI-STRUCTURES:
+;;     you should read the information concerning this variable,
+;;     but some basics are required to go further.
+;;     In the construct
+;;             if toto then tata
+;;             else
+;;               titi 
+;;             end_if
+;;     "if" is called a HEAD or a head-key,
+;;     "else" is called a STRONG, 
+;;     "end_if" is called an END.
+;;     Basically, the "else" is aligned on the "if" and the
+;;     "end_if" on previous "else"/"elif"/"if" if the HEREDITY applies.
+;;     HEREDITY applies unless otherwise specified.
+;;     The key "then" is called a SOFT-key: it implies special
+;;     indentation afterwards but is not aimed at being under
+;;     the "if".
+;;     Keys can also be termed
+;;          FIXED (usually global stuff),
+;;          BEACON (like "do" in a while-construct),
+;;          RELATION (math),
+;;          SEPARATOR,
+;;          SPECIAL-HEAD (initial declarators like "local", "var", "remember").
+
+;;     The same END can be used for several HEADs, a word can be
+;;     a HEAD and a SPECIAL-HEAD, but if so, its corresponding HEAD name
+;;     cannot be its own.
+;;     HEADs, RELATIONs, BEACONs, SEPARATORs, SOFTs, ENDs should all be different,
+;;     and SPECIAL-HEADs can only be also HEADs.
+;;     SOFTs, STRONGs or ENDs can be used in fifferent constructs.
+
 ;;   INDENT OF THIS LINE:
 ;;     we look if the first word on this line is a fixed/strong/end/soft
 ;;        if yes --> fixed keys are easy
@@ -23,7 +56,20 @@
 ;;                   in which case the alignment is on the head.
 ;;                
 ;;        if no  --> use indentation of previous line
-;;   INDENT OF THIS NEXT LINE:
+;;   INDENT OF NEXT LINE:
+;;     see if previous line has an unclosed head/strong/soft.
+;;        if yes --> use its indentation.
+;;        if no  --> use indentation of previous line.
+;;   SEE sli-tools for more info.
+
+;;  REGION scanned: the region scanned is extremely important for lengthy programms,
+;;  since no unclosed constructs may be found before the very beginning of the file.
+;;  So we provide the variable `sli-safe-place-regexp' which indicates where one
+;;  can start: after the end of the first grouping. For inctance
+;;  "^\(\\\\--\)$" means that a line containing only "\\--" indicates a place
+;;  outside any construct. One can start after the string "--" or before the "\\".
+
+;;  COMMENTS: nothing much has been done for indenting comments just now.
 
 ;; Use of properties:
 ;;  -- 'sli-type can be
@@ -47,13 +93,16 @@
 
 ;; Maintainer: Olivier Ramare <ramare@agat.univ-lille1.fr>
 
-;; version 0.98
+;; version 0.99
 
 ;; BUGS:
 ;; (1) If I remember well, strings spreading over several lines may
 ;;     raise some troubles.
 ;; (2) sli-tutor has some troubles if used in the middle of already
 ;;     complete structures.
+;; (3) Due to lazy computations of text properties, sli-show-sexp may
+;;     show wrong things. Wait a bit and things will become ok.
+;;     See `sli-prop-do-not-recompute-time'.
 ;; Use of sli-special-head-heads-alist ??
 
 (provide 'sli-tools)
@@ -149,7 +198,7 @@ Cdr's are to be evaled.
 Technical note: the first element of this list *has to* contain a 'head'. ")
 
 (defvar sli-escape-key-string ""
-"The strings used as separators, relations, and all")
+"The strings used as separators, relations, and all. Not yet used.")
 
 (defvar sli-shift-alist nil
 "Usual 'strong/end' are aligned on the previous
@@ -175,11 +224,14 @@ Elements of this list have format [head-key key].")
 (defun sli-is-a-separatorp (&optional pt)
   (funcall sli-is-a-separatorp-fn pt))
 
-(defvar sli-put-newline-fn 'sli-put-newline-default)
+(defvar sli-put-newline-fn 'sli-put-newline-default
+"Function used to insert a newline.")
 
 (defun sli-put-newline-default nil (insert-char ?\n 1))
 
 (defun sli-put-newline nil
+"Indirection. Puts a newline according to `sli-put-newline-fn'
+and takes care not to write anything on read-only parts."
   (unless (get-text-property (point) 'read-only)
     (funcall sli-put-newline-fn)))
 
@@ -226,8 +278,8 @@ That is to say an extension of `comment-start' in this special case.")
 (defvar sli-end-keys nil)
 (defvar sli-keys nil)
 (defvar sli-max-keys-length 0
-"An integer: the maximum length of a keyword in sli-structures.")
-
+"An integer: the maximum length of a keyword in sli-structures.
+Used in `sli-anchored-posix-search-backward', a fix for posix-search-backward. ")
 (defvar sli-all-keys-nomrelations-noseparators-regexp nil)
 (defvar sli-all-keys-regexp nil) ; including string quotes and all kind of comments.
 (defvar sli-all-end-strong-regexp nil)
@@ -256,7 +308,9 @@ The car should be a member of the cdr if the car is a strong.")
 "An alist. Put all head/strong/end's in one bundle. say two keys are linked if
 they occur in a same constructs. Close this relation transitively.
 this is the alist ((key . (keys in the same class)) ...).")
-(defvar sli-ancestors-alist nil)
+(defvar sli-ancestors-alist nil
+"The alist ((end/strong-key . (head/strong1 head/strong2 ...)) ...)
+of keys that can occur before the first key.")
 
 (defvar sli-second-offset-alist nil )  ; to apply after the soft
 (defvar sli-relation-offset-alist nil)
@@ -1190,7 +1244,7 @@ was a special-head: it is thus a special-head or a head located before (word . p
 ;(defun sli-is-a-special-head (pt word)
   (save-match-data
     (cond 
-     ((assoc word sli-special-head-heads-alist)
+     ((sli-special-head-headp word)
       (cond
         ((and (eq (sli-prop-has-type pt) 'special-head)
               (get-text-property pt 'sli-ancestor))
@@ -2253,7 +2307,8 @@ in which case one should press [f8] to see the
 corresponding key.
 
 C-M-f/C-M-b run forward-sexp/backward-sexp in a special
-way: head
+way: heads will be atuned to ends and strongs to either
+one.
 Finally, `sli-maid' tries to further constructs for you
 while `sli-tutor' strives to end all constructs.
 
@@ -2296,4 +2351,4 @@ and the syntax table should be ok."
         (sli-precomputations))
     (error (princ "\nSomething went wrong in sli-tools: ")(princ err) nil)))
 
-;;------------------ sli-tools ends here. 2299 lines ??
+;;------------------ sli-tools ends here. 2354 lines ??
