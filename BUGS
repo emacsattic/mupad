@@ -1,6 +1,11 @@
-(fixed: 2003/10/27)
+(fixed: 3.2.2 2003/10/27)
+Fixed caar in sli-maid-get-alist. The following error message was
+printed on loading mupacs:
+Something went wrong in sli-tools: (wrong-type-argument listp %if)
+and afterward closing end_if with C-c C-e did not work.
+------------------------------------------------------------------------------
+(fixed: 3.2.2 2003/10/27)
 sli-show-sexp caused spurious debugging output.
-
 ------------------------------------------------------------------------------
 (fixed: 3.2.1 2003/09/28)
 mupad-run was broken when mupad-run-recenter-behaviour is set to nil.
