@@ -10,6 +10,7 @@ INSTALLED:  27.03.1998
 VERSION:       2.0
 Last Modified: 14-Oct-2002 by Olivier Ramare.
 REQUIRES: sli-tools > 0.92
+$Id$
 
 Purpose of this package
 -----------------------
