@@ -30,9 +30,9 @@ home page, in French</a></h2>
 <h2><a name="news">News</a></h2>
 <dl><dt>2003/10/28
     <dd>Pre-release of MuPACS 3.2.2 (see the <a href="NEWS">NEWS</a> file)<br>
-<dl><dt>2003/09/29
+    <dt>2003/09/29
     <dd>Pre-release of MuPACS 3.2.1 (see the <a href="NEWS">NEWS</a> file)<br>
-<dt>2003/09/23
+    <dt>2003/09/23
     <dd>Pre-release of MuPACS 3.2 (see the <a href="NEWS">NEWS</a> file)<br>
         This will be a stable release. It's already pretty stable (up
 	to a few installation issues with some Linux distributions).
