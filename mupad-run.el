@@ -70,13 +70,12 @@
 ;;
 ;; Variables de configuration
 ;; 
-;; mupad-run-pgm est le programme appelé, "mupad" en général
-;;
-;; mupad-run-pgm-opt est la liste des paramètres de la ligne de commande
+;; mupad-run-command est le programme appelé ("mupad" en général), suivi
+;; de la liste des paramètres de la ligne de commande
 ;;   -R ou -E (-E est uniquement valable pour les versions >= 3.0) ;
 ;;   avec l'option -E les appels à l'aide en ligne de la forme ? sin 
 ;;   sont mieux gérés.
-;;   Les options "-U" et "EMACS" permettent de déterminer dans mupad que
+;;   Les options "-U" et "EMACS=TRUE" permettent de déterminer dans mupad que
 ;;   le système a été lancé par emacs, pour configurer correctement
 ;;   vcam lors de l'initialisation de mupad, dans ~/.mupad/userinit.mu.
 ;;
@@ -120,7 +119,7 @@ In which case the options for starting mupad won't be asked for.")
 
 (defun mupad-run-set-options (sym val) (set sym val))
 
-(defcustom mupad-run-pgm-exec
+(defcustom mupad-run-commandline
   "mupad -R -U EMACS=TRUE"
   "Command-line for mupad process.
 In fact other options can be given but one of these two blocks
@@ -131,10 +130,10 @@ should be present."
   :set 'mupad-run-set-options
   :group 'mupad-run)
 
-(defvar mupad-run-pgm-history
-  (list mupad-run-pgm-exec)
+(defvar mupad-run-commandline-history
+  (list mupad-run-commandline)
   ;initialize 'custom-initialize-default
-  "The history of the command used to start mupad")
+  "The history of the commands used to start mupad")
 
 (defcustom mupad-run-history-max 100
   "Number of commands in the history"
@@ -163,24 +162,38 @@ should be present."
 
 (defun mupad-run-error (str) (ding) (message str))
 
-(defun mupad-run-recenter () 
-; If buffer isn't in a window do nothing
-; if buffer is too up in a window do nothing (mupad-run-recenter-br)
-  (when (get-buffer-window (current-buffer))    ; the buffer is in a window
-    (let (pop-up-windows (brx (window-buffer)) (bry (current-buffer)))
-      (cond 
-        ((string= (buffer-name bry) (buffer-name brx)) 
+(defun mupad-run-recenter ()
+  ;; If the MuPAD buffer is visible in a window, recenter it to avoid
+  ;; showing too many empty lines at the end of the buffer.
+
+  ;; mupad-run-recenter looks at the position of the point to keep it
+  ;; visible; so any movement of the point should be done before
+  ;; calling it.
+
+  ;; The real work is done by mupad-run-recenter-br
+  (when (get-buffer-window (current-buffer)) ; the buffer is in a window
+    (let ((brx (window-buffer)) (bry (current-buffer)))
+      (cond
+        ((string= (buffer-name bry) (buffer-name brx))
           (mupad-run-recenter-br))
-        (t  
-          (pop-to-buffer bry t) 
-          (mupad-run-recenter-br) 
+        (t
+          (pop-to-buffer bry t)
+          (mupad-run-recenter-br)
           (pop-to-buffer brx t))))))
 
 (defun mupad-run-recenter-br ()
-  (if (or mupad-run-recenter-agressively
-      (> (count-lines (window-start) (point)) ; "the cursor-line on the screen"
-         (- (1- (window-height)) mupad-run-recenter-bottom-margin)))
-    (recenter (- mupad-run-recenter-bottom-margin))))
+  (cond ((eq mupad-run-recenter-behaviour 'agressive)
+	 ;; Agressive recentering
+	 (recenter (max 1
+			(- (window-height)
+			   (+ (max 1 (count-screen-lines (point) (point-max)))
+			      mupad-run-recenter-bottom-margin
+			      1)))))
+	(t
+	 ;; Conservative recentering. Francois: check this part!
+	 (if (> (count-lines (window-start) (point)) ; "the cursor-line on the screen"
+		(- (1- (window-height)) mupad-run-recenter-bottom-margin)))
+	 (recenter (- mupad-run-recenter-bottom-margin)))))
 
 (defun mupad-run-set-system-trace (sym val)
   (set sym val)
@@ -473,11 +486,13 @@ should be present."
   :set 'mupad-run-set-arrow-behaviour
   :group 'mupad-run)
 
-(defcustom mupad-run-recenter-agressively nil
-  "Non-nil means recenter agressively the window after a history
-lookup to show as many lines of the command as possible, without
-showing empty lines after it."
-  :type 'boolean :group 'mupad-run)
+(defcustom mupad-run-recenter-behaviour (const nil)
+  "Selects how the buffer is recentered after history lookups, MuPAD
+output, and so on. nil means no recentering. agressive means recenter
+the window to show as many lines of the command/output as possible,
+without showing empty lines after it."
+  :type '(radio (const nil) (const agressive))
+  :group 'mupad-run)
 
 (defcustom mupad-run-recenter-bottom-margin 1
   "Maximum number of empty lines left at the bottom of the buffer on
@@ -587,17 +602,18 @@ recentering."
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
-(defun mupad-run-ask-pgm-opt nil
-; Let the user edit the mupad command (mupad-run-pgm-exec) in the minibuffer.
-  (let ((command ""))
-    ;; The first time, insert the default command in the history
-    (unless mupad-run-pgm-history
-      (setq mupad-run-pgm-history (list mupad-run-pgm-exec)))
-    ;; Edition in the minibuffer
-    (while (<= (length (split-string command " ")) 1)
-      (setq command 
-        (read-from-minibuffer "Command to start mupad: " 
-          mupad-run-pgm-exec nil nil 'mupad-run-pgm-history)))))
+(defun mupad-run-commandline-ask nil
+  ;; Let the user edit the mupad command (mupad-run-commandline) in the
+  ;; minibuffer. The edition is repeated until the command is non
+  ;; trivial.
+  (while (<= (length (split-string
+		      (setq mupad-run-commandline
+			    (read-from-minibuffer
+			     "Command to start mupad: "
+			     mupad-run-commandline nil nil
+			     'mupad-run-commandline-history))
+		      " "))
+	     1)))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -641,7 +657,7 @@ Available special keys:
 \\{mupad-run-mode-map}"
   (interactive)
   (when (mupad-run-mode-control)
-    (unless mupad-run-less-questions (mupad-run-ask-pgm-opt))
+    (unless mupad-run-less-questions (mupad-run-commandline-ask))
     (mupad-run-mode-intern)))
 
 (defun mupad-run-mode-control ()
@@ -711,13 +727,13 @@ Available special keys:
   (setq mupad-run-hist-commands (head-tail-void))
   (ptr-to-head mupad-run-hist-commands)
 ; gestion du curseur
-  (when mupad-run-recenter-agressively (setq scroll-conservatively 1))
+  (when mupad-run-recenter-behaviour (setq scroll-conservatively 1))
 ; lancement du programme 
   (setq mupad-run-output "")
   (setq mupad-run-state 'beginning)
-  (setq mupad-run-process (mupad-run-process-fct mupad-run-pgm-exec))
+  (setq mupad-run-process (mupad-run-process-fct mupad-run-commandline))
 ; methode d'accès à l'aide en ligne
-  (setq mupad-help-method (mupad-run-help-method mupad-run-pgm-exec))
+  (setq mupad-help-method (mupad-run-help-method mupad-run-commandline))
   (set-process-filter mupad-run-process (function mupad-run-filter))
   (setq mupad-run-time-start (current-time))
 ; la barre de menu
@@ -2001,8 +2017,9 @@ Available special keys:
   (delete-region mupad-run-edit (point-max))
   (goto-char mupad-run-edit)
   (insert str)
-  (save-excursion (goto-char (point-max)) (mupad-run-recenter))
-  (goto-char (min pos (point-max))))
+  (goto-char (min pos (point-max)))
+  (mupad-run-recenter)
+  )
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
