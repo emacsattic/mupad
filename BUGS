@@ -1,18 +1,4 @@
 ------------------------------------------------------------------------------
-/tmp/debug0.... does not get reloaded when it has changed
-(fixed; use autorevert instead ?).
-
-------------------------------------------------------------------------------
-Examples with empty lines are not sent entirely. Should we look for
-two lines as separator? (fixed? is it guaranteed that there are always
-two lines at the end of an example?)
-
-------------------------------------------------------------------------------
-Calling mupad-select-example right after mupad-previous-example did
-not work properly because the cursor was not at the proper position.
-(done)
-
-------------------------------------------------------------------------------
 customizing mupad-directory does not reset mupad-help-file-name-tar
 accordingly
 
@@ -33,11 +19,6 @@ Hitting backspace right after the xx in the line below in MuPAD mode
 seems to run into some infinite loop:
 
 	proc(xx)
-
-------------------------------------------------------------------------------
-prog::testinit raises an error because it assumes that the user
-options form a sequence of equations.
-(Fixed by defining EMACS=TRUE).
 
 ------------------------------------------------------------------------------
 D is non-functionnal under the debugger

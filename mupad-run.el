@@ -102,7 +102,7 @@
 (defcustom mupad-run-info 
   "/home/ramare/lisp/first-look/MuPAD/mupad-run.el-info"
   "Indique où est le fichier de présentation de mupad-run"
-  :type 'string :group 'mupad-run)
+  :type 'file :group 'mupad-run)
 
 (defvar mupad-help-method 'mupad-help-from-toc-to-buffer)
 ;mupad-help-from-toc-to-buffer  --> valable pour l'option -R
@@ -120,27 +120,45 @@ In which case the options for starting mupad won't be asked for.")
           (setq mupad-help-method 'mupad-help-from-toc-to-buffer))))
 
 (defcustom mupad-run-pgm-opt
-  '("-R" "-U" "EMACS")
+  '("-R" "-U" "EMACS=TRUE")
   "Options given to the mupad process.
 In fact other options can be given but one of these two blocks
 should be present."
-  :type '(choice (const ("-R" "-U" "EMACS")) (const ("-E" "-U" "EMACS")))
+  :type '(choice (const ("-R" "-U" "EMACS=TRUE"))
+		 (const ("-E" "-U" "EMACS=TRUE")))
   :initialize 'custom-initialize-default
   :set 'mupad-run-set-options
   :group 'mupad-run)
 
+(defvar mupad-run-pgm-history
+  nil
+  "The history of the command used to start mupad")
+
 (defcustom mupad-run-history-max 100
-  "Nombre de commandes dans l'historique"
+  "Number of commands in the history"
   :type 'integer :group 'mupad-run)
 
 (defcustom mupad-run-mode-hook-before nil
-  "Hook for mupad-mode. Read early by mupad-mode."
+  "Hook for mupad-mode. Executed early by mupad-run."
   :type 'hook :group 'mupad-run)
 
 (defcustom mupad-run-mode-hook nil
-  "Hook for mupad-mode. Read last by mupad-mode."
+  "Hook for mupad-mode. Executed last by mupad-run."
   :options '(mupad-help-init mupad-bus-adapt-textwidth)
   :type 'hook :group 'mupad-run)
+
+
+; affichage de messages de debug
+(defcustom mupad-run-debug-level '()
+  "Controls the level of debug messages output by mupad-run."
+  :type '(set (const filter)
+	      (const input)
+	      (const edit-to-todo)
+	      (const todo-to-output))
+  :group 'mupad-run)
+(defun mupad-run-debug-message (item str)
+  (if (memq item mupad-run-debug-level) (message str)))
+
 
 (defun mupad-run-set-system-trace (sym val)
   (set sym val)
@@ -185,8 +203,8 @@ should be present."
   :group 'mupad-run :prefix "mupad-run")
 
 (defface mupad-run-face-default
-  `((((background dark)) (:foreground "white" :background "grey25"))
-    (t                   (:foreground "black" :background "grey95")))
+  `((t (:foreground ,(face-foreground 'default)
+	:background ,(face-background 'default))))
   "Default face in mupad-run."
   :group 'mupad-run-faces)
 
@@ -393,7 +411,7 @@ should be present."
   '(mupad-run-edit mupad-run-todo mupad-run-comp-edit mupad-run-last-prompt
     mupad-run-itema mupad-run-itemb mupad-run-last-type
     mupad-run-output mupad-run-state mupad-run-time-start 
-    mupad-run-hist-commands mupad-run-save-except mupad-run-debug 
+    mupad-run-hist-commands mupad-run-save-except mupad-run-debug-level 
     mupad-run-save-buffer mupad-run-prompt
     mupad-run-comp-begin mupad-run-emacs-completion
     mupad-run-rawcommand mupad-run-debugger-file mupad-run-debugger-line
@@ -507,14 +525,15 @@ should be present."
 ;;   les attributs des polices de caractères                [ mupad-run-face ]
 ;;   l'historique des commandes                        [ mupad-hist-commands ]
 ;;   la dernière commande d'entrée envoyée à mupad    [ mupad-run-rawcommand ]
-;;   affichage de messages de debug                          [mupad-run-debug]
+;;   affichage de messages de debug                  [ mupad-run-debug-level ]
+;;     liste de mots clefs: ('filter 'input 'edit-to-todo 'todo-to-output)
 ;;        mupad-run-last-session mupad-run-save-except
 ;;
 ;; fonctions principales : 
 ;;   lancement du mode mupad-run dans un nouveau tampon          [ mupad-run ]
 ;;   sortie de  mupad-run après confirmation de sauvegarde   [ mupad-run-end ]
 ;;   réinitialisation du mode mupad-run                    [ mupad-run-reset ]
-;; Fonctions : 
+;; Fonctions :
 ;;   mupad-run, mupad-run-end, mupad-run-reset
 ;;   mupad-run-filter, mupad-run-output-complete-data, mupad-run-print,
 ;;
@@ -535,18 +554,25 @@ should be present."
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
+;; Let the user edit the mupad command (mupad-run-pgm) and options
+;; (mupad-run-pgm-opt) in the minibuffer,
 (defun mupad-run-ask-pgm-opt nil
-  (unless mupad-run-less-questions
-    (let ((cmd-to-start
-	   (split-string
-	    (read-from-minibuffer
-	     "Command to start mupad: "
-	     (concat mupad-run-pgm " "
-		     (mapconcat (lambda (wd) wd) mupad-run-pgm-opt " ")))
-	    " ")))
-      (mupad-run-set-options
-       'mupad-run-pgm-opt (cdr cmd-to-start))
-      (setq mupad-run-pgm (car cmd-to-start)))))
+  (let ((command
+	 (concat mupad-run-pgm " "
+		 (mapconcat (lambda (wd) wd) mupad-run-pgm-opt " "))))
+    ;; The first time, insert the default command in the history
+    (unless mupad-run-pgm-history
+      (setq mupad-run-pgm-history (list command)))
+    ;; Edition in the minibuffer
+    (setq command
+	  (split-string
+	   (read-from-minibuffer "Command to start mupad: " command nil nil
+				 'mupad-run-pgm-history)
+	   " "))
+    ;; Save the command
+    (mupad-run-set-options
+     'mupad-run-pgm-opt (cdr command))
+    (setq mupad-run-pgm (car command))))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -590,7 +616,7 @@ Available special keys:
 \\{mupad-run-mode-map}"
   (interactive)
   (when (mupad-run-mode-control)
-    (mupad-run-ask-pgm-opt)
+    (unless mupad-run-less-questions (mupad-run-ask-pgm-opt))
     (mupad-run-mode-intern)))
 
 (defun mupad-run-mode-control ()
@@ -626,7 +652,7 @@ Available special keys:
        mupad-run-output mupad-run-state 
        mupad-run-itema mupad-run-itemb mupad-run-last-type 
        mupad-run-time-start mupad-run-comp-begin mupad-run-prompt
-       mupad-run-save-except mupad-run-debug
+       mupad-run-save-except mupad-run-debug-level
        mupad-run-last-session mupad-run-buffer-face
        mupad-run-emacs-completion
 ; NT 04/11/2002 added for the debugger
@@ -862,8 +888,10 @@ Available special keys:
 ;; 7 : type d'affichage (prettyprint)   255 : perte de synchro. (par emacs)
 ;; 8 : aide en ligne 
 ;;
-(defun mupad-run-filter (proc str) 
-  (let 
+(defun mupad-run-filter (proc str)
+  (mupad-run-debug-message 'filter
+			   (concat "MuPAD-run-filter: " str))
+  (let
     ((output-index 0) output-type output-str brt (inhibit-read-only t)
      (brc (current-buffer)) (brb (process-buffer proc)))
      (set-buffer brb)
@@ -875,7 +903,7 @@ Available special keys:
         (substring 
           mupad-run-output (+ 2 (car output-type)) (cadr output-type)))
       (setq brt (char-int (car (cddr output-type))))
-      (mupad-run-message-debug 'mupad-run-filter 
+      (mupad-run-debug-message 'filter 
         (concat "MuPAD output: [" (number-to-string brt) "] " output-str))
 ; traiter les différents types de données renvoyées par mupad
       (cond
@@ -921,17 +949,44 @@ Available special keys:
         ((or (eq brt 34)            ; MPRCmdb_file_pos
 ;	     (eq brt 41)
 	     (eq brt 66))           ; MPRCmdb_where
+         ; Extract this in a separate function
 ; debugger -> frontend: display file at position line no.
 	 (string-match "^\\(\\S-+\\)\n\\([0-9]+\\)" output-str)
 	 (let
 	     ((file (match-string 1 output-str))
 	      (line (string-to-number (match-string 2 output-str))))
 	   (setq gud-comint-buffer (current-buffer))
+	   (cond
+	    ((string-match "^\\(.*\\.tar\\)#\\(.*\\)$" file)
+	     ;; Special treatment for tar files:
+	     (let
+		 ((tarfile (match-string 1 file))
+		  (subfile (match-string 2 file)))
+	       (setq file tarfile)))
+	    ((string-match "^/tmp/debug[0-9]\\.[0-9]+$" file);[:digit:]\\.[:digit:]+
+	     ;; Special treatment for debug files /tmp/debug*:
+	     ;;  - Opened read-only in MuPAD-mode
+	     ;;  - Reverted at each iteration
+	     (save-excursion
+	       ;(message (concat "Check for debug buffer" file))
+	       (if (get-file-buffer file)
+		   (set-buffer (get-file-buffer file))
+		 ;(message "Open buffer")
+		 (set-buffer (find-file-noselect file t))
+		 ;(message "Set buffer read only")
+		 (setq buffer-read-only t)
+		 ;(message "Switch to mupad-mode")
+		 (mupad-mode))
+	       ;(message "Revert buffer")
+	       (revert-buffer t t t)
+	       )))
+	   ;(message "Calling gud")
 	   (gud-display-line file line)
+	   ;(message "Setting file")
 	   (setq mupad-run-debugger-file file)
 	   (setq mupad-run-debugger-line line)
 	   ))
-        ((eq brt 62)
+	((eq brt 62)
 	 ; kernel has stopped and waits for the next debugger command
 	 (setq mupad-run-prompt output-str)
 	 (set-marker mupad-run-last-prompt (1- mupad-run-todo))
@@ -966,7 +1021,8 @@ Available special keys:
 ; raccourcissement de la chaîne à traiter à la fin de la boucle 
   (setq mupad-run-output (substring mupad-run-output output-index))
 ; maj de l'affichage en début de session
-  (when (and (equal brb brc) (<= (count-lines 1 (point)) 20)) (recenter -4))
+; (when (and (equal brb brc) (<= (count-lines 1 (point)) 20)) (recenter -4))
+; the proper buffer!
   (set-buffer brc)))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1038,7 +1094,26 @@ Available special keys:
       (put-text-property pos (point) 'rear-nonsticky t)
       (put-text-property pos (point) 'front-sticky t)
       (put-text-property pos (point) 'read-only t)
-      (add-text-properties pos (point) ajout)))
+      (add-text-properties pos (point) ajout)
+    ;; NT: Hack to scroll the current buffer so that we do not see
+    ;; past the end. Simply calling (recenter -1) does not work,
+    ;; because it recenters the active buffer
+      ;(message (concat "bla" str))
+      (when (and
+	     (eq (point) (point-max))
+	     (get-buffer-window (current-buffer)))
+	(let ((buffer (current-buffer))
+	      (old-buffer (window-buffer)))
+	  ;(message "bla1")
+	  (unless (eq buffer old-buffer)
+	    (pop-to-buffer buffer t))
+	  ;(message "bla2")
+	  (bury-buffer buffer)
+	  ;(message "bla3")
+	  (recenter -1)
+	  ;(message "bla4")
+	  (unless (eq buffer old-buffer)
+	    (pop-to-buffer old-buffer))))))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -1056,10 +1131,11 @@ Available special keys:
 (defun mupad-run-tab () 
   "Search last word completion"
   (interactive)
-  (when (not (memq mupad-run-state '(wait-input wait-debugger-input)))
-    (error "MuPAD computes - completion impossible"))
+  (mupad-run-debug-message 'input "Tab")
   ;; NT: TODO: modify to allow for completion in debugger commands
   ;; see also mupad-run-output-end-comp for this
+  (when (not (memq mupad-run-state '(wait-input)))
+    (error "MuPAD computes - completion impossible"))
   (when (< (point) mupad-run-edit)
     (error "Completion only in the edit zone"))
   (set-marker mupad-run-comp-edit (point))
@@ -1067,7 +1143,7 @@ Available special keys:
     ((br (posix-search-backward "[^a-zA-Z0-9_:\\.]" (1- mupad-run-edit) t)))
     (when br
       (progn
-	  (mupad-run-message-debug 'edit-to-todo
+	  (mupad-run-debug-message 'edit-to-todo
 				   (concat "MuPAD input: ["
 					   (number-to-string 37) "] "
 					   (setq mupad-run-comp-begin 
@@ -1080,9 +1156,12 @@ Available special keys:
 		(buffer-substring (1+ br) mupad-run-comp-edit))
           "\007\n"))
         (goto-char mupad-run-comp-edit)
-        (if (eq mupad-run-state 'wait-input)
-	    (setq mupad-run-state 'running)
-          (setq mupad-run-state 'run-debug))))))
+	(setq mupad-run-state 'wait-for-completion)
+	(mupad-run-debug-message 'input "Waiting for mupad output")
+	(while (not (eq mupad-run-state 'wait-input))
+	  (accept-process-output mupad-run-process))
+	(mupad-run-debug-message 'input "Done")
+	))))
 
 ; (process-send-string mupad-run-process "\006\037S co\007\n")
 ;;
@@ -1350,7 +1429,7 @@ Available special keys:
 ;;
 (defun mupad-run-from-edit-to-todo () 
   (let (br br1 (inhibit-read-only t))
-    (mupad-run-message-debug 'edit-to-todo "DEB : edit-to-todo")
+    (mupad-run-debug-message 'edit-to-todo "DEB : edit-to-todo")
     (goto-char (point-max))
     (when 
       (or 
@@ -1395,14 +1474,14 @@ Available special keys:
            'item (cons 'cmd mupad-run-itema))
          (set-marker mupad-run-edit br1)))
       (goto-char (point-max))
-      (mupad-run-message-debug 'edit-to-todo  "FIN : edit-to-todo"))))
+      (mupad-run-debug-message 'edit-to-todo  "FIN : edit-to-todo"))))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 (defun mupad-run-from-todo-to-output ()
   (save-excursion
     (let (br br1 br2 br3 (brp (point)) (inhibit-read-only t))
-      (mupad-run-message-debug 'todo-to-output "DEB : todo-to-output")
+      (mupad-run-debug-message 'todo-to-output "DEB : todo-to-output")
       (setq br (get-text-property mupad-run-todo 'item))
       (when (eq (car br) 'rem) ; commentaire : en premier effacer le prompt
         (goto-char mupad-run-todo)
@@ -1430,7 +1509,7 @@ Available special keys:
       (when (and br (eq (car br) 'cmd))
         (setq br1 
           (or (next-single-property-change mupad-run-todo 'item) (point-max)))
-        (mupad-run-message-debug 'todo-to-output "MIL : todo-to-output")
+        (mupad-run-debug-message 'todo-to-output "MIL : todo-to-output")
 ; NT 04/11/2002: modifications for the debugger 
 ; en fonction de mupad-run-state
 	 (cond
@@ -1452,7 +1531,7 @@ Available special keys:
             (setq mupad-run-rawcommand 
               (mupad-run-from-todo-to-output-debug br2))))
 	(when mupad-run-rawcommand
-	  (mupad-run-message-debug 'todo-to-output
+	  (mupad-run-debug-message 'todo-to-output
 	     (concat "MuPAD input: ["
                (number-to-string (car mupad-run-rawcommand)) "] "
 	       (nth 1 mupad-run-rawcommand)))
@@ -1484,7 +1563,9 @@ Available special keys:
             (beginning-of-line))
           (put-text-property brp (point) 'item mupad-run-itemb)
           (setq mupad-run-last-type 'end-cmd))))
-          (mupad-run-message-debug 'todo-to-output "MIL : todo-to-output")))
+          (mupad-run-debug-message 'todo-to-output "MIL : todo-to-output"))
+;  (recenter -1)
+  )
 
 (defun mupad-run-from-todo-to-output-debug (br2)
   (cond 
@@ -1617,6 +1698,7 @@ Available special keys:
 ;;
 (defun mupad-run-return ()
   (interactive)
+  (mupad-run-debug-message 'input "Return")
   (mupad-run-delete-windows "*MuPAD Completions*") 
   (cond 
     ((>= (point) (marker-position mupad-run-edit))
@@ -1847,7 +1929,8 @@ Available special keys:
          (setq brt 
            (not 
              (string= str (substring brs 0 (min (length str) (length brs)))))))
-      (ptr-to-tail mupad-run-hist-commands))
+;      (ptr-to-tail mupad-run-hist-commands))
+       (ptr-to-head mupad-run-hist-commands))
 ;    (when brt (aset mupad-run-hist-commands 2 br))
 ; renvoie nil si le début de la chaîne n'est pas trouvé, la chaine sinon
     (and (not brt) brs)))
@@ -1894,6 +1977,17 @@ Available special keys:
   (when (>= (length str) 3)
     (add-head str mupad-run-hist-commands)
     (aset mupad-run-hist-commands 2 'head)))
+
+(defun mupad-run-replace-edit-zone (str pos)
+  ; Replace the text in the edit zone by the string str, and
+  ; put the cursor at position pos (or at the end of buffer
+  ; if pos is past the end of buffer)
+  (delete-region mupad-run-edit (point-max))
+  (goto-char mupad-run-edit)
+  (insert str)
+  (save-excursion (goto-char (point-max)) (recenter -1))
+  (goto-char (min pos (point-max))))
+
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -1910,15 +2004,11 @@ Available special keys:
       (aset mupad-run-hist-commands 2 br2)
       (unless (string= brs br) (mupad-run-store-line br))
       (aset mupad-run-hist-commands 2 br3)
-      (delete-region mupad-run-edit (point-max))
-      (goto-char mupad-run-edit)
-      (cond 
-        ((not br1) 
-          (insert brs)
-          (error "End of history list"))
-        (t 
-          (insert br1) 
-          (goto-char brn))))))
+      (unless br1
+	(error "End of history list")
+	(setq br1 brs))
+      (mupad-run-replace-edit-zone br1 brn))))
+
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -1935,14 +2025,10 @@ Available special keys:
       (aset mupad-run-hist-commands 2 br2)
       (unless (string= "" br) (mupad-run-store-line br))
       (aset mupad-run-hist-commands 2 br3)
-      (delete-region mupad-run-edit (point-max))
-      (goto-char mupad-run-edit)
-      (cond 
-        ((not br1) 
-          (error "End of history list"))
-        (t 
-          (insert br1) 
-          (goto-char (min brn (point-max))))))))
+      (unless br1
+	(error "End of history list")
+	(setq br1 ""))
+      (mupad-run-replace-edit-zone br1 brn))))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -1952,7 +2038,8 @@ Available special keys:
   (when (>= (point) (marker-position mupad-run-edit))
     (let 
       ( (br (buffer-substring mupad-run-edit (point-max))) 
-        (brs (buffer-substring mupad-run-edit (point))) (brn (point))
+        (brs (buffer-substring mupad-run-edit (point)))
+	(brn (point))
         br1 br2 br3)
       (setq br2 (aref mupad-run-hist-commands 2))
       (setq br1 (mupad-run-get-next-command brs))
@@ -1960,15 +2047,10 @@ Available special keys:
       (aset mupad-run-hist-commands 2 br2)
       (unless (string= brs br) (mupad-run-store-line br))
       (aset mupad-run-hist-commands 2 br3)
-      (delete-region mupad-run-edit (point-max))
-      (goto-char mupad-run-edit)
-      (cond 
-        ((not br1) 
-          (insert brs)
-          (error "End of history list"))
-        (t 
-          (insert br1) 
-          (goto-char brn))))))
+      (unless br1
+	(error "End of history list")
+	(setq br1 brs))
+      (mupad-run-replace-edit-zone br1 brn))))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -1985,14 +2067,10 @@ Available special keys:
       (aset mupad-run-hist-commands 2 br2)
       (unless (string= "" br) (mupad-run-store-line br))
       (aset mupad-run-hist-commands 2 br3)
-      (delete-region mupad-run-edit (point-max))
-      (goto-char mupad-run-edit)
-      (cond 
-        ((not br1) 
-          (error "End of history list"))
-        (t 
-          (insert br1) 
-          (goto-char (min brn (point-max))))))))
+      (unless br1
+	(error "End of history list")
+	(setq br1 ""))
+      (mupad-run-replace-edit-zone br1 brn))))
 ;; 
 ;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 ;;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -2042,7 +2120,7 @@ Available special keys:
         (when (not (string= (substring br -5) "-flag"))
           (mupad-run-put-face brb (1+ brb) (intern (concat br "-flag"))))
         (delete-region bra brb)
-        (recenter)))))
+        (recenter -1)))))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -2059,7 +2137,8 @@ Available special keys:
       (when (not (cdr br1))
         (mupad-run-put-face (point) (1+ (point))
           (intern (substring br2 0 (- (length br2) 5)))))
-      (recenter))))
+      ;(recenter -1) ; NT: ???
+      )))
 
 (defun mupad-run-move-flag-up (pt)
   (let ( (inhibit-read-only t) 
@@ -2450,10 +2529,6 @@ Available special keys:
 ;;
 ;;
 ;;
-(defun mupad-run-message-debug (item str) 
-  (if (memq item mupad-run-debug) (message str)))
-; affichage de messages de debug
-  (setq mupad-run-debug ())
 ;;
 ;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 ;;=-= FIN du fichier mupad-run.el =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-

@@ -2,10 +2,6 @@
 Take care of tar files in the debugger
 
 ------------------------------------------------------------------------------
-When a history search fails, restart from the end of the history, or
-at least let the next search start from the end of the history. (done)
-
-------------------------------------------------------------------------------
 Allow for looking up ascii documentation in several directories
 
 ------------------------------------------------------------------------------
@@ -19,13 +15,6 @@ the window. (improved; test if the heuristic is ok!)
 
 ------------------------------------------------------------------------------
 Allow for deleting blocs of input/output
-
-------------------------------------------------------------------------------
-When fetching a multiline command from the history, scroll down so
-that one can see the full command ? (done)
-
-------------------------------------------------------------------------------
-Turn mupad-mode on on /tmp/debug.**** (done+avoid reloading the file)
 
 ------------------------------------------------------------------------------
 Add a init.mu file to the MuPAD directory for vcam ?
