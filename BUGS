@@ -44,18 +44,10 @@ puis essayer de revenir en arrière avec undo. Chez-moi il affiche "No
 further undo information" avant d'avoir remis tout le "map ..." en
 place.
 ------------------------------------------------------------------------------
-domain bla
-    rowSums :=
-    proc(m: dom) : combinat::integerVectors
-	map(m, _plus @ op);
-    end_proc;
-end;
+P and D are non-functionnal under the debugger
 
 ------------------------------------------------------------------------------
-D is non-functionnal under the debugger
-
-------------------------------------------------------------------------------
-Le commentaire a l'air de poser problème
+Le commentaire a l'air de poser problème dans mupad-run
 Max :=
 proc(a, b) /* comment: maximum of a and b */
 begin
