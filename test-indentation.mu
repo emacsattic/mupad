@@ -9,6 +9,7 @@
 
 /**
  * 2003/09/19 Bug: the indentation of axiom and bla below is incorrect
+ * 2004/01/10 Seems to be fixed, though I don't known when.
  **/
 domain combinat::subClass(class : DOM_DOMAIN)
   category op(class::getCategories());
