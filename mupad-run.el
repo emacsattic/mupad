@@ -486,7 +486,7 @@ should be present."
   :set 'mupad-run-set-arrow-behaviour
   :group 'mupad-run)
 
-(defcustom mupad-run-recenter-behaviour (const nil)
+(defcustom mupad-run-recenter-behaviour nil
   "Selects how the buffer is recentered after history lookups, MuPAD
 output, and so on. nil means no recentering. agressive means recenter
 the window to show as many lines of the command/output as possible,
