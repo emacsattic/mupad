@@ -461,7 +461,7 @@ by a carriage return in mupad-mode."
   (define-key map "\M-p"     'mupad-backward-to-same-indent)
   (define-key map "\M-n"     'mupad-forward-to-same-indent)
   (define-key map "\C-cF"    'mupad-fun-to-proc)
-  (define-key map "\C-ch"    'mupad-help)
+  (define-key map "\C-ch"    'mupad-help-emacs-search)
   (define-key map "\C-cf"    'mupad-for)
   (define-key map "\C-cw"    'mupad-while)
   (define-key map "\C-ct"    'mupad-title)

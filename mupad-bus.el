@@ -325,8 +325,10 @@ The variable MY-BUFFER-NAME is one of
 
 ;;----------------------------------------------------------------------------------
 
-(defconst mupad-max-nb-wind-conf 20
- "Maximal number of saved window configurations (<= 254).")
+(defcustom mupad-max-nb-wind-conf 20
+ "Maximal number of saved window configurations (<= 254)."
+:type 'integer
+:group 'mupad-miscellana)
 
 (defvar mupad-registers-list nil
 "List of registers [0 - mupad-max-nb-wind-conf] where window-configurations
