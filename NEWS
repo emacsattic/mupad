@@ -1,3 +1,19 @@
+Overview of changes in mupacs 3.2:
+==================================
+
+New customization variables:
+ - mupad-run-completion-style   (new completion styles in MuPAD-run)
+ - mupad-run-recenter-behaviour (improved vertical recentering heuristics)
+ - mupad-run-debug-level
+ - mupad-help-examples-execute
+ - mupad-help-examples-comment
+Lots of bug fixing (indentation, synchronization mupad-emacs, ...)
+Testsuite for the indentation.
+Use EMACS=TRUE instead of EMACS in the mupad user options.
+Improved support of /tmp/debug* file in the debugger
+
+
+
 Overview of changes in mupacs 3.1:
 ==================================
 
