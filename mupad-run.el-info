@@ -300,8 +300,6 @@ La première ligne ci-dessous n'est prise en compte que si mupad est lancé
 avec l'option -U EMACS pour ne pas interférer avec mupad lancé dans une
 fenètre xterm.
 
-Pour MuPAD 2.5.1 :
-
 if Pref::userOptions() = "EMACS"
   then
     proc()
@@ -315,32 +313,6 @@ if Pref::userOptions() = "EMACS"
 	     stdlib::oldPlot(PlotDevice=["/tmp/muplot" . getpid(), Binary], args());
 	     system("vcam -xmupad /tmp/muplot" . getpid())):
       protect(stdlib, oldProtectState) ; 
-    end_proc() :
-end_if:
-
-Pour MuPAD 3.0 :
-
-if Pref::userOptions() = "EMACS"  
-  then
-    proc()
-      local oldPlot, oldProtectState ;
-      option escape ;
-    begin
-      oldProtectState := protect (plot, ProtectLevelNone) ;
-      plot::Scene::defaultOptions2d [PlotDevice] :=
-        ["/tmp/muplot." . getpid(), Binary] ;
-      plot::Scene::defaultOptions3d [PlotDevice] :=
-        ["/tmp/muplot." . getpid(), Binary] ;
-      protect (plot, oldProtectState) ;
-      oldProtectState := protect (stdlib, ProtectLevelNone) ;
-      oldPlot := stdlib::plot ;
-      stdlib::plot := 
-        proc () 
-        begin
-          oldPlot (args()) ; 
-          system ("vcam /tmp/muplot." . getpid()) ;
-        end_proc ;
-      protect (stdlib, oldProtectState) ;
     end_proc() :
 end_if:
 
