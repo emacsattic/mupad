@@ -170,13 +170,13 @@ See `mupad-describe-this-proc' and `mupad-user-mail-address'."
      (["option" special-head 7 ";"])
      ["begin"    strong mupad-indent-level]
      ["end_proc" end])
-    (["domain" head '(absolute . 4)]
-     ["begin" strong mupad-indent-level] ; should be the same as above !!
-     ["end_domain" end])
-    (["category" head '(absolute . 4)]
+    (["category" head '(absolute . 2)]
      ["begin" strong mupad-indent-level] ; should be the same as above !!
      ["end_category" end])
-    (["axiom" head '(absolute . 4)]
+    (["domain" head '(absolute . 2)]
+     ["begin" strong mupad-indent-level] ; should be the same as above !!
+     ["end_domain" end])
+    (["axiom" head '(absolute . 2)]
      ["begin" strong mupad-indent-level] ; should be the same as above !!
      ["end_axiom" end])
     (["repeat"     head 7]
