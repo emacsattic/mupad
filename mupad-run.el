@@ -515,10 +515,11 @@ Available special keys:
 (defun mupad-run-before-kill () 
   (when (eq major-mode 'mupad-run-mode) 
     (switch-to-buffer (current-buffer))
-    (if 
-      (and 
-        mupad-run-question-before-kill
-        (yes-or-no-p "This mupad-run buffer will be killed, save it ? "))
+    (when
+	(and 
+	 mupad-run-question-before-kill
+	 (not
+	  (yes-or-no-p "Mupad-run buffer not saved. Quit anyway (else save it first)? ")))
       (mupad-run-save))
     (if 
       (and 
@@ -1531,7 +1532,7 @@ Available special keys:
             "/usr/local/lib/MuPAD/emacs/" "/usr/local/share/lib/MuPAD/emacs/" 
             "/usr/share/lib/MuPAD/emacs/" "/usr/local/lib/MuPAD/"       
             "/usr/local/share/lib/MuPAD/" "/usr/share/lib/MuPAD/"       
-            "/usr/local/share/emacs/site-lisp" "/usr/share/emacs/site-lisp")))
+            "/usr/local/share/emacs/site-lisp/" "/usr/share/emacs/site-lisp/")))
 ;; Locate mupad.el-info:
       (mapcar 
         (lambda (afile) (if (file-exists-p afile) (setq where-it-is afile)))
@@ -1558,7 +1559,7 @@ Available special keys:
           (mupad-bus-window-manager "*MuPAD Help*" 'mupad-beginning-temp)
           (insert 
              (concat 
-               "The file mupad.el-info was not found."
+               "The file mupad-run.el-info was not found."
                "You should discover where it is, say in the directory" 
                "/usr/local/share/emacs/site-lisp and add the line\n"
                "(setq load-path "
@@ -1615,8 +1616,10 @@ Available special keys:
         ["Adapt TEXTWIDTH" mupad-bus-adapt-textwidth :active 
           (processp mupad-run-process)
           :help 
-"Set the textwidth of the mupad process to the actual width of your window"]
-        "--------------------"
+	  "Set the textwidth of the mupad process to the actual width of your window"]
+        ["PrettyPrint switch" mupad-bus-prettyprint-switch :active (processp mupad-bus-my-mupad-run-process)
+         :help "Toggle the value of PRETTYPRINT"]
+	"--------------------"
         ["Customize" mupad-run-customize-group :active t 
           :key-sequence nil])))))
 

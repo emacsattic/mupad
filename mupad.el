@@ -2780,14 +2780,12 @@ unique completion can be done."
 		    (equal (nth 1 comp) (list word))) ;; de mupad-simplify-cpl-lst
                 ;; no match:
                 (progn
-		  (if (and (get-buffer "*Completions*")
-			   (get-buffer-window "*Completions*"))
-		      ;; Occurs whenever an earlier completion has
-		      ;; been asked for.
-		      (progn ;(print "Restoring")
-			(mupad-restore-wind-conf)
-			;(forward-word 1)
-			))
+		  (when (and (get-buffer "*Completions*")
+			     (get-buffer-window "*Completions*"))
+		    ;; Occurs whenever an earlier completion has
+		    ;; been asked for.
+		    ;(print "Restoring")
+		    (mupad-restore-wind-conf))
 		  (message "No completion found or already complete"))
               ;; more than two matches:
               (when (string= (car comp) "")
