@@ -783,7 +783,10 @@ Available special keys:
 ; two variables to trick gud into thinking that this buffer is a
 ; normal gud-buffer so that we can use gud-display-line
   (setq gud-comint-buffer (current-buffer))
-  (setq gud-find-file 'gud-gdb-find-file)
+  ; definition duplicated from gud-gdb-find-file which seems
+  ; not to be defined in emacs from CVS (NT, CCR, 2004/10/04)
+  (setq gud-find-file '(lambda (f) (find-file-noselect f 'nowarn)))
+
   (run-hooks 'mupad-run-mode-hook))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
