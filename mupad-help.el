@@ -16,7 +16,11 @@
 (require 'mupad-bus)
 (defconst mupad-help-mode-version "2.00" "Version of `mupad-help.el'.")
 
-(defcustom mupad-help-tree "/usr/local/src/MuPAD/share/doc/"
+;; This variable should be set by a CONFIGURE if it ever exists...
+(defvar mupad-directory "/usr/local/src/MuPAD/share/"
+"Used for initializing some variables below.")
+
+(defcustom mupad-help-tree (concat mupad-directory "/share/doc/")
 "Location of the help files.
 Used to set `mupad-help-file-name-tar' and `mupad-help-file-name-toc'."
 :type 'string :group 'mupad-run)
