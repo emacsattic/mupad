@@ -5,10 +5,6 @@
 ;; Maintainer: Francois Maltey <Francois.Maltey@enst-bretagne.fr>
 ;; keywords: progmodes
 
-;; Ce programme est un logiciel libre en cours de développement distribué 
-;; sans aucun support ni garantie de la part de l'auteur. 
-;; L'utilisateur est donc conscient qu'il le teste à ses risques et périls.
-
 ;; This library is free software; you can redistribute it and/or
 ;; modify it under the terms of the GNU Lesser General Public
 ;; License as published by the Free Software Foundation version 2.1.
@@ -357,12 +353,13 @@ should be present."
 
 (defvar mupad-run-mode-map nil "Touches définies par mupad-run-mode.")
 
-(when (and (not mupad-run-mode-map) (not xemacsp))
+(when (not mupad-run-mode-map) 
   (let ((map (make-sparse-keymap)))
     (define-key map [(control return)] (function mupad-run-creturn))
     (define-key map [(control up)] (function mupad-run-previous-history))
     (define-key map [(control down)] (function mupad-run-next-history))
-    (define-key map [(control prior)] (function mupad-run-previous-history-search))
+    (define-key map [(control prior)] 
+      (function mupad-run-previous-history-search))
     (define-key map [(control next)] (function mupad-run-next-history-search))
     (define-key map [(control left)] (function mupad-run-left))
     (define-key map [(control right)] (function mupad-run-right))
@@ -378,11 +375,14 @@ should be present."
     (define-key map [(control ?c) (control ?w)] (function mupad-run-save))
     (define-key map [(control ?c) ?k]  (function mupad-run-end))
     (define-key map [(control ?c) ?0]  (function mupad-run-reset))
-    (define-key map [(control ?c) ?1]  (function mupad-run-insert-last-session))
+    (define-key map [(control ?c) ?1]  
+      (function mupad-run-insert-last-session))
     (define-key map [f5] (function mupad-help-emacs-search))
-    (define-key map [(control ?c) (control ?h)] (function mupad-help-emacs-search))
+    (define-key map [(control ?c) (control ?h)] 
+      (function mupad-help-emacs-search))
     (define-key map [f6] (function mupad-help-emacs-ask))
-    (define-key map [(control ?c) (control ?i)] (function mupad-help-emacs-ask))
+    (define-key map [(control ?c) (control ?i)] 
+      (function mupad-help-emacs-ask))
     (define-key map [(control ?y)] (function mupad-run-yank))
     (define-key map [mouse-2] (function mupad-run-yank-at-click))
     (setq mupad-run-mode-map map)))
@@ -548,17 +548,18 @@ should be present."
 (defalias 'run-mupad 'mupad-run)
 (defun mupad-run nil
   (interactive)
-  (mupad-run-ask-pgm-opt)
   (switch-to-buffer "*MuPAD*")
   (mupad-run-mode))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
-;(defun mupad-run-new nil
-;  (interactive)
-;  (mupad-run-ask-pgm-opt)
-;  (switch-to-buffer "*MuPAD*")
-;  (mupad-run-mode))
+(defun mupad-run-new ()
+  (interactive)
+  (let ((brs (generate-new-buffer-name "*MuPAD*")))
+    (cond 
+      ((mupad-run-buffer-name-p brs)
+        (switch-to-buffer brs) (mupad-run-mode))
+      (t (error "A new buffer for mupad is impossible")))))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -583,94 +584,103 @@ The main work is to run mupad in an emacs buffer.
 Available special keys:
 \\{mupad-run-mode-map}"
   (interactive)
-  (if 
-    (and 
-      (eq major-mode 'mupad-run-mode) 
-      mupad-run-process
-      (processp mupad-run-process))
-    (message "Buffer already in mupad-run mode")
-    (cond 
-      ((eq major-mode 'mupad-run-mode)
-        (error "Mupad doesn't run in this mupad-run buffer"))
-      ((and (not (eq major-mode 'mupad-run-mode)) mupad-run-process)
-        (error "Mupad runs inside a buffer in an other mode"))
-      ((not (mupad-run-buffer-name-p (buffer-name (current-buffer))))
-        (error "Buffer name isn't allowed for mupad-run mode")))
-;    (setq delete-exited-processes t)
-    (kill-all-local-variables)
+  (when (mupad-run-mode-control)
+    (mupad-run-ask-pgm-opt)
+    (mupad-run-mode-intern)))
+
+(defun mupad-run-mode-control ()
+  (cond 
+    ((and 
+        (eq major-mode 'mupad-run-mode) 
+        mupad-run-process 
+        (processp mupad-run-process)) 
+      (message "Buffer already in mupad-run mode")
+      nil)
+    ((eq major-mode 'mupad-run-mode)
+      (error "Mupad doesn't run in this mupad-run buffer"))
+    ((and (not (eq major-mode 'mupad-run-mode)) mupad-run-process)
+      (error "Mupad runs inside a buffer in an other mode"))
+    ((not (mupad-run-buffer-name-p (buffer-name (current-buffer))))
+      (error "Buffer name isn't allowed for mupad-run mode"))
+    (t t)))
+
+(defun mupad-run-mode-intern ()
+  (kill-all-local-variables)
 ; initialisation du tampon et du clavier
-    (use-local-map mupad-run-mode-map)
-    (mupad-run-set-arrow-behaviour nil mupad-run-arrow-behaviour)
-    (add-hook 'kill-buffer-query-functions 'mupad-run-before-kill)
-    (goto-char 1)
-    (set-text-properties (point-min) (point-max) nil)
-    (mapcar     
-      (lambda (var) (make-local-variable var))
-      '(mupad-run-history-max mupad-run-system-trace 
-        mupad-run-system-exception mupad-run-process
-        mupad-run-edit mupad-run-todo mupad-run-comp-edit 
-        mupad-run-last-prompt mupad-run-hist-commands 
-        mupad-run-output mupad-run-state 
-        mupad-run-itema mupad-run-itemb mupad-run-last-type 
-        mupad-run-time-start mupad-run-comp-begin mupad-run-prompt
-        mupad-run-save-except mupad-run-debug
-        mupad-run-last-session mupad-run-buffer-face
+  (use-local-map mupad-run-mode-map)
+  (mupad-run-set-arrow-behaviour nil mupad-run-arrow-behaviour)
+  (add-hook 'kill-buffer-query-functions 'mupad-run-before-kill)
+  (goto-char 1)
+  (set-text-properties (point-min) (point-max) nil)
+  (mapcar     
+    (lambda (var) (make-local-variable var))
+     '(mupad-run-history-max mupad-run-system-trace 
+       mupad-run-system-exception mupad-run-process
+       mupad-run-edit mupad-run-todo mupad-run-comp-edit 
+       mupad-run-last-prompt mupad-run-hist-commands 
+       mupad-run-output mupad-run-state 
+       mupad-run-itema mupad-run-itemb mupad-run-last-type 
+       mupad-run-time-start mupad-run-comp-begin mupad-run-prompt
+       mupad-run-save-except mupad-run-debug
+       mupad-run-last-session mupad-run-buffer-face
 ; NT 04/11/2002 added for the debugger
-        mupad-run-rawcommand
-	mupad-run-debugger-file	mupad-run-debugger-line
-	gud-comint-buffer gud-find-file))
+       mupad-run-rawcommand
+       mupad-run-debugger-file	mupad-run-debugger-line
+       gud-comint-buffer gud-find-file))
 ; construction de la couleur de fond
     (when (string= (buffer-name) "*MuPAD*<2>")
       (setq mupad-run-buffer-face "-2"))
-    (run-hooks 'mupad-run-mode-hook-before)
-    (setq mupad-run-edit (make-marker))
-    (set-marker mupad-run-edit (point))
-    (setq mupad-run-todo (make-marker))
-    (set-marker mupad-run-todo (point))
+    (when (string= (buffer-name) "*MuPAD*<3>")
+      (setq mupad-run-buffer-face "-3"))
+  (run-hooks 'mupad-run-mode-hook-before)
+  (setq mupad-run-edit (make-marker))
+  (set-marker mupad-run-edit (point))
+  (setq mupad-run-todo (make-marker))
+  (set-marker mupad-run-todo (point))
 ; autres markeurs pour la complétion et les messages d'erreur
-    (setq mupad-run-comp-edit (make-marker))
-    (set-marker mupad-run-comp-edit nil)
-    (setq mupad-run-last-prompt (make-marker))
-    (set-marker mupad-run-last-prompt nil)
-    (setq mupad-run-itema 1) 
-    (setq mupad-run-itemb 1) 
-    (setq mupad-run-last-type -1)
+  (setq mupad-run-comp-edit (make-marker))
+  (set-marker mupad-run-comp-edit nil)
+  (setq mupad-run-last-prompt (make-marker))
+  (set-marker mupad-run-last-prompt nil)
+  (setq mupad-run-itema 1) 
+  (setq mupad-run-itemb 1) 
+  (setq mupad-run-last-type -1)
 ; gestion de l'historique 
-    (setq mupad-run-hist-commands (head-tail-void))
-    (set-ptr-head mupad-run-hist-commands)
+  (setq mupad-run-hist-commands (head-tail-void))
+  (set-ptr-head mupad-run-hist-commands)
 ; lancement du programme 
-    (setq mupad-run-output "")
-    (setq mupad-run-state 'beginning)
-    (setq mupad-run-process 
-      (apply (function start-process) 
-         "mupad" (current-buffer) mupad-run-pgm mupad-run-pgm-opt))
-    (set-process-filter mupad-run-process (function mupad-run-filter))
-    (setq mupad-run-time-start (current-time))
+  (setq mupad-run-output "")
+  (setq mupad-run-state 'beginning)
+  (setq mupad-run-process 
+    (apply (function start-process) 
+       "mupad" (current-buffer) mupad-run-pgm mupad-run-pgm-opt))
+  (set-process-filter mupad-run-process (function mupad-run-filter))
+  (setq mupad-run-time-start (current-time))
 ; la barre de menu
-    (mupad-run-init-menu-bar)  
-    (add-hook 'menu-bar-update-hook
-              '(lambda nil
-                 (when (eq major-mode 'mupad-mode)
-                   (easy-menu-add-item MuPAD-menu-map nil
-                                       ["quit"   mupad-end]
-                                       "Send file to MuPAD..."))))
+  (mupad-run-init-menu-bar)  
+  (add-hook 'menu-bar-update-hook
+            '(lambda nil
+               (when (eq major-mode 'mupad-mode)
+                 (easy-menu-add-item MuPAD-menu-map nil
+                                     ["quit"   mupad-end]
+                                     "Send file to MuPAD..."))))
 ; configuration du mode majeur et évaluation du hook
-    (setq major-mode 'mupad-run-mode) 
-    (setq mode-name "MuPAD-run")
+  (setq major-mode 'mupad-run-mode) 
+  (setq mode-name "MuPAD-run")
 ; affichage de messages de debug
-    (setq mupad-run-debug ())
+  (setq mupad-run-debug ())
 ; the last raw command sent to MuPAD:
 ;   nil or a list (message-type message) like (1 "x+1")
-    (setq mupad-run-rawcommand nil)
+  (setq mupad-run-rawcommand nil)
 ; the file position in the debugger: nil or a string
-    (setq mupad-run-debugger-file nil)
+  (setq mupad-run-debugger-file nil)
 ; the file position in the debugger: nil or an int
-    (setq mupad-run-debugger-line nil)
+  (setq mupad-run-debugger-line nil)
 ; two variables to trick gud into thinking that this buffer is a
 ; normal gud-buffer so that we can use gud-display-line
-    (setq gud-comint-buffer (current-buffer))
-    (setq gud-find-file 'gud-gdb-find-file)
-    (run-hooks 'mupad-run-mode-hook)))
+  (setq gud-comint-buffer (current-buffer))
+  (setq gud-find-file 'gud-gdb-find-file)
+  (run-hooks 'mupad-run-mode-hook))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -1038,11 +1048,11 @@ Available special keys:
   "Search last word completion"
   (interactive)
   (when (not (eq mupad-run-state 'wait-input))
-    (error "MuPAD computes, completion impossible."))
+    (error "MuPAD computes - completion impossible"))
   ;; NT: TODO: modify to allow for completion in debugger commands
   ;; see also mupad-run-output-end-comp for this
   (when (< (point) mupad-run-edit)
-    (error "Completion only in the edit zone."))
+    (error "Completion only in the edit zone"))
   (set-marker mupad-run-comp-edit (point))
   (let 
     ((br (posix-search-backward "[^a-zA-Z0-9_:\\.]" (1- mupad-run-edit) t)))
@@ -1770,7 +1780,7 @@ Available special keys:
       (cond 
         ((not br1) 
           (insert brs)
-          (error "end of history list"))
+          (error "End of history list"))
         (t 
           (insert br1) 
           (goto-char brn))))))
@@ -1793,7 +1803,7 @@ Available special keys:
       (goto-char mupad-run-edit)
       (cond 
         ((not br1) 
-          (error "end of history list"))
+          (error "End of history list"))
         (t 
           (insert br1) 
           (goto-char (min brn (point-max))))))))
@@ -1818,7 +1828,7 @@ Available special keys:
       (cond 
         ((not br1) 
           (insert brs)
-          (error "end of history list"))
+          (error "End of history list"))
         (t 
           (insert br1) 
           (goto-char brn))))))
@@ -1841,7 +1851,7 @@ Available special keys:
       (goto-char mupad-run-edit)
       (cond 
         ((not br1) 
-          (error "end of history list"))
+          (error "End of history list"))
         (t 
           (insert br1) 
           (goto-char (min brn (point-max))))))))
