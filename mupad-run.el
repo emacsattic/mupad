@@ -525,6 +525,9 @@ rereadable by MuPAD."
 (defconst mupad-run-automate-exception
   '((( 0 . ?\n) .  1) (( 0 . ?\\) .  2) (( 0 . ?\") . 10) (( 0 . ?\/) .  3) 
     (( 0 . ?\*) .  5)
+; a modifier ? en 
+    (( 3 . ?\*) . 80)
+; ancienne version 
     (( 2 . ?\n) .  0)
     (( 1 . ?\") . 10) (( 1 . ?\\) .  2) (( 1 . ?\n) .  1) (( 1 . ?\/) .  4)
     (( 1 . ?\*) .  5)
@@ -1462,6 +1465,7 @@ Available special keys:
 ;;
 ;; état 24 [presque separateur c]
 ;;   (NL) ->  1 [début de ligne]    - -> 25 [séparateur] 
+;;    (message (format "%d" etat)) pour tester l'automate 
 ;;  sinon -> 20 [commentaire]
 ;;
 ;; recherche la première commande entre pos et max
