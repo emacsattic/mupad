@@ -21,7 +21,7 @@
 
 ;;; Commentary:
  
-;; This files refers to MuPAD 2.5 and is used by mupad.el 3.00.
+;; This files refers to MuPAD 2.5.1/.2 and is used by mupad.el 3.00.
 
 (defvar mupad-cpl-version "3.00")
 
