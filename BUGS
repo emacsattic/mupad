@@ -29,6 +29,7 @@ res TAB says no completion available ?
 There are cases where the name of the program is ignored?
 
 ------------------------------------------------------------------------------
+(fixed)
 Hitting backspace right after the xx in the line below in MuPAD mode
 seems to run into some infinite loop:
 
@@ -38,6 +39,7 @@ Same thing when erasing with backspace starting right before the i
 	[ [ m[k][i] ] ]
 
 ------------------------------------------------------------------------------
+(probably fixed by a bugfix with sexps)
 Dans un fichier bla.mu contenant les lignes suivantes; partir du ";" à
 la fin du map, effacer tout avec backspace jusqu'au "m: dom" compris,
 puis essayer de revenir en arrière avec undo. Chez-moi il affiche "No
