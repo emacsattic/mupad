@@ -1,0 +1,14 @@
+(1) Does these scripts work with xemacs ? No.
+(2) How to replace xmupad by emacs + mupad-run.el ?
+    use the following trivial script:
+    -----------------------------------------------
+    #!/bin/sh -f
+    emacs -f run-mupad &
+    -----------------------------------------------
+    You simply need to make a text file (say mymupad),
+    copy the above two lines and make it executable
+    by "chmod 755 mymupad". And then create an icon
+    on your desktop or your menubar to start this
+    executable. If you are under windows, get linux ...
+    No, get cygwin, it should be enough or ask
+    a windows forum how to achieve that.
