@@ -1,9 +1,6 @@
 On error, use the "debugger pointer" to show where the error occured.
 
 ------------------------------------------------------------------------------
-Turn /tmp/debug* to read-only in the debugger
-
-------------------------------------------------------------------------------
 Take care of tar files in the debugger.
 
 ------------------------------------------------------------------------------
@@ -27,3 +24,6 @@ Ou demander `a mupad-bus d'envoyer les commandes qui vont bien à MuPAD ?
 
 ------------------------------------------------------------------------------
 Set by default C-up/down to mupad-run-previous-history-search
+
+------------------------------------------------------------------------------
+Option so that the cursor occurs just after the prompt without newline
