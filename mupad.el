@@ -1530,7 +1530,9 @@ unique completion can be done."
              (eq MuPAD-menu-map nil))
      (easy-menu-define MuPAD-menu-map mupad-mode-map
        "Menu-bar item used under mupad-mode"
-       (mupad-menu-bar))))
+       (list "MuPAD")
+       ;(mupad-menu-bar)
+       )))
 
-;; mupad.el ends here.    1825 lines;;; mupad.el --- mupad editing support package
+;; mupad.el ends here.    1535 lines;;; mupad.el --- mupad editing support package
 

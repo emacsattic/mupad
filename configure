@@ -25,6 +25,7 @@ fi
 echo -e ";;File automatically created by the shell script toinstall" > "configure-to-compile-mupad-el-and-all"
 echo -e "(setq load-path (append (list \"$LISP_INSTALL_DIR\") load-path))" >> "configure-to-compile-mupad-el-and-all"
 echo -e "(setq byte-compile-warnings '(obsolete))" >> "configure-to-compile-mupad-el-and-all"
+#echo -e "\n(load-file \"~/.emacs\")" >> "configure-to-compile-mupad-el-and-all"
 echo -e "\n(require 'disp-table)" >> "configure-to-compile-mupad-el-and-all"
 echo -e "(require 'backquote)" >> "configure-to-compile-mupad-el-and-all"
 echo -e "(require 'gud)" >> "configure-to-compile-mupad-el-and-all"
@@ -50,7 +51,7 @@ if test -f mupad.el; then
    fi
    # file mupad.el-info and variable mupad-directory in mupad.el:
    # and do not complain when compiling:
-   sed -e "s|(defcustom mupad-el-info .*mupad.el-info|(defcustom mupad-el-info \"$LISP_INSTALL_DIR/mupad\.el-info|" -e "s|/usr/local/src/MuPAD/share/|$MUPAD_INSTALL_DIR|"  -e "s|(defcustom mupad-directory \".*\"|(defcustom mupad-directory \"$MUPAD_INSTALL_DIR/\"|" -e "s|  (setq byte-compile-warnings '(free-vars unresolved callargs redefine obsolete))|  ;(setq byte-compile-warnings '(free-vars unresolved callargs redefine obsolete))|" -e "s|  ;(setq byte-compile-warnings '(unresolved redefine obsolete))|  (setq byte-compile-warnings '(unresolved redefine obsolete))|" mupad.el > mupad-bis.el
+   sed -e "s|(defcustom mupad-el-info .*mupad.el-info|(defcustom mupad-el-info \"$LISP_INSTALL_DIR/mupad\.el-info|" -e "s|/usr/local/src/MuPAD/share/|$MUPAD_INSTALL_DIR|"  -e "s|(defcustom mupad-directory \".*\"|(defcustom mupad-directory \"$MUPAD_INSTALL_DIR/\"|" -e "s|  (setq byte-compile-warnings '(free-vars unresolved callargs redefine obsolete))|  ;(setq byte-compile-warnings '(free-vars unresolved callargs redefine obsolete))|" -e "s|  ;(setq byte-compile-warnings '(unresolved redefine obsolete))|  (setq byte-compile-warnings '(unresolved redefine obsolete))|" -e "s|^(require 'mupad-xemacs)|;(require 'mupad-xemacs)|" mupad.el > mupad-bis.el
 
    rm mupad.el
    mv mupad-bis.el mupad.el
@@ -114,9 +115,9 @@ if test -f mupad-help.el; then
 
    #Variable mupad-help-method:
    if [ `mupad -V` = 2.5.1 ]; then
-      sed "s|(defvar mupad-help-method 'mupad-help-from-file-to-buffer)|(defvar mupad-help-method 'mupad-help-from-toc-to-buffer)|" mupad-run.el > mupad-run-bis.el
+      sed -e "s|(defvar mupad-help-method 'mupad-help-from-file-to-buffer)|(defvar mupad-help-method 'mupad-help-from-toc-to-buffer)|" -e "s|^(require 'mupad-xemacs)|;(require 'mupad-xemacs)|" mupad-run.el > mupad-run-bis.el
    else
-      sed "s|(defvar mupad-help-method 'mupad-help-from-file-to-buffer)|(defvar mupad-help-method 'mupad-help-from-toc-to-buffer)|" mupad-run.el > mupad-run-bis.el
+      sed -e "s|(defvar mupad-help-method 'mupad-help-from-file-to-buffer)|(defvar mupad-help-method 'mupad-help-from-toc-to-buffer)|" -e "s|^(require 'mupad-xemacs)|;(require 'mupad-xemacs)|" mupad-run.el > mupad-run-bis.el
    fi
 
    rm mupad-run.el

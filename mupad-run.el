@@ -56,6 +56,7 @@
 (require 'mupad-help)
 (require 'gud)
 (require 'advice)
+;(require 'mupad-xemacs)
 ;;
 ;;
 ;; définit l'extension mupad-run, et sa version.
@@ -348,9 +349,6 @@ should be present."
      mupad-run-face-for-emacs           mupad-run-face-system
      mupad-run-face-completion          mupad-run-face-call-system))
 
-
-(defvar xemacsp (string= (substring (version) 0 6) "XEmacs"))
-
 (defvar mupad-run-mode-map nil "Touches définies par mupad-run-mode.")
 
 (when (not mupad-run-mode-map) 
@@ -467,7 +465,6 @@ should be present."
 
 (ad-activate 'save-buffers-kill-emacs)
 
-(when (not xemacsp) (defun char-int (x) x))
 ;;
 ;;
 ;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=

@@ -1,5 +1,7 @@
 (provide 'mupad-xemacs)
 
+(defun char-int (x) x)
+
 (defun line-end-position (&optional n)
   (save-excursion
     (end-of-line)
@@ -17,6 +19,9 @@
 (provide 'lazy-lock)
 
 
+(defvar font-lock-builtin-face		'font-lock-builtin-face
+  "Face name to use for builtins.")
+
 (defface font-lock-builtin-face
   '((((type tty) (class color)) (:foreground "blue" :weight light))
     (((class grayscale) (background light)) (:foreground "LightGray" :bold t))
@@ -26,6 +31,9 @@
     (t (:bold t)))
   "Font Lock mode face used to highlight builtins."
   :group 'font-lock-highlighting-faces)
+
+(defvar font-lock-constant-face		'font-lock-constant-face
+  "Face name to use for constant and label names.")
 
 (defface font-lock-constant-face
   '((((type tty) (class color)) (:foreground "magenta"))
