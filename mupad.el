@@ -72,7 +72,6 @@ and furthering of constructs"
   (when (featurep 'mupad-help)
     (setq  mupad-help-tree (concat mupad-directory "/share/doc/"))))
 
-;; This variable should be set by a CONFIGURE if it ever exists...
 (defcustom mupad-directory "//"
 "Used for initializing `mupad-manual-command' and `mupad-help-tree'."
 :initialize 'custom-initialize-default
@@ -122,7 +121,7 @@ M-x mupad-replace-hash-comment."
 :type 'boolean :group 'mupad)
 
 (defcustom mupad-javadoc-stylep nil
-"t means an additionnal item will be added to the menu-bar:
+  "t means an additionnal item will be added to the menu-bar:
 [MuPAD/Shapes/Describe]. When used at the beginning of a procedure, it triggers
 insertion of javadoc-style description of it.
 See `mupad-describe-this-proc' and `mupad-user-mail-address'."
@@ -131,10 +130,10 @@ See `mupad-describe-this-proc' and `mupad-user-mail-address'."
 (defcustom mupad-user-mail-address
   user-mail-address
   "What it says it is. See `mupad-javadoc-stylep'."
-  :type 'string :group 'mupad-miscellana)
+:type 'string :group 'mupad-miscellana)
 
 (defcustom mupad-tutorial-requiredp t
-"If non-nil, more information will be given."
+  "If non-nil, more information will be given."
 :type 'boolean :group 'mupad-miscellana)
 
 (defcustom mupad-indent-level 2
@@ -151,14 +150,12 @@ See `mupad-describe-this-proc' and `mupad-user-mail-address'."
 
 (defun mupad-set-and-recompute-indentation (sym val)
 "Used to set things dynamically in some customizable variable."
-  (set sym val)
   (save-current-buffer
-   (mapcar
-    (lambda (bf)
-      (set-buffer bf)
-      (cond
-       ((eq major-mode 'mupad-mode) (mupad-learns-indentation))))
-      (buffer-list))))
+   (dolist (bf (buffer-list))
+     (set-buffer bf)
+     (set sym val)
+     (when (eq major-mode 'mupad-mode)
+       (mupad-learns-indentation)))))
 
 (defcustom mupad-structures
   '((["if" head 3]
@@ -208,7 +205,7 @@ See `mupad-describe-this-proc' and `mupad-user-mail-address'."
      ["begin" strong mupad-domain-indent] ; should be the same as above !!
      ["end_domain" end])
     (["axiom" head mupad-domain-indent]
-     ["begin" strong mupad-domain-level] ; should be the same as above !!
+     ["begin" strong mupad-domain-indent] ; should be the same as above !!
      ["end_axiom" end])
     (["repeat"     head 7]
      ["until"      strong 6]
@@ -247,12 +244,7 @@ simply exchange both strings in this definition."
 :group 'mupad-indentation)
 
 (defcustom mupad-shift-alist
-  '((["case" "of"] . mupad-case-indent)
-    (["domain" "begin"] . -2)
-    (["category" "begin"] . -2))
-;    Shouldn't we use mupad-domain-indent instead of 2 ?
-;    (["domain" "begin"] . -mupad-domain-indent)
-;    (["category" "begin"] . -mupad-domain-indent)
+  '((["case" "of"] . mupad-case-indent))
 "See `sli-shift-alist'."
 :type '(repeat (cons (vector string string) sexp))
 :initialize 'custom-initialize-default
@@ -331,6 +323,23 @@ after 'end_proc' and so on. See `sli-more-maidp'."
 :set 'mupad-set-and-recompute-indentation
 :group 'mupad-indentation)
 
+(defun mupad-set-mupad-show-sexpp (sym val)
+  (save-current-buffer
+    (dolist (buff (buffer-list))
+      (set-buffer buff) 
+      (set sym val)
+      (when (eq major-mode 'mupad-mode)
+        (sli-show-sexp-semi-mode (if val 1 0))))))
+
+(defcustom mupad-show-sexpp t
+"If non-nil, both ends of constructs like proc/end_proc,
+for/end_for are highlighted when cursor is on them
+like with show-paren-mode."
+:type 'boolean
+:initialize 'custom-initialize-default
+:set 'mupad-set-mupad-show-sexpp
+:group 'mupad-indentation)
+
 (defun mupad-is-a-separatorp (&optional pt)
 "See `sli-is-a-separatorp-fn'."
   (save-excursion
@@ -366,7 +375,8 @@ after 'end_proc' and so on. See `sli-more-maidp'."
   (require 'mupad-run)
   (require 'mupad-bus)
   (require 'mupad-help)
-  
+  (require 'sli-tools)
+
   (or (featurep 'easymenu) (load "easymenu" t))
   (or (featurep 'easymenu)
       (progn
@@ -476,7 +486,7 @@ by a carriage return in mupad-mode."
   (define-key map "{"        'mupad-electric-open-brace)
   (define-key map [(meta ?i)]          'mupad-complete)
   (define-key map [(meta control ?i)]  'mupad-complete) ; taken by linux !!
-  (define-key map "\d"     'backward-delete-char-untabify)
+  (define-key map [backspace]          'sli-backward-to-indentation)
   (define-key map [(meta ?*)]                 'mupad-star-comment)
   (define-key map [(control ?c) (control ?c)] 'comment-region)
   (define-key map [(control ?c) (control ?e)] 'sli-maid)
@@ -740,7 +750,7 @@ Answers nil if no comment has been skipped."
              mupad-safe-place-regexp
              mupad-keys-with-newline mupad-keys-without-newline
              mupad-add-to-key-alist
-             '("//") mupad-no-heredity-list nil mupad-correction-alist)
+             '("//") mupad-no-heredity-list nil mupad-correction-alist mupad-show-sexpp)
   (setq sli-more-maidp mupad-more-maidp
         sli-tab-always-indent mupad-tab-always-indent))
 
