@@ -120,6 +120,14 @@ begin
   bla()
 end_proc:
 
+domain bla
+  /**
+    Bugs: indent-region with all this domain selected raises an error
+    Hitting return below this comment does not indent properly
+  **/
+  bla := 1;
+end;
+
 // Local Variables:
 // mode: mupad
 // mupad-domain-indent: 2
