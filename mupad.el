@@ -145,7 +145,7 @@ See `mupad-describe-this-proc' and `mupad-user-mail-address'."
 "Indentation for case statements."
 :type 'integer :group 'mupad-indentation)
 
-(defcustom mupad-domain-indent 2
+(defcustom mupad-domain-indent 4
 "Indentation for domain, category and axiom statements."
 :type 'integer :group 'mupad-indentation)
 
@@ -200,7 +200,8 @@ See `mupad-describe-this-proc' and `mupad-user-mail-address'."
      (["category" special-head 10 ";"])
      (["axiom" special-head 10 ";"])
      ["begin" strong mupad-domain-indent] ; should be the same as above !!
-     ["end_category" end])
+     ["end_category" end]
+     ["end" end])
     (["domain" head mupad-domain-indent]
      (["category" special-head 10 ";"])
      (["axiom" special-head 10 ";"])
@@ -267,7 +268,7 @@ simply exchange both strings in this definition."
 "See `sli-separators'.")
 
 (defcustom mupad-fixed-keys-alist
-  '(("proc" . mupad-indent-level))
+  '(("proc" . 0))
 "See `sli-fixed-keys-alist'."
 :type '(repeat (cons string sexp))
 :initialize 'custom-initialize-default
