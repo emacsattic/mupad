@@ -20,6 +20,23 @@ seems to run into some infinite loop:
 
 	proc(xx)
 
+Same thing when erasing with backspace starting right before the i
+	[ [ m[k][i] ] ]
+
+------------------------------------------------------------------------------
+Dans un fichier bla.mu contenant les lignes suivantes; partir du ";" à
+la fin du map, effacer tout avec backspace jusqu'au "m: dom" compris,
+puis essayer de revenir en arrière avec undo. Chez-moi il affiche "No
+further undo information" avant d'avoir remis tout le "map ..." en
+place.
+------------------------------------------------------------------------------
+domain bla
+    rowSums :=
+    proc(m: dom) : combinat::integerVectors
+	map(m, _plus @ op);
+    end_proc;
+end;
+
 ------------------------------------------------------------------------------
 D is non-functionnal under the debugger
 
