@@ -669,8 +669,6 @@ Available special keys:
 ; configuration du mode majeur et évaluation du hook
   (setq major-mode 'mupad-run-mode) 
   (setq mode-name "MuPAD-run")
-; affichage de messages de debug
-  (setq mupad-run-debug ())
 ; the last raw command sent to MuPAD:
 ;   nil or a list (message-type message) like (1 "x+1")
   (setq mupad-run-rawcommand nil)
@@ -892,13 +890,15 @@ Available special keys:
            (setq mupad-run-state 'wait-input))
         ((or (eq brt 9)   ; error message
 	     (eq brt 63)) ; NT: debugger error message
-          (put-text-property mupad-run-last-prompt (1+ mupad-run-last-prompt) 
-              'to-insert "///--- Erreur dans ce bloc\n")
           (mupad-run-print output-str 
               'mupad-run-face-error 
               (marker-position mupad-run-todo) brt nil)
-          (put-text-property (1- mupad-run-todo) mupad-run-todo  
-              'to-insert "///--- Fin du bloc avec une erreur\n"))
+          (when (marker-position mupad-run-last-prompt)
+            (put-text-property mupad-run-last-prompt 
+              (1+ mupad-run-last-prompt) 
+              'to-insert "///--- Erreur dans ce bloc\n")
+            (put-text-property (1- mupad-run-todo) mupad-run-todo  
+                'to-insert "///--- Fin du bloc avec une erreur\n")))
         ((eq brt 3) (mupad-run-call-system output-str)) ; system-call
         ((eq brt 6)) ; change to TEXTWIDTH
         ((eq brt 7)) ; change to PRETTYPRINT
@@ -2442,6 +2442,8 @@ Available special keys:
 ;;
 (defun mupad-run-message-debug (item str) 
   (if (memq item mupad-run-debug) (message str)))
+; affichage de messages de debug
+  (setq mupad-run-debug ())
 ;;
 ;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 ;;=-= FIN du fichier mupad-run.el =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
