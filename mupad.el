@@ -149,8 +149,8 @@ See `mupad-describe-this-proc' and `mupad-user-mail-address'."
     (lambda (bf)
       (set-buffer bf)
       (cond
-       ((eq major-mode 'mupad-mode) (mupad-learns-indentation)))
-    (buffer-list)))))
+       ((eq major-mode 'mupad-mode) (mupad-learns-indentation))))
+      (buffer-list))))
 
 (defcustom mupad-structures
   '((["if" head 3]
@@ -193,6 +193,7 @@ See `mupad-describe-this-proc' and `mupad-user-mail-address'."
      ["end_category" end])
     (["domain" head '(absolute . 2)]
      (["category" special-head 10 ";"])
+     (["axiom" special-head 10 ";"])
      ["begin" strong mupad-indent-level] ; should be the same as above !!
      ["end_domain" end])
     (["axiom" head '(absolute . 2)]
