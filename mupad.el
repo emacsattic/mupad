@@ -238,7 +238,8 @@ simply exchange both strings in this definition."
 (defvar mupad-separators '(";" ":" ",")
 "See `sli-separators'.")
 
-(defcustom mupad-fixed-keys-alist (("proc" . mupad-indent-level))
+(defcustom mupad-fixed-keys-alist
+  '(("proc" . mupad-indent-level))
 "See `sli-fixed-keys-alist'."
 :type '(repeat (cons string sexp))
 :initialize 'custom-initialize-default
@@ -1827,7 +1828,8 @@ simply exchange both strings in this definition."
 (defvar mupad-separators '(";" ":" ",")
 "See `sli-separators'.")
 
-(defcustom mupad-fixed-keys-alist nil;'(("proc" . mupad-indent-level))
+(defcustom mupad-fixed-keys-alist
+  '(("proc" . mupad-indent-level))
 "See `sli-fixed-keys-alist'."
 :type '(repeat (cons string sexp))
 :initialize 'custom-initialize-default
@@ -1952,10 +1954,6 @@ after 'end_proc' and so on. See `sli-more-maidp'."
 
 
 (defvar mupad-textwidth (1- (window-width)))
-
-(defvar mupad-complete-expression nil
-"t if expression to be send to MuPAD is complete. Else see
-`mupad-qualify-incomplete-expression'. See also `mupad-copy-input'.")
 
 (defvar mupad-create-completions-donep nil "t if `mupad-completion-array' is already created.")
 (defvar mupad-completion-array (make-vector 5003 0) ;3776 symbols in MuPAD 2.0
@@ -2788,7 +2786,8 @@ unique completion can be done."
 		      ;; been asked for.
 		      (progn ;(print "Restoring")
 			(mupad-restore-wind-conf)
-			(forward-word 1)))
+			;(forward-word 1)
+			))
 		  (message "No completion found or already complete"))
               ;; more than two matches:
               (when (string= (car comp) "")
