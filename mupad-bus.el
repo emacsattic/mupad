@@ -66,7 +66,7 @@ of \\([a-zA-Z_0-9]\\|::\\). Returns point."
    ))))
 
 
-(defun mupad-bus-visible-command (acommand)
+(defun mupad-bus-visible-command (acommand prop)
   (condition-case err
       (progn
         (mupad-bus-switch-to-mupad)
@@ -77,6 +77,7 @@ of \\([a-zA-Z_0-9]\\|::\\). Returns point."
 	  (delete-region mupad-run-edit (point-max))
 	  ;; do your stuff:
 	  (insert acommand) ;(print (list "My Visible Command: " acommand))
+          (add-text-properties mupad-run-edit (point) prop)
 	  (mupad-run-return) ; comes back at the end of the stuff.
 	  ;; reput what was there:
 	  (insert old)
@@ -111,7 +112,7 @@ directory."
       (widen)
       (write-region beg end zap-file nil nil)))
     (mupad-bus-switch-to-mupad)
-    (mupad-bus-visible-command (concat "read(\"" zap-file "\"):")))
+    (mupad-bus-visible-command (concat "read(\"" zap-file "\"):") nil))
 
 (defun mupad-bus-read-input (prompt default sep flag)
   " If flag is non-nil, reads string (if string is \"\" uses default).
@@ -152,7 +153,7 @@ CLOSING-STATEMENT can be \";\". See `mupad-region' for more information."
               (if (buffer-modified-p) (save-buffer 0))))
 
         (mupad-bus-visible-command
-           (concat "read(\"" mupad-pgrm "\")" closing-statement))))
+           (concat "read(\"" mupad-pgrm "\")" closing-statement) nil)))
 
 (defun mupad-bus-file nil
   (interactive)
@@ -168,16 +169,18 @@ CLOSING-STATEMENT can be \";\". See `mupad-region' for more information."
 
 (defun mupad-bus-set-digits nil
   (interactive)
-  (mupad-bus-visible-command (concat "DIGITS:=" (read-string "New Value: ") ":")))
+  (mupad-bus-visible-command 
+    (concat "DIGITS:=" (read-string "New Value: ") ":") nil))
 
 (defun mupad-bus-adapt-textwidth nil
   (interactive)
   (mupad-bus-visible-command
-    (concat "TEXTWIDTH:=" (number-to-string (1- (window-width))) ":")))
+    (concat "TEXTWIDTH:=" (number-to-string (1- (window-width))) ":")
+    '(not-save textwidth)))
 
 (defun mupad-bus-prettyprint-switch nil
   (interactive)
-  (mupad-bus-visible-command "PRETTYPRINT:=not PRETTYPRINT;"))
+  (mupad-bus-visible-command "PRETTYPRINT:=not PRETTYPRINT;" nil))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
