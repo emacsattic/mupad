@@ -31,7 +31,7 @@ $(pkg_source).tar.gz:
 
 .PHONY: rpm
 rpm: packages/rpm/SPECS/$(PKG_RPM_NAME).spec packages/rpm/SOURCES/$(distdir).tar.gz
-	rpm	--define '_topdir '`pwd`'/packages/rpm'			\
+	rpmbuild --define '_topdir '`pwd`'/packages/rpm'			\
 		-ba packages/rpm/SPECS/$(PKG_RPM_NAME).spec		\
 		@PKG_SIGN@
 	find packages/rpm/RPMS -type f -name '$(PKG_RPM_NAME).*.rpm' -print
