@@ -17,7 +17,7 @@
 (defconst mupad-help-mode-version "2.00" "Version of `mupad-help.el'.")
 
 ;; This variable should be set by a CONFIGURE if it ever exists...
-(defvar mupad-directory "/usr/local/mupad/"
+(defvar mupad-directory "/usr/local/src/MuPAD/"
 "Used for initializing some variables below.")
 
 (defcustom mupad-help-tree (concat mupad-directory "/doc/")

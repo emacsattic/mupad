@@ -74,48 +74,15 @@ commands export/unexport. This variable is used only by font-lock.")
   (list
     ''mupad-comment  ''mupad-string  ''mupad-keyword ''mupad-options
     ''mupad-domain ''mupad-function-name  ''mupad-variable-name ''mupad-global-var
-    ''mupad-type     ''mupad-info ''mupad-prompt ''mupad-last-prompt ''mupad-primitive-name
-    ''mupad-user-def ''mupad-input ''mupad-last-input ''mupad-output)))
+    ''mupad-type   ''mupad-info''mupad-primitive-name
+    ''mupad-user-def))
+(mapcar (lambda (aplace) (eval (list 'defvar (eval aplace) aplace)))
+      mupad-places))
 
 (defconst mupad-color-scheme-alist
  ;; Each scheme should at least contain 'mupad-prompt 'mupad-input 'mupad-type
  ;; 'mupad-info 'mupad-domain and 'mupad-options.
 '(("Minimal" ; any title would do but check value of mupad-color-scheme exists.
-    ('mupad-prompt
-     '((((class grayscale) (background light)) (:foreground "LightGray" :bold t))
-       (((class grayscale) (background dark)) (:foreground "DimGray" :bold t))
-       (((class color) (background light)) (:foreground "Orchid"))
-       (((class color) (background dark)) (:foreground "LightSteelBlue"))
-       (t (:bold t)))
-      "Face used in MuPAD to fontify prompt except the last one.")
-    ('mupad-last-prompt
-     '((((class grayscale) (background light)) (:foreground "LightGray" :bold t))
-       (((class grayscale) (background dark)) (:foreground "DimGray" :bold t))
-       (((class color) (background light)) (:foreground "Red"))
-       (((class color) (background dark)) (:foreground "Red"))
-       (t (:bold t)))
-      "Face used in MuPAD to fontify last prompt.")
-    ('mupad-input
-     '((((class grayscale) (background light)) (:foreground "DimGray" :italic t))
-       (((class grayscale) (background dark)) (:foreground "LightGray" :italic t))
-       (((class color) (background light)) (:foreground "RosyBrown"))
-       (((class color) (background dark)) (:foreground "LightSalmon"))
-       (t (:italic t)))
-     "Face used in MuPAD to fontify intputs except last one.")
-    ('mupad-last-input
-     '((((class grayscale) (background light)) (:foreground "DimGray" :italic t))
-       (((class grayscale) (background dark)) (:foreground "LightGray" :italic t))
-       (((class color) (background light)) (:foreground "Brown"))
-       (((class color) (background dark)) (:foreground "Red"))
-       (t (:italic t)))
-     "Face used in MuPAD to fontify last intput.")
-    ('mupad-output
-     '((((class grayscale) (background light)) (:foreground "DimGray" :italic t))
-       (((class grayscale) (background dark)) (:foreground "LightGray" :italic t))
-       (((class color) (background light)) (:foreground "RosyBrown"))
-       (((class color) (background dark)) (:foreground "LightSalmon"))
-       (t (:italic t)))
-     "Face used in MuPAD to fontify outputs.")
     ('mupad-type
      '((((class grayscale) (background light)) (:foreground "Gray90" :bold t))
       (((class grayscale) (background dark)) (:foreground "DimGray" :bold t))
@@ -145,42 +112,6 @@ commands export/unexport. This variable is used only by font-lock.")
       (t (:bold t)))
      "Face used in MuPAD to fontify options."))
   ("MuPAD's own" ; copied from mupad-mode.el
-    ('mupad-last-prompt
-     '((((class grayscale) (background light)) (:foreground "LightGray" :bold t))
-       (((class grayscale) (background dark)) (:foreground "DimGray" :bold t))
-       (((class color) (background light))
-        (:bold nil :inverse-video t :foreground "RoyalBlue" :background "yellow"))
-       (((class color) (background dark)) (:foreground "LightSteelBlue"))
-       (t (:bold t)))
-      "Face used in MuPAD to fontify promptthe last one.")
-    ('mupad-prompt
-     '((((class grayscale) (background light)) (:foreground "LightGray" :bold t))
-       (((class grayscale) (background dark)) (:foreground "DimGray" :bold t))
-       (((class color) (background light)) (:foreground "Orchid"))
-       (((class color) (background dark)) (:foreground "Red"))
-       (t (:bold t)))
-      "Face used in MuPAD to fontify last prompt.")
-    ('mupad-input
-     '((((class grayscale) (background light)) (:foreground "DimGray" :italic t))
-       (((class grayscale) (background dark)) (:foreground "LightGray" :italic t))
-       (((class color) (background light)) (:foreground "RosyBrown"))
-       (((class color) (background dark)) (:foreground "LightSalmon"))
-       (t (:italic t)))
-     "Face used in MuPAD to fontify intputs except last one.")
-    ('mupad-last-input
-     '((((class grayscale) (background light)) (:foreground "DimGray" :italic t))
-       (((class grayscale) (background dark)) (:foreground "LightGray" :italic t))
-       (((class color) (background light)) (:foreground "Brown"))
-       (((class color) (background dark)) (:foreground "Red"))
-       (t (:italic t)))
-     "Face used in MuPAD to fontify last intput.")
-    ('mupad-output
-     '((((class grayscale) (background light)) (:foreground "DimGray" :italic t))
-       (((class grayscale) (background dark)) (:foreground "LightGray" :italic t))
-       (((class color) (background light)) (:foreground "RosyBrown"))
-       (((class color) (background dark)) (:foreground "LightSalmon"))
-       (t (:italic t)))
-     "Face used in MuPAD to fontify outputs.")
     ('mupad-type
      '((((class grayscale) (background light)) (:foreground "LightGray" :bold t))
       (((class grayscale) (background dark)) (:foreground "DimGray" :bold t))
@@ -262,10 +193,10 @@ commands export/unexport. This variable is used only by font-lock.")
 
 (defconst mupad-script-fontification-keywords-1
   (purecopy
-   '(
-    ("\\(\\<userinfo\\>(\\)\\([^;]+\\));"  (2 mupad-info t t))
-    (mupad-find-def (0 (if mupad-function-defp 'mupad-function-name 'mupad-global-var)))
-    (mupad-find-keywords (0 mupad-keyword))
+   (list
+    (list 'mupad-find-def '(0 (if mupad-function-defp 'mupad-function-name 'mupad-global-var)))
+    '("\\(\\<userinfo\\>(\\)\\([^;]+\\));"  (2 mupad-info t t))
+    '(mupad-find-keywords (0 mupad-keyword))
    ))
   "Subdued level of fontification for mupad-mode.")
 
