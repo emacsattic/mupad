@@ -1,10 +1,22 @@
-;; fichier mupad-help.el
+;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+;;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+;;
+;; copyright 2002 par François Maltey : Francois.Maltey@enst-bretagne.fr
+;;
+;; Ce programme est un logiciel libre en cours de développement distribué 
+;; sans aucun support ni garantie de la part de l'auteur. 
+;; L'utilisateur est donc conscient qu'il le teste à ses risques et périls.
+;;
+;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+;;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 (provide 'mupad-help)
 (require 'mupad-bus)
+(defconst mupad-help-mode-version "2.00" "Version of `mupad-help.el'.")
 
 (defcustom mupad-help-tree "/usr/local/src/MuPAD/share/doc/"
-  ;"/usr/local/mupad/share/doc/"
 "Location of the help files.
 Used to set `mupad-help-file-name-tar' and `mupad-help-file-name-toc'."
 :type 'string :group 'mupad-run)
@@ -16,15 +28,13 @@ Used to set `mupad-help-file-name-tar' and `mupad-help-file-name-toc'."
 
 (eval-and-compile
   (mapcar (lambda (sym) (eval (list 'defvar sym nil)))
-  '(mupad-help-item-to-file
-    mupad-help-toc-to-item
+  '(mupad-help-item-to-file mupad-help-toc-to-item 
     mupad-help-file-to-offset)))
-;
 
-(defvar mupad-help-keymap 
+(defvar mupad-help-mode-map 
   nil 
   "Touches définies dans l'aide en ligne de mupad.")
-(unless mupad-help-keymap
+(unless mupad-help-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map "q" (function mupad-help-quit))
     (define-key map "Q" (function mupad-help-quit))
@@ -33,10 +43,13 @@ Used to set `mupad-help-file-name-tar' and `mupad-help-file-name-toc'."
     (define-key map "\r" (function mupad-help-return))
     (define-key map ">" (function end-of-buffer))
     (define-key map "<" (function beginning-of-buffer))
-    (define-key map "\C-c\C-h" (function mupad-help-emacs-search))
-    (define-key map [mouse-2] (function mupad-help-mouse-2))
     (define-key map [f5] (function mupad-help-emacs-search))
-    (setq mupad-help-keymap map)))
+    (define-key map "\C-c\C-h" (function mupad-help-emacs-search))
+    (define-key map [f6] (function mupad-help-emacs-ask))
+    (define-key map "\C-c\C-i" (function mupad-help-emacs-ask))
+    (define-key map [mouse-2] (function mupad-help-mouse-2))
+    (define-key map "\M-o" (function mupad-restore-wind-conf))
+    (setq mupad-help-mode-map map)))
 
 (defconst mupad-help-face
   '((mupad-help-face-gras-soul    "red"         )
@@ -44,30 +57,17 @@ Used to set `mupad-help-file-name-tar' and `mupad-help-file-name-toc'."
     (mupad-help-face-soul         "forestgreen" )
     (mupad-help-face-normal       "black"       )))
 
-(defun mupad-help-init ()
-    ;(mupad-bus-window-manager "*MuPAD Help*" 'mupad-show-info)
-; initialisation des couleurs
-  (unless mupad-help-item-to-file
-    (mapcar
-     (lambda (a-face)
-       (make-face (car a-face)) 
-       (set-face-foreground (car a-face) (cadr a-face)))
-     mupad-help-face)
-    (mupad-help-init-item-to-file)
-    (mupad-help-init-file-to-offset)
-    (mupad-help-init-toc-to-item)))
-
-(defvar mupad-help-completion-array (make-vector 5003 0) ;3776 symbols in MuPAD 2.0
-"Obarray used for completion.")  ;; A prime number as a length is a good thing !
-;----------------------------------------------------------------------------------------
+;; 3776 symbols in MuPAD 2.0 ; a prime number as a length is a good thing !
+(defvar mupad-help-completion-array 
+  (make-vector 5003 0) "Obarray used for completion.")  
 ;;  
 ;;
-;; 
 ;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 ;;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 ;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 ;;
-;;  6/ Aide en ligne (y compris en cours de saisie, et recopie d'exemples)
+;;  Fonctions de l'aide en ligne 
+;;    (y compris en cours de saisie, et recopie d'exemples)
 ;;
 ;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 ;;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -77,28 +77,28 @@ Used to set `mupad-help-file-name-tar' and `mupad-help-file-name-toc'."
 ;;   construit la liste (sous-titre de l'aide . nom du fichier de l'aide) ;
 ;;   elle est affectée à la variable mupad-help-item-to-file
 ;;
+;; mupad-help-init-toc-to-item 
+;;   construit la liste (nom dans l'interface graphique . sous-titre) ;
+;;   elle est affectée à la variable mupad-help-toc-to-file
+;;
 ;; mupad-help-init-file-to-offset
 ;;   construit la liste (fichier de l'aide . position dans l'archive) ;
 ;;   elle est affectée à la variable mupad-help-file-to-offset.
 ;;
 (defun mupad-help-init-item-to-file () 
-  (with-temp-buffer   (print "in")
-    (setq mupad-help-item-to-file ())
-    (call-process "tar" nil t nil 
-      "-Oxf" mupad-help-file-name-tar mupad-help-file-name-indextty)
-    (goto-char 1)
-    (while (re-search-forward "\\(.*\\)\\\\\\(.*\\)" nil t)
-      (setq 
-        mupad-help-item-to-file 
-        (cons 
-          (cons 
-            (progn
-	     (let ((mot (buffer-substring (match-beginning 1) (1- (match-end 1)))))
-	       (intern mot mupad-help-completion-array)
-	       mot))
-            (match-string 2))
-          mupad-help-item-to-file))))(print "exit")
-  (setq mupad-help-item-to-file (reverse mupad-help-item-to-file)))
+  (let (br)
+    (with-temp-buffer   
+      (setq mupad-help-item-to-file ())
+      (call-process "tar" nil t nil 
+        "-Oxf" mupad-help-file-name-tar mupad-help-file-name-indextty)
+      (goto-char 1)
+      (while (re-search-forward "\\(.*\\)\\\\\\(.*\\)" nil t)
+        (setq br (buffer-substring (match-beginning 1) (1- (match-end 1))))
+        (setq mupad-help-item-to-file 
+          (cons (cons br (match-string 2)) mupad-help-item-to-file))
+        (intern br mupad-help-completion-array)
+        (match-string 2))
+      (setq mupad-help-item-to-file (reverse mupad-help-item-to-file)))))
 
 (defun mupad-help-init-toc-to-item () 
   (with-temp-buffer   
@@ -132,20 +132,19 @@ Used to set `mupad-help-file-name-tar' and `mupad-help-file-name-toc'."
   (setq mupad-help-file-to-offset (reverse mupad-help-file-to-offset)))
 
 (defun mupad-help-from-file-to-buffer (ind)
-  (let (br brm brb br1 bra brp br3)
-    (print (list "entering mupad-help-from-file-to-buffer with " ind))
+  (let (br brb br1 bra brp br3 brm)
 ; recherche du fichier d'aide en ligne dans le fichier ascii.tar,
 ; br contient la paire pointée indiquant les positions de début et fin
     (and 
       (setq br (assoc (concat "ascii/" ind ".help") mupad-help-file-to-offset))
       (setq br (cdr br)))
-    (unless br
-      (error "help file is missing in ascii format"))
+    (unless br (error "Help file is missing in ascii format"))
 ; création d'un tampon d'aide et remise à zéro s'il existe déjà.
-      (mupad-bus-window-manager "*MuPAD Help*" 'mupad-show-help)
-      (set-buffer "*MuPAD Help*")
-      (setq buffer-read-only nil)
-      (erase-buffer)
+    (mupad-bus-window-manager "*MuPAD Help*" 'mupad-show-help)
+    (set-buffer "*MuPAD Help*")
+    (mupad-help-mode)
+    (setq buffer-read-only nil)
+    (erase-buffer)
 ; insertion de l'aide en ligne
       (call-process "sh" nil t nil "-c" 
         (concat 
@@ -156,7 +155,7 @@ Used to set `mupad-help-file-name-tar' and `mupad-help-file-name-toc'."
       (setq br 1)
 ; interprétation des codes de contrôles ansi
       (while (setq br1 (re-search-forward "\033\\[.m" nil t))
-      (setq bra (buffer-substring (- br1 2)(1- br1)))
+       (setq bra (buffer-substring (- br1 2)(1- br1)))
        (delete-region (- br1 4) br1)
        (setq br1 (- br1 4))
        (cond 
@@ -177,35 +176,55 @@ Used to set `mupad-help-file-name-tar' and `mupad-help-file-name-toc'."
       (setq brp brm))
     (goto-char 1)
     (setq buffer-read-only t)
-    (use-local-map mupad-help-keymap))
-  (mupad-help-info-mode))
-;)
+    (use-local-map mupad-help-mode-map)
+    (mupad-help-info-mode)))
 
-(defun mupad-help-mouse-2 (click) 
-  "Directly search the help file"
-  (interactive "e")
-  (mouse-set-point click)
-  (unwind-protect 
-      (mupad-help-from-string-to-buffer
-       (buffer-substring-no-properties (previous-single-property-change (point) 'mouse-face)
-				       (next-single-property-change (point) 'mouse-face))))
-    )
+(defun mupad-help-mode ()
+  "Major mode version `mupad-help-mode-version' for searching in Mupad help.
+\\<mupad-help-mode-map>
+The main work is to read mupad help files.
+
+Available special keys:
+\\{mupad-help-mode-map}"
+  (interactive)
+  (kill-all-local-variables)
+; initialisation du tampon et du clavier
+  (use-local-map mupad-help-mode-map)
+; la barre de menu
+;   (mupad-help-init-menu-bar)  
+; configuration du mode majeur et évaluation du hook
+  (setq major-mode 'mupad-help-mode) 
+  (setq mode-name "MuPAD-help")
+  (run-hooks 'mupad-help-mode-hook))
 
 (defun mupad-help-emacs-search () 
   "Directly search the help file"
   (interactive)
   (let ((br1 (point)) bra brb)
-    (setq bra (or (posix-search-backward "[^a-zA-Z0-9_:]" nil t) 0))
+; recherche le premier caractère qui n'est pas dans un nom d'aide en ligne
+    (setq bra (or (posix-search-backward "[^a-zA-Z0-9_:.]" nil t) 0))
     (goto-char br1)
+; recherche la fin du mot dans l'aide en ligne, des lettres comprenant 
+; éventuellement :: ou ... ; 
+; cette méthode ne marche pas pour la recherche arrière.
     (setq brb 
-      (or (posix-search-forward "[^a-zA-Z0-9_:]" nil t) (1+ (point-max))))
-    (unwind-protect 
-      (mupad-help-from-string-to-buffer (buffer-substring (1+ bra) (1- brb)))
-      ;(goto-char br1) ;;;; REMOVED BY RAMARE
-      )))
+      (posix-search-forward 
+        "\\([a-zA-Z0-9_]\\|\\(::\\)\\|\\(\\.\\.+\\)\\)*" 
+        nil t))
+    (condition-case err 
+      (mupad-help-from-string-to-buffer (buffer-substring (1+ bra) brb))
+      (error 
+        (progn (message "%s" (error-message-string err)) (goto-char br1))))))
 
-(defun mupad-help-from-string-to-buffer (str)(print str)
-  (let ((br (assoc str mupad-help-item-to-file)))
+(defun mupad-help-mouse-2 (click) 
+  "Directly search the help file"
+  (interactive "e")
+  (mouse-set-point click)
+  (mupad-help-emacs-search))
+
+(defun mupad-help-from-string-to-buffer (str)
+  (let (br)
+    (setq br (assoc str mupad-help-item-to-file))
     (unless br 
        (error (concat "Emacs can't find help-file for '" str "'")))
     (setq mupad-run-save-buffer (current-buffer))
@@ -229,7 +248,7 @@ Used to set `mupad-help-file-name-tar' and `mupad-help-file-name-toc'."
   (interactive)
   (if (< (point) (point-max)) (forward-char 1))
   (if (search-forward ">> " nil t) 
-      (forward-char -3)
+    (forward-char -3)
     (goto-char (point-max))))
 
 (defun mupad-help-previous-exemple ()
@@ -278,6 +297,51 @@ Used to set `mupad-help-file-name-tar' and `mupad-help-file-name-toc'."
        (when (not (memq (char-before br2) '(?\: ?\;)))
          (goto-char br2) (insert " ;"))))
 
+(defun mupad-help-completion (question)
+  (save-excursion
+    (let* 
+      ((posfuncname
+         (buffer-substring-no-properties 
+           (or (backward-extended-mupadword) (point))
+	   (forward-extended-mupadword)))
+         (funcname (completing-read
+           (if (string-equal posfuncname "") 
+             (concat question ": ")
+             (concat question " [" posfuncname "]: "))
+           mupad-help-completion-array)))
+      (and (string-equal funcname "") (setq funcname posfuncname)) funcname)))
 
-(defun mupad-help-info-mode nil
-  (message "q/Q pour sortir, </> haut/bas de tampon, voir aussi C-left/C-right/RET/C-cC-h"))
+(defun mupad-help-emacs-ask ()
+  (interactive)
+  (mupad-help-from-string-to-buffer (mupad-help-completion "Help about")))
+
+(defun mupad-help-info-mode ()
+   (message 
+     "q/Q pour sortir, </> début/fin, voir aussi C-left/C-right/RET/C-cC-h"))
+;;  
+;;
+;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+;;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+;;
+;;  Initialisation effectuée au chargement.
+;;
+;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+;;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+;;
+;; initialisation des couleurs
+;;
+(mapcar 
+  (lambda (a-face) (make-face (car a-face)) 
+    (set-face-foreground (car a-face) (cadr a-face)))
+  mupad-help-face)
+;;
+;; construction des bases de données de l'aide en ligne 
+;;    relations entre le nom du fichier dans l'aide en ligne, 
+;;    la position de ce fichier dans l'archive .tar, 
+;;    et le nom de cette même aide dans l'interface multi-fenêtre
+;;
+(mupad-help-init-item-to-file)
+(mupad-help-init-file-to-offset)
+(mupad-help-init-toc-to-item)
