@@ -22,29 +22,41 @@ SUFFIXES	= .mcc .mdm
 
 # Rule to rename the module with the standard MuPAD suffix .mdm, and
 # make a copy of it in the modules directory of the toplevel to enable
-# using them before the installation (typically in tests).
-
+# using them before the installation (typically in the test suite).
+#
 # This needs to be seriously improved! In particular, we should
 # probably call libtool for the copy, since the .so may have another
-# name on another architecture. Also using ln might cause trouble if
-# the .so is a soft link and not a file.
+# name on another architecture.
+#
+# Note: we try to use ln instead of cp to save some diskspace.  Using
+# ln -s just for %.mdm does not work since it breaks the dependency
+# checking, and the module is not copied in $(MUPADlocalmdmdir). One
+# should use ln -s for both; this implies (for portability) to run the
+# ln -s from $(MUPADlocalmdmdir): some work in perspective
+#
+# Note: the local module directory used to be created using a separate
+# dependency $(MUPADlocalmdmdir). However, this does not work properly
+# with VPATHS (if the directory exists in the source tree, it's flaged
+# as already created. So we now create it on the fly if it's missing.
+#
+# Note from Andreas: MuPAD dynamic modules are perfectly standard
+# dynamic libraries (unix: .so; windows: .dll), with just some
+# specific entry points for the MuPAD kernel.
 
-%.mdm: %.la $(MUPADlocalmdmdir)
-	rm -f $@ && ln .libs/$*.so $@
-	rm -f $(MUPADlocalmdmdir)/$@ && ln .libs/$*.so $(MUPADlocalmdmdir)/$@
-
-$(MUPADlocalmdmdir):
-	$(INSTALL) -d $@
+%.mdm: %.la
+	test -d $(MUPADlocalmdmdir) || $(INSTALL) -d $(MUPADlocalmdmdir)
+	rm -f $@ $(MUPADlocalmdmdir)/$@
+	module=.libs/$*.so;						\
+	if [ -f $$module ]; then					\
+		ln $$module $@;						\
+		ln $$module $(MUPADlocalmdmdir)/$@;			\
+	else								\
+		cp $$module $@;						\
+		cp $$module $(MUPADlocalmdmdir)/$@;			\
+	fi;
 
 # does not work if the cleanfile dependency is not generated
 #CLEANFILES	+= $(wildcard *.mmg)
-
-# The following preprocessor definitions are used by mmg under
-# GNU/linux. This is certainly not portable, and should be provided by
-# mmg instead, with something like `mmg --cflags`
-
-# This overrides any AM_CPPFLAGS defined in the makefile!
-AM_CPPFLAGS	= -DMDX -DLONG_IS_32BIT -DSYSV -DPARI_LITTLE_ENDIAN -DMMMDLEAN -DNO_BYTECODE -DNO_ENHANCED_MATCH
 
 ##############################################################################
 # Minimal test suite for MuPAD

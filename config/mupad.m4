@@ -27,50 +27,72 @@
 AC_DEFUN([AM_PROG_MUPAD],
 [
 	# MUPAD
-	AC_CHECK_PROGS(MUPAD, mupad, "")
-	test -n "$MUPAD" || AC_MSG_ERROR(Not found.
+	AC_CHECK_PROGS([MUPAD], [mupad], "")
+	test -n "$MUPAD" || AC_MSG_ERROR([Not found.
 Please check the installation of MuPAD or override with
-./configure MUPAD=<.../>mupad)
+./configure MUPAD=<.../>mupad])
 
 	# MUPAD_VERSION
-	AC_CACHE_CHECK(for MuPAD version, MUPAD_VERSION,[
-	  MUPAD_VERSION=`echo 'fprint(Unquoted,0,(v:=version();"".op(v,1).".".op(v,2).".".op(v,3))):quit' | $MUPAD -n -P pe -S`
-	case "$MUPAD_VERSION" in
-	  ?.?.?) ;;
-	  *) AC_MSG_ERROR(Not found.
+	AC_CACHE_CHECK([for MuPAD version],
+          [mupad_cv_mupad_version],
+	  [if test "${MUPAD_VERSION+set}" = set; then
+	     mupad_cv_mupad_version=$MUPAD_VERSION
+           else
+	     mupad_cv_mupad_version=`echo 'fprint(Unquoted,0,(v:=version();"".op(v,1).".".op(v,2).".".op(v,3))):quit' | $MUPAD -n -P pe -S`
+	   fi
+	   case $mupad_cv_mupad_version in
+	     ?.?.?) ;;
+	     *) AC_MSG_ERROR([Not found.
 Please check the installation of MuPAD or override with
-./configure MUPAD_VERSION=2.4.2)
-	esac])
-	
+./configure MUPAD_VERSION=2.4.2]);;
+	   esac
+	   ])
+	MUPAD_VERSION=$mupad_cv_mupad_version
+	AC_SUBST([MUPAD_VERSION])
+
 	# MUPADdir
-	AC_CACHE_CHECK(for MuPAD root directory, MUPADdir, [
-	  case "$MUPAD_VERSION" in
-	    1.?.?)
-		MUPADdir=`echo 'fprint(Unquoted,0,LIB_PATH):quit' | $MUPAD -n -P pe -S | sed 's/\/share\/lib\(\/lib.tar.lib\)\?\/*$//'`;;
-	    2.0.?)
-		MUPADdir=`echo 'fprint(Unquoted,0,op(LIBPATH,nops(LIBPATH))):quit' | $MUPAD -n -P pe -S | sed 's/\/share\/lib\(\/lib.tar.lib\)\?\/*$//'`;;
-	    *.?.?)
-		MUPADdir=`$MUPAD -r`;;
-	    *)
-	  esac;
-	  test -d "$MUPADdir" || AC_MSG_ERROR(Not found.
+	AC_CACHE_CHECK([for MuPAD root directory],
+          [mupad_cv_mupaddir],
+          [if test "${MUPADdir+set}" = set; then
+	     mupad_cv_mupaddir=$MUPADdir
+           else
+	     case $MUPAD_VERSION in
+	       1.?.?)
+		 mupad_cv_mupaddir=`echo 'fprint(Unquoted,0,LIB_PATH):quit' | $MUPAD -n -P pe -S | sed 's/\/share\/lib\(\/lib.tar.lib\)\?\/*$//'`;;
+	       2.0.?)
+		 mupad_cv_mupaddir=`echo 'fprint(Unquoted,0,op(LIBPATH,nops(LIBPATH))):quit' | $MUPAD -n -P pe -S | sed 's/\/share\/lib\(\/lib.tar.lib\)\?\/*$//'`;;
+	       *.?.?)
+		 mupad_cv_mupaddir=`$MUPAD -r`;;
+	       *);;
+	     esac;
+	   fi
+	   test -d "$mupad_cv_mupaddir" || AC_MSG_ERROR([Not found.
 Please check the installation of MuPAD or override with
-./configure MUPADdir=<MuPAD_ROOT_PATH>)]);
-	AC_SUBST(MUPADdir)
-	AC_SUBST(MUPAD_VERSION)
+./configure MUPADdir=<MuPAD_ROOT_PATH>])
+        ]);
+	MUPADdir=$mupad_cv_mupaddir
+	AC_SUBST([MUPADdir])
 
 	# MUPADbindir
-	AC_CACHE_CHECK(for MuPAD bin directory, MUPADbindir,
-	  test -n "$MUPADbindir" || MUPADbindir=$MUPADdir/share/bin
-	  test -d "$MUPADbindir" || AC_MSG_ERROR(Not found.
+	AC_CACHE_CHECK([for MuPAD bin directory],
+	  [mupad_cv_mupadbindir],
+	  [mupad_cv_mupadbindir=${MUPADbindir="$MUPADdir/share/bin"}
+	   test -d "$mupad_cv_mupadbindir" ||\
+	     AC_MSG_ERROR([Not found.
 Please check the installation of MuPAD or override with
-./configure MUPADbindir=<MuPAD_ROOT_PATH/share/bin>))
+./configure MUPADbindir=<MuPAD_ROOT_PATH/share/bin>])
+        ])
+	MUPADbindir=$mupad_cv_mupadbindir
+	AC_SUBST([MUPADbindir])
 
 	# MUPADpkgdir
-	AC_CACHE_CHECK(for MuPAD package installation directory, MUPADpkgdir,
-	  test -n "$MUPADpkgdir" || MUPADpkgdir=$MUPADdir/packages/$PACKAGE_NAME)
-	AC_SUBST(MUPADpkgdir)
-])
+	AC_CACHE_CHECK([for MuPAD package installation directory],
+          [mupad_cv_mupadpkgdir],
+	  [mupad_cv_mupadpkgdir=${MUPADpkgdir="$MUPADdir/packages/$PACKAGE_NAME"}
+        ])
+	MUPADpkgdir=$mupad_cv_mupadpkgdir
+	AC_SUBST([MUPADpkgdir])
+])# AM_PROG_MUPAD
 
 # AM_PROG_MUPAD2
 #
@@ -79,12 +101,12 @@ Please check the installation of MuPAD or override with
 
 AC_DEFUN([AM_PROG_MUPAD2],
 [
-	AC_REQUIRE([AM_PROG_MUPAD]) 
-	case "$MUPAD_VERSION" in
+	AC_REQUIRE([AM_PROG_MUPAD])
+	case $MUPAD_VERSION in
 	  1.?.?)
-		AC_MSG_ERROR(Version >= 2.0.0 of MuPAD required);;
+	    AC_MSG_ERROR([Version >= 2.0.0 of MuPAD required]);;
 	esac;
-])
+])# AM_PROG_MUPAD2
 
 ##############################################################################
 # AM_PROG_MUPAD_MMG
@@ -92,12 +114,12 @@ AC_DEFUN([AM_PROG_MUPAD2],
 # Look for the MuPAD module generator, setting the variables:
 #  - MUPAD_MMG		path to the module generator mmg
 #			e.g. /usr/local/MuPAD/share/bin/mmg
+#  - MUPAD_MMG_CFLAGS   compiler options required for MuPAD dynamic modules
+#  - MUPAD_MMG_LDFLAGS  linker options required for MuPAD dynamic modules
 #  - MUPAD_SYSINFO	path to the script sysinfo
 #			e.g. /usr/local/MuPAD/share/bin/sysinfo
 #  - MUPAD_ARCH		MuPAD's name for the architecture
 #			e.g. linux
-#  - INCLUDE		include path for mmg headers
-#			e.g. /usr/local/MuPAD/share/packages/bla/
 #  - MUPADpkgmdmdir	directory where modules are installed
 #			e.g. /usr/local/MuPAD/share/packages/bla/modules/linux
 #  - MUPADlocalmdmdir	local directory where modules are copied
@@ -109,7 +131,7 @@ AC_DEFUN([AM_PROG_MUPAD_MMG],
 [
 	# Warning: this might interfer with the building of other
 	# parts of the package ...
-	AC_REQUIRE([AC_DISABLE_STATIC]) 
+	AC_REQUIRE([AC_DISABLE_STATIC])
 	AC_REQUIRE([AC_PROG_LIBTOOL])
 	# Note: there is a bug in autoconf 2.13: calling AC_PROG_LIBTOOL
 	# after AC_LANG_CPLUSPLUS causes the executable suffix to be
@@ -119,53 +141,107 @@ AC_DEFUN([AM_PROG_MUPAD_MMG],
 	AC_REQUIRE([AC_LANG_CPLUSPLUS])
 
 	# MUPAD_MMG
-	AC_PATH_PROG(MUPAD_MMG, mmg, , $MUPADbindir)
+	AC_PATH_PROG([MUPAD_MMG], [mmg], , [$MUPADbindir])
 	test -n "$MUPAD_MMG" ||\
 	  AC_MSG_ERROR([MuPAD module generator not found.
 Please check the installation of MuPAD or override with
 ./configure MUPAD_MMG=...])
 
 	# MUPAD_SYSINFO
-	AC_PATH_PROG(MUPAD_SYSINFO, sysinfo, , $MUPADbindir)
+	AC_PATH_PROG([MUPAD_SYSINFO], [sysinfo], , [$MUPADbindir])
 	test -n "$MUPAD_SYSINFO" ||\
 	  AC_MSG_WARN([MuPAD sysinfo script not found.
 Please check the installation of MuPAD or override with
 ./configure MUPAD_SYSINFO=...])
 
 	# MUPAD_ARCH
-	AC_CACHE_CHECK(for MuPAD arch, MUPAD_ARCH,
-	  MUPAD_ARCH=`$MUPAD_SYSINFO`
- 	  test -n "$MUPAD_ARCH" ||\
-	  AC_MSG_ERROR([Could not determine MuPAD architecture.
+	AC_CACHE_CHECK([for MuPAD arch],
+          [mupad_cv_mupad_arch],
+	  [mupad_cv_mupad_arch=${MUPAD_ARCH=`$MUPAD_SYSINFO`}
+ 	   test -n "$mupad_cv_mupad_arch" ||\
+	     AC_MSG_ERROR([Could not determine MuPAD architecture.
 Please check the installation of MuPAD or override with
-./configure MUPAD_ARCH=...]))
-	AC_SUBST(MUPAD_ARCH)
+./configure MUPAD_ARCH=...])
+        ])
+	MUPAD_ARCH=$mupad_cv_mupad_arch
+	AC_SUBST([MUPAD_ARCH])
+
+	# MUPAD_MMG_CFLAGS
+	AC_CACHE_CHECK([for mmg compiler options],
+          [mupad_cv_mupad_mmg_cflags],
+	  [if test "${MUPAD_MMG_CFLAGS+set}" = set; then
+	     mupad_cv_mupad_mmg_cflags=$MUPAD_MMG_CFLAGS
+	   else
+	     # Obtained by examining the output of mmg on a fake module
+	     # Suggestion from Andreas: use the -n option
+	     echo "MFUNC(init, MCnop) { } MFEND" > conftestmmg.cc
+	     mupad_cv_mupad_mmg_cflags=`MMG_CC=echo $MUPAD_MMG -nog -nol conftestmmg.cc | sed 's/-c MMGconftestmmg.cpp -o conftestmmg.o //'` ||\
+	       AC_MSG_ERROR([Not found.
+Please check the installation of MuPAD or override with
+./configure MUPAD_MMG_CFLAGS=-D... -I...]);
+	   fi
+	   case $mupad_cv_mupad_mmg_cflags in
+	     -D*) ;; # very basic sanity check
+	     *) AC_MSG_ERROR([Inconsistent value: $mupad_cv_mupad_mmg_cflags.
+Please check the installation of MuPAD or override with
+./configure MUPAD_MMG_CFLAGS=-D... -I...]);;
+	   esac
+        ])
+	MUPAD_MMG_CFLAGS=$mupad_cv_mupad_mmg_cflags
+	AC_SUBST([MUPAD_MMG_CFLAGS])
+
+	# Check that the mmg headers are available
+	CPPFLAGS_BACKUP="$CPPFLAGS"
+	CPPFLAGS="$CPPFLAGS $MUPAD_MMG_CFLAGS"
+	AC_CHECK_HEADER([MDM_base.h], ,
+		        [AC_MSG_ERROR([MuPAD MMG headers not found.
+Please check the installation of MuPAD])],
+			[/* checkCompilation */])
+	CPPFLAGS="$CPPFLAGS_BACKUP"
+
+	# MUPAD_MMG_LDFLAGS
+	AC_CACHE_CHECK([for mmg linker options],
+          [mupad_cv_mupad_mmg_ldlags],
+          [if test "${MUPAD_MMG_LDFLAGS+set}" = set; then
+	     mupad_cv_mupad_mmg_ldlags=$MUPAD_MMG_LDFLAGS
+	   else
+	     # Obtained by examining the output of mmg on a fake module
+	     # It seems that the link flags of mmg always contain
+	     # -L/usr/local/MuPAD/linux/lib. If the libstdc++ provided
+	     # by the MuPAD distribution is not compatible with the c++
+	     # standard headers provided by the system then the symbols
+	     # are set incorrectly and the module cannot be loaded.
+	     # Temporary fix: erase this flag from the link flags
+	     # Also always add -avoid-version. Is this portable
+	     # outside of linux/gcc ?
+	     echo "MFUNC(init, MCnop) { } MFEND" > conftestmmg.cc
+	     mupad_cv_mupad_mmg_ldlags=-avoid-version `MMG_LD=echo $MUPAD_MMG -nog -noc conftestmmg.cc | sed "s/-o conftestmmg.mdm conftestmmg.o //; s,-L *$MUPADdir/$MUPAD_ARCH/lib,,"` ||\
+	       AC_MSG_ERROR([Not found.
+Please check the installation of MuPAD or override with
+./configure MUPAD_MMG_LDFLAGS=...])
+	   fi
+        ])
+	MUPAD_MMG_LDFLAGS=$mupad_cv_mupad_mmg_ldlags
+	AC_SUBST([MUPAD_MMG_LDFLAGS])
 
 	# MUPADpkgmdmdir
-	AC_CACHE_CHECK(for MuPAD dynamic modules package installation directory,
-	  MUPADpkgmdmdir,
-	  test -n "$MUPADpkgmdmdir" ||\
-	    MUPADpkgmdmdir=$MUPADpkgdir/modules/$MUPAD_ARCH)
-	AC_SUBST(MUPADpkgmdmdir)
+	AC_CACHE_CHECK([for MuPAD dynamic modules package installation directory],
+	  [mupad_cv_mupadpkgmdmdir],
+	  [mupad_cv_mupadpkgmdmdir=${MUPADpkgmdmdir="$MUPADpkgdir/modules/$MUPAD_ARCH"}
+	])
+	MUPADpkgmdmdir=$mupad_cv_mupadpkgmdmdir
+	AC_SUBST([MUPADpkgmdmdir])
 
 	# MUPADlocalmdmdir
-	AC_CACHE_CHECK(for MuPAD dynamic modules local installation directory,
-	  MUPADlocalmdmdir,
-	  # MUPADlocalmdmdir expansion is delayed to ensure a proper
-	  # definition in Makefiles of subdirectories
-	  test -n "$MUPADlocalmdmdir" ||\
-	    MUPADlocalmdmdir='$(top_builddir)/modules/$(MUPAD_ARCH)/$(MUPAD_VERSION)')
-	AC_SUBST(MUPADlocalmdmdir)
-
-	# Search for mmg include directories, and add them to the include path
-	# Should we define a variable MUPADincludedir instead ?
-	CPPFLAGS="$CPPFLAGS -I $MUPADdir/share/mmg/include/kernel -I $MUPADdir/share/mmg/include/pari"
-	AC_CHECK_HEADER(MDM_base.h,,AC_MSG_ERROR(MuPAD MMG headers not found - please check the installation of MuPAD))
-	INCLUDE="$INCLUDE -I $MUPADdir/share/mmg/include/kernel -I $MUPADdir/share/mmg/include/pari"
-	AC_SUBST(INCLUDE)
-])
-
-AC_SUBST(MUPAD_LIBS)
+	AC_CACHE_CHECK([for MuPAD dynamic modules local installation directory],
+	  [mupad_cv_mupadlocalmdmdir],
+	  [# MUPADlocalmdmdir expansion is delayed to ensure a proper
+	   # definition in Makefiles of subdirectories
+	   mupad_cv_mupadlocalmdmdir=${MUPADlocalmdmdir='$(top_builddir)/modules/$(MUPAD_ARCH)/$(MUPAD_VERSION)'}
+	])
+	MUPADlocalmdmdir=$mupad_cv_mupadlocalmdmdir
+	AC_SUBST([MUPADlocalmdmdir])
+])# AM_PROG_MUPAD_MMG
 
 ##############################################################################
 # AM_PROG_MUPAD_PACKAGE
@@ -187,6 +263,10 @@ AC_DEFUN([AM_PROG_MUPAD_PACKAGE],
 # DVI documentation
 ##############################################################################
 
+# List of the main documented MuPAD libraries contained or extended in
+# this package
+AC_SUBST(MUPAD_LIBS)
+
 AC_ARG_ENABLE(dvi-documentation,
   AC_HELP_STRING([--enable-dvi-documentation],
 		 [Build dvi documentation and test its examples]),
@@ -206,7 +286,7 @@ fi
 
 # LaTeX setup to use MuPAD's style files and fonts
 
-MUPAD_LATEX_ENV='TEXINPUTS=$(top_srcdir):$(top_srcdir)/doc/STYLES//:$$TEXINPUTS MFINPUTS=$$MFINPUTS:$(top_srcdir)/doc/FONTS TFMFONTS=$(top_srcdir)/doc/FONTS:$$TFMFONTS'
+MUPAD_LATEX_ENV='TEXINPUTS=$(top_srcdir):$(top_srcdir)/doc/STYLES//:$$TEXINPUTS MFINPUTS=$$MFINPUTS:$(top_srcdir)/doc/FONTS TFMFONTS=$(top_srcdir)/doc/FONTS:$$TFMFONTS TEXMFCNF=$(srcdir):$$TEXMFCNF'
 AC_SUBST(MUPAD_LATEX_ENV)
 
 ##############################################################################
@@ -302,5 +382,4 @@ AC_ARG_ENABLE(dynamic-modules,
   [], [enable_dynamic_modules=yes])
 AM_CONDITIONAL(DYNAMIC_MODULES, test x$enable_dynamic_modules = xyes)
 
-
-])
+])# AM_PROG_MUPAD_PACKAGE
