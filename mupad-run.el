@@ -91,7 +91,7 @@
   (set sym val)
   (cond ((eq val '("-R" "-U" "EMACS"))
           (setq mupad-help-method 'mupad-help-from-toc-to-buffer))
-	((eq val '("-E" "-U" "EMACS"))
+        ((eq val '("-E" "-U" "EMACS"))
           (setq mupad-help-method 'mupad-help-from-file-to-buffer))))
 
 (defcustom mupad-run-pgm-opt
@@ -313,11 +313,12 @@
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
+(defalias 'run-mupad 'mupad-run)
 (defun mupad-run ()
    (interactive)
    (switch-to-buffer "*MuPAD*")
    (mupad-run-mode))
-(defalias 'run-mupad 'mupad-run)
+;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 (defun mupad-end ()
@@ -404,11 +405,11 @@ Available special keys:
 ; la barre de menu
     (mupad-run-init-menu-bar)  
     (add-hook 'menu-bar-update-hook
-	      '(lambda nil
-		 (when (eq major-mode 'mupad-mode)
-		   (easy-menu-add-item MuPAD-menu-map nil
-				       ["quit"   mupad-run-end]
-				       "Send file to MuPAD..."))))
+              '(lambda nil
+                 (when (eq major-mode 'mupad-mode)
+                   (easy-menu-add-item MuPAD-menu-map nil
+                                       ["quit"   mupad-run-end]
+                                       "Send file to MuPAD..."))))
 ; configuration du mode majeur et évaluation du hook
     (setq major-mode 'mupad-run-mode) 
     (setq mode-name "MuPAD-run")
@@ -419,16 +420,16 @@ Available special keys:
 (defun mupad-run-end () 
   "Kill the first buffer in mupad-run-mode"
   (interactive)
-; kill-process est superflu car il attaché au tampon
   (let ((bfl (buffer-list)))
     (save-excursion
       (while bfl
-	(set-buffer (pop bfl))
-	(when (eq major-mode 'mupad-run-mode)
-	  (kill-buffer (current-buffer))
-	  (sleep-for 0.1)
-	  (setq mupad-run-process nil)
-	  (setq bfl nil))))))
+      (set-buffer (pop bfl))
+      (when (eq major-mode 'mupad-run-mode)
+; kill-process est superflu car il attaché au tampon
+        (kill-buffer (current-buffer))
+        (sleep-for 0.1)
+        (setq mupad-run-process nil)
+        (setq bfl nil))))))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -1102,24 +1103,6 @@ Available special keys:
         (setq brp (= (marker-position mupad-run-todo) brp))
         (set-marker mupad-run-todo (point)))
       (if brp (goto-char mupad-run-todo)))))
-
-(defun mupad-run-call-vcam (str)
-  (let ((muplot (substring str 5)) brp br)
-      (save-excursion (print muplot)
-        (goto-char mupad-run-todo)
-        (setq br (point))
-        (start-process-shell-command "vcam" nil (concat "vcam -xmupad " muplot))
-        (put-text-property br (point) 'face 'mupad-run-face-system)
-        (put-text-property br (point) 'rear-nonsticky t)
-        (put-text-property br (point) 'front-sticky t)
-        (put-text-property br (point) 'read-only t)
-        (if 
-          (= (marker-position mupad-run-todo) 
-             (marker-position mupad-run-edit))
-          (set-marker mupad-run-edit (point)))
-        (setq brp (= (marker-position mupad-run-todo) brp))
-        (set-marker mupad-run-todo (point)))
-      (if brp (goto-char mupad-run-todo))))
 ;;
 ;; 
 ;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -1528,7 +1511,7 @@ Available special keys:
             "/usr/share/lib/MuPAD/emacs/" "/usr/local/lib/MuPAD/"       
             "/usr/local/share/lib/MuPAD/" "/usr/share/lib/MuPAD/"       
             "/usr/local/share/emacs/site-lisp" "/usr/share/emacs/site-lisp")))
-        ;; Locate mupad.el-info:
+;; Locate mupad.el-info:
       (mapcar 
         (lambda (afile) (if (file-exists-p afile) (setq where-it-is afile)))
         (mapcar 
@@ -1537,35 +1520,37 @@ Available special keys:
           (append to-be-tested load-path)))
       (if (and mupad-run-info (file-exists-p mupad-run-info))
         (setq where-it-is mupad-run-info))
-      (if (not (string-equal where-it-is ""))
-	  (progn
-	    ;; We switch to the buffer *MuPAD Help* and erase its content:
-	    (set-buffer (get-buffer-create "*MuPAD Help*"))
-	    (erase-buffer)
-	    (message where-it-is)  ;; tell *Messages* which version is used.
-	    (insert-file where-it-is)
-	    ;; Show the help buffer and tell user how to remove help window:
-	    (mupad-bus-window-manager "*MuPAD Help*" 'mupad-show-help)
-	    (mupad-info-wind-conf)
-	    (select-window wind))
-	;; Tell the user the file was not found:
-        (mupad-bus-window-manager "*MuPAD Help*" 'mupad-beginning-temp)
-        (insert 
-           (concat 
-             "The file mupad.el-info was not found."
-             "You should discover where it is, say in the directory" 
-             "/usr/local/share/emacs/site-lisp and add the line\n"
-             "(setq load-path "
-             "(concat load-path \"/usr/local/share/emacs/istelisp\"))\n"
-             "to your .emacs file (create it if it doesn't already exist)."))
-	(setq fill-column 
-	      (1- (window-width (get-buffer-window "*MuPAD Help*"))))
-	(fill-individual-paragraphs (point-min) (point-max) 'left)
-	;; Remove help window :
-        (setq buffer-read-only t)
-	(mupad-bus-window-manager 
-	 "*MuPAD Help*" 'mupad-remove-help-old-config)
-	(mupad-restore-wind-conf)))
+      (cond 
+        ((not (string-equal where-it-is ""))
+;; We switch to the buffer *MuPAD Help* and erase its content:
+          (set-buffer (get-buffer-create "*MuPAD Help*"))
+          (erase-buffer)
+          (message where-it-is)  ;; tell *Messages* which version is used.
+          (insert-file where-it-is)
+;; Show the help buffer and tell user how to remove help window:
+          (mupad-bus-window-manager "*MuPAD Help*" 'mupad-show-help)
+          (setq buffer-read-only t)
+          (mupad-info-wind-conf)
+          (select-window wind))
+;; Tell the user the file was not found:
+        (t 
+          (mupad-bus-window-manager "*MuPAD Help*" 'mupad-beginning-temp)
+          (insert 
+             (concat 
+               "The file mupad.el-info was not found."
+               "You should discover where it is, say in the directory" 
+               "/usr/local/share/emacs/site-lisp and add the line\n"
+               "(setq load-path "
+               "(concat load-path \"/usr/local/share/emacs/sitelisp\"))\n"
+            "to your .emacs file (create it if it doesn't already exist)."))
+          (setq fill-column 
+            (1- (window-width (get-buffer-window "*MuPAD Help*"))))
+          (fill-individual-paragraphs (point-min) (point-max) 'left)
+;; Remove help window :
+          (setq buffer-read-only t)
+          (mupad-bus-window-manager 
+            "*MuPAD Help*" 'mupad-remove-help-old-config)
+          (mupad-restore-wind-conf))))
     (error (princ "An error occured in mupad-info: ") (princ err) nil)))
 
 (defun mupad-run-customize-group nil
@@ -1585,20 +1570,22 @@ Available special keys:
       (list
         "Send file to MuPAD..."
         ["Silently"  mupad-bus-file t :active (featurep 'mupad)
-	   :help "Send a file to the mupad-process by `read(...):'"]
+         :help "Send a file to the mupad-process by `read(...):'"]
         ["Openly"    mupad-bus-execute-file t :active (featurep 'mupad)
-	   :help "Send a file to the mupad-process by `read(...);'"])
+         :help "Send a file to the mupad-process by `read(...);'"])
       "---------------------"
-      ["Manual" mupad-start-manual :active t :key-sequence nil :help "Open the hytex manual"]
+      ["Manual" mupad-start-manual :active t :key-sequence nil
+        :help "Open the hytex manual"]
       ["Info on this mode" mupad-run-show-mupad-info :active t 
         :key-sequence nil]
       "---------------------"
       ["help around cursor" mupad-help-emacs-search :active t]
-      ["help on ..."        mupad-help-emacs-ask :active t :help "Text help on a mupad object"]
+      ["help on ..."        mupad-help-emacs-ask :active t 
+        :help "Text help on a mupad object"]
       "---------------------"
       ["Restore windows" mupad-restore-wind-conf
         :active (not (null mupad-registers-list)
-	       :help "Go to previous window configuration")]
+        :help "Go to previous window configuration")]
       "----------------------------"
       (list 
         "Environment"
@@ -1606,7 +1593,8 @@ Available special keys:
           (processp mupad-run-process)]
         ["Adapt TEXTWIDTH" mupad-bus-adapt-textwidth :active 
           (processp mupad-run-process)
-	 :help "Set the textwidth of the mupad process to the actual width of your window"]
+          :help 
+"Set the textwidth of the mupad process to the actual width of your window"]
         "--------------------"
         ["Customize" mupad-run-customize-group :active t 
           :key-sequence nil])))))
@@ -1621,7 +1609,6 @@ Available special keys:
       mupad-run-mode-map
       "Menu-bar item used under mupad-run-mode"
       (mupad-run-menu-bar))))
-
 ;;
 ;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 ;;=-= FIN du fichier mupad-run.el =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
