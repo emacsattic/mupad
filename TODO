@@ -1,12 +1,14 @@
+Turn /tmp/debug* to read-only in the debugger
+
 ------------------------------------------------------------------------------
-Take care of tar files in the debugger
+Take care of tar files in the debugger.
 
 ------------------------------------------------------------------------------
 Allow for looking up ascii documentation in several directories
 
 ------------------------------------------------------------------------------
 Should mupad-run get dynamically the version, proper flags and the path
-to the help ? not quite sure
+to the help ? not quite sure.
 
 ------------------------------------------------------------------------------
 How to avoid the recentering ? That is, except at the very beginning,
