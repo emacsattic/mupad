@@ -192,7 +192,8 @@ See `mupad-describe-this-proc' and `mupad-user-mail-address'."
      (["name" special-head 5 ";"])
      (["option" special-head 7 ";"])
      ["begin"    strong mupad-indent-level]
-     ["end_proc" end])
+     ["end_proc" end]
+     ["end" end])
     (["category" head mupad-domain-indent]
      (["category" special-head 10 ";"])
      (["axiom" special-head 10 ";"])
@@ -203,10 +204,12 @@ See `mupad-describe-this-proc' and `mupad-user-mail-address'."
      (["category" special-head 10 ";"])
      (["axiom" special-head 10 ";"])
      ["begin" strong mupad-domain-indent] ; should be the same as above !!
-     ["end_domain" end])
+     ["end_domain" end]
+     ["end" end])
     (["axiom" head mupad-domain-indent]
      ["begin" strong mupad-domain-indent] ; should be the same as above !!
-     ["end_axiom" end])
+     ["end_axiom" end]
+     ["end" end])
     (["repeat"     head 7]
      ["until"      strong 6]
      ["end_repeat" end]
