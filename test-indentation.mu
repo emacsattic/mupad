@@ -1,5 +1,17 @@
+// $Id$
+// test-indentation.mu --- test file for the automatic indentation
+// Copyright (C) 2002, François Maltey, Nicolas Thiéry, Olivier Ramaré
+// Maintainer: Olivier Ramare <ramare@agat.univ-lille1.fr>
+
+domain bla
+  inherits zut;
+  category ble::bli;
+    
+  bla := 1;
+end_domain;
+
 category bla
-  category truc;
+category truc;
   category tric;
   axiom tric;
   axiom bla;
@@ -107,3 +119,9 @@ proc()
 begin
   bla()
 end_proc:
+
+// Local Variables:
+// mode: mupad
+// mupad-domain-indent: 2
+// mupad-indent-level: 2
+// End:
