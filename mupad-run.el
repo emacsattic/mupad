@@ -908,10 +908,13 @@ Available special keys:
   (interactive)
   (cond 
     ((>= (point) (marker-position mupad-run-edit)) (insert "\n"))
-    ((memq (get-text-property (point) 'face)
-      '(mupad-run-face-prompt       mupad-run-face-prompt-flag
-        mupad-run-face-local-prompt mupad-run-face-prompt-flag
-        mupad-run-face-last-input   mupad-run-face-result-last-input))
+    ((or 
+        (memq (get-text-property (point) 'face)
+          '(mupad-run-face-local-prompt mupad-run-face-prompt-flag
+            mupad-run-face-last-input   mupad-run-face-result-last-input))
+        (and 
+          (eq (get-text-property (point) 'face) 'mupad-run-face-prompt)
+          (eq (char-after) ?\n)))
       (mupad-run-copy-cmd))
     (t (mupad-run-insert-comment))))
 ;;
@@ -923,10 +926,13 @@ Available special keys:
     ((>= (point) (marker-position mupad-run-edit))
       (mupad-run-from-edit-to-todo)
       (if (eq mupad-run-state 'wait-input) (mupad-run-from-todo-to-output)))
-    ((memq (get-text-property (point) 'face)
-      '(mupad-run-face-prompt       mupad-run-face-prompt-flag
-        mupad-run-face-local-prompt mupad-run-face-local-prompt-flag
-        mupad-run-face-last-input   mupad-run-face-result-last-input))
+    ((or 
+      (memq (get-text-property (point) 'face)
+        '(mupad-run-face-local-prompt mupad-run-face-local-prompt-flag
+          mupad-run-face-last-input   mupad-run-face-result-last-input))
+        (and 
+          (eq (get-text-property (point) 'face) 'mupad-run-face-prompt)
+          (eq (char-after) ?\n)))
       (mupad-run-copy-cmd))
     (t (mupad-run-insert-comment))))
 
@@ -1171,9 +1177,11 @@ Available special keys:
       (when (string= (substring br -5) "-flag")
         (put-text-property pt (1+ pt)
           'face (intern (substring br 0 (- (length br) 5))))
+        (goto-char pt)
         (mupad-run-left)
         (put-text-property (point) (1+ (point))
           'hide (get-text-property pt 'hide))
+        (put-text-property pt (1+ pt) 'hide ())
         (setq br (symbol-name (get-text-property (point) 'face)))
         (put-text-property (point) (1+ (point)) 
           'face (intern (concat br "-flag")))))))
@@ -1322,11 +1330,12 @@ Available special keys:
        (mupad-run-insert-comment))))) 
 
 (defun mupad-run-insert-comment-br (pt str)  
+  (goto-char pt)
   (cond 
     ((= pt (marker-position mupad-run-last-prompt))
      (set-marker mupad-run-last-prompt (1+ pt))
      (insert "///---\n")
-     (set-marker mupad-run-last-prompt (1- pt)))
+     (set-marker mupad-run-last-prompt (1- mupad-run-last-prompt)))
     (t (insert "///---\n")))
   (backward-char)
   (put-text-property (- (point) 6) (1+ (point)) 'rear-nonsticky t)
