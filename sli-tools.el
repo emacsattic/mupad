@@ -72,6 +72,7 @@
 (defcustom sli-handles-sexp nil "A true value advises forward/backward/scan-sexp/s"
 :type 'boolean :group 'sli)
 
+;; These values are modified in sli-tools:
 (defvar sli-verbose nil "A true value gives (debugging) infos")
 (defvar sli-prop-verbose nil "A true value gives (debugging) infos on text properties")
 
@@ -269,6 +270,8 @@ They *should be* soft or strong keys.")
 (defvar sli-overlay-end (make-overlay (point-min) (point-min)))
 (overlay-put sli-overlay-beg 'face 'show-paren-match-face)
 (overlay-put sli-overlay-end 'face 'show-paren-match-face)
+(overlay-put sli-overlay-beg 'priority 0)
+(overlay-put sli-overlay-end 'priority 0)
 (defvar sli-prop-do-not-recompute-time 10
 "Time span in milliseconds under which it is not necessary to recompute
 text properties alloted by sli-tools.")
@@ -1602,14 +1605,9 @@ Answer POINT of where to go."
   (interactive)
   (if (bound-and-true-p sli-handles-sexp) (sli-backward-sexp arg) ad-do-it))
 
-(defadvice scan-sexps (around sli-handles-scan-sexps (pt count))
-  (interactive)
-  (if (bound-and-true-p sli-handles-sexp) (sli-scan-sexps pt count) ad-do-it))
-
 (require 'advice)
 (ad-activate 'forward-sexp  'around)
 (ad-activate 'backward-sexp 'around)
-(ad-activate 'scan-sexps    'around)
 
 ;;;----------------------------------------------------------------------------
 ;;;--- end of forward/backward/scan-sexp/s
