@@ -1,7 +1,7 @@
 ------------------------------------------------------------------------------
 mupad-run-mode got confused if undo was called enough times to revert
 the insertion of the last mupad output (the markers mupad-run-todo and
-such probably become incoherent).
+such probably became incoherent).
 
 Fix: the undo list is now flushed after each command is inserted in
 the todo list, and after each insertion of a prompt. See the comments
