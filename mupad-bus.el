@@ -88,18 +88,18 @@ of \\([a-zA-Z_0-9]\\|::\\). Returns point."
 	  ))
     (error (princ err) nil)))
 
-(defun mupad-bus-switch-to-mupad nil
-  (mupad-bus-window-manager "*MuPAD*" 'mupad-beginning)
+(defun mupad-bus-switch-to-mupad (&optional buff-to-select)
+  (mupad-bus-window-manager (or buff-to-select "*MuPAD*") 'mupad-beginning)
   ; in case of a new process, start mode and adapt textwidth
     (unless mupad-run-process
       (mupad-run-mode)
       (setq mupad-bus-my-mupad-run-process mupad-run-process)
       (mupad-bus-adapt-textwidth)))
 
-(defun mupad-bus-start nil
+(defun mupad-bus-start (&optional buff-to-select)
   (interactive)
   (condition-case err
-      (mupad-bus-switch-to-mupad)
+      (mupad-bus-switch-to-mupad buff-to-select)
     (error (princ "Could not start MuPAD: ")(princ err) nil)))
 
 (defun mupad-bus-region (beg end)
@@ -225,66 +225,26 @@ The variable OPTION is
   -- mupad-remove-help-now-old-config to remove help-window without
                                touching to the other windows.
   -- mupad-show-help.
-  -- gud-start-or-cont.
-  -- gud-end.
   -- nil when it is the end of a call.
 The variable MY-BUFFER-NAME is one of
-\"*MuPAD*\"  \"*MuPAD Help*\" or a file for the debugger. "
+\"*MuPAD*\"  \"*MuPAD Help*\". "
 
-  (cond ((and (string= my-buffer-name "*MuPAD*")
+  (cond ((and (compare-strings my-buffer-name "*MuPAD" 1 6 1 6)
               (eq option 'mupad-beginning)
-              (get-buffer-window "*MuPAD*"))
+              (get-buffer-window my-buffer-name))
          ;; We go to *MuPAD* and a window already exists with this buffer.
-         (select-window (get-buffer-window "*MuPAD*")))
+         (select-window (get-buffer-window my-buffer-name)))
        
-        ((and (string= my-buffer-name "*MuPAD*")
+        ((and (compare-strings my-buffer-name "*MuPAD" 1 6 1 6)
               (eq option 'mupad-beginning)
-              (not (get-buffer-window "*MuPAD*")))
+              (not (get-buffer-window my-buffer-name)))
          ;; We go to *MuPAD* and a window doesn't exist with this buffer.
-         (mupad-bus-select-other-window "*MuPAD*"))
+         (mupad-bus-select-other-window my-buffer-name))
 
-        ((and (string= my-buffer-name "*MuPAD*")
+        ((and (compare-strings my-buffer-name "*MuPAD" 1 6 1 6)
               (not option)
-              (get-buffer "*MuPAD*"))
-         ;; We want to exit from *MuPAD*.
-         (if (> (count-windows) 1)
-             (delete-windows-on "*MuPAD*")
-             ;; Else only one window.
-             (if (string= (buffer-name (window-buffer)) "*MuPAD*")
-                 ;; This only window displays "*MuPAD*"
-                 (let ((next-buffer (mupad-possible-file-name)))
-                      (if next-buffer (switch-to-buffer next-buffer)
-                          ;; Else, don't know what to do !
-                          (mupad-restore-wind-conf)
-                          ))))
-         (with-current-buffer (get-buffer "*MuPAD*")
-           (let ((inhibit-read-only t))
-             (remove-text-properties (point-min) (point-max) '(read-only nil))))
-         (kill-buffer "*MuPAD*"))
-
-        ((eq option 'gud-start-or-cont)
-	 ;; We are in gud stuff
-	 (cond
-	  ;; Either the file my-buffer-name exists and is displayed:
-	  ((and (get-buffer my-buffer-name)
-		(mupad-bus-buffer-visiblep my-buffer-name))
-	   nil)
-	  (t
-	   (save-excursion (mupad-bus-select-other-window my-buffer-name)))))
-	 
-        ((eq option 'gud-end)
-	 ;; We are in gud stuff
-	 (cond
-	  ;; Either the file my-buffer-name exists and is displayed:
-	  ((and (get-buffer my-buffer-name)
-		(mupad-bus-buffer-visiblep my-buffer-name))
-	   nil)
-	  (t
-	   (save-excursion (mupad-bus-select-window my-buffer-name)))))
-	 
-        ((and (eq option 'gud-start)
               (get-buffer my-buffer-name))
-         ;; We want to exit from debugger.
+         ;; We want to exit from *MuPAD*.
          (if (> (count-windows) 1)
              (delete-windows-on my-buffer-name)
              ;; Else only one window.
@@ -300,12 +260,11 @@ The variable MY-BUFFER-NAME is one of
              (remove-text-properties (point-min) (point-max) '(read-only nil))))
          (kill-buffer my-buffer-name))
 
-	((and (get-buffer my-buffer-name)
+	((and (get-buffer "*MuPAD*")
               (string= my-buffer-name "*MuPAD Help*")
               (eq option 'mupad-remove-help-now))
          ;; A buffer displaying "*MuPAD Help*" exists.
          ;; We want to remove the message.
-	 ;(let ((inhibit-read-only t)) (kill-buffer my-buffer-name))
          (let ((buffer-to-select ""))
            (save-excursion
            (let ((abufferlist (buffer-list)))
