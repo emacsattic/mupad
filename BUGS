@@ -69,6 +69,7 @@ place.
 P and D are non-functionnal under the debugger
 
 ------------------------------------------------------------------------------
+(fixed: 3.2.3 15/12/2003)
 Le commentaire a l'air de poser problème dans mupad-run
 Max :=
 proc(a, b) /* comment: maximum of a and b */
