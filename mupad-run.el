@@ -290,7 +290,7 @@
     (lambda (buf)
       (set-buffer buf)
       (when (eq major-mode 'mupad-run-mode)
-        (switch-to-buffer buf) (kill-buffer buf)))
+        (let ((inhibit-read-only t))(switch-to-buffer buf) (kill-buffer buf))))
     (buffer-list)))
 
 (ad-activate 'save-buffers-kill-emacs)
@@ -481,7 +481,7 @@ Available special keys:
 (defun mupad-run-end () 
   "Kill the first buffer in mupad-run-mode"
   (interactive)
-  (let ((bfl (buffer-list)))
+  (let ((bfl (buffer-list)) (inhibit-read-only t))
     (save-excursion
       (while bfl
       (set-buffer (car bfl))
@@ -499,7 +499,7 @@ Available special keys:
   (interactive) 
   (let 
     ( (br (buffer-name (current-buffer))) (brc mupad-run-hist-commands) 
-      br1 (mupad-run-save-except 'reset))
+      br1 (mupad-run-save-except 'reset) (inhibit-read-only t))
     (mupad-run-store-line (buffer-substring mupad-run-edit (point-max)))
     (mupad-run-save)
     (setq br1 mupad-run-last-session)
@@ -532,8 +532,8 @@ Available special keys:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 (defun mupad-run-save-br ()
-  (let (brn br br1 br2 (inhibit-read-only t) (brb (current-buffer))
-        brp1 brp2 brp3)
+  (let (brn br br1 br2 (brb (current-buffer)) brp1 brp2 brp3 
+    (inhibit-read-only t))
     (setq brp1 (marker-position mupad-run-todo))
     (setq brp2 (marker-position mupad-run-edit))
     (if (marker-position mupad-run-last-prompt)
@@ -586,7 +586,7 @@ Available special keys:
 (defun mupad-run-save ()
   "Saves the MuPAD commands"
   (interactive)
-  (let ((brb (current-buffer)) brn) 
+  (let ((brb (current-buffer)) brn)
 ; mupad-run-save-except 'reset 'end ou nil (lors des sauvegardes 'save)
 ; 'kill pour ne rien faire 
     (cond 
@@ -602,15 +602,15 @@ Available special keys:
            (prog2 (set-buffer brn) (buffer-string) (set-buffer brb)))
          (kill-buffer brn))
       ((eq  mupad-run-save-except 'end)
-         (when          
+         (when 
            (not 
              (yes-or-no-p 
                "Mupad-run buffer not saved.  Quit without save ? "))
           (setq brn (mupad-run-save-br))
           (unwind-protect (save-buffer) 
             (progn (kill-buffer brn) (set-buffer brb)))
-          (kill-buffer brn)
-          (set-buffer brb))))))
+          (kill-buffer brn))
+          (set-buffer brb)))))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -620,12 +620,10 @@ Available special keys:
     (when (not mupad-run-save-except)
       (setq mupad-run-save-except 'end))
     (mupad-run-save)
-    (when 
-;      (and 
-        (processp mupad-run-process) 
- ;       (eq (process-status mupad-run-process) 'run))
-      (delete-process mupad-run-process))
-    (setq mupad-run-process nil))
+    (let ((inhibit-read-only t))
+      (when (processp mupad-run-process) (delete-process mupad-run-process))
+      (setq mupad-run-process nil)
+      (set-text-properties (point-min) (point-max) nil)))
   t)
 ;; 
 ;; 
@@ -752,11 +750,7 @@ Available special keys:
     (mupad-run-from-todo-to-output))
 ; raccourcissement de la chaîne à traiter à la fin de la boucle 
   (setq mupad-run-output (substring mupad-run-output output-index))
-  (when (eq brc brb)
-    (setq brp (point))
-    (goto-char (point-max))
-    (recenter -4)
-    (goto-char brp))
+  (when (equal brb brc) (recenter -4))
   (set-buffer brc)))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1704,7 +1698,8 @@ Available special keys:
           (put-text-property brb (1+ brb) 'mupad-run-char-prop 
             (intern (concat br "-flag")))
           (mupad-run-put-face brb (1+ brb) (intern (concat br "-flag"))))
-        (delete-region bra brb)))))
+        (delete-region bra brb)
+        (recenter)))))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -1722,7 +1717,8 @@ Available special keys:
           'mupad-run-char-prop 
           (intern (substring br2 0 (- (length br2) 5))))
         (mupad-run-put-face (point) (1+ (point))
-          (intern (substring br2 0 (- (length br2) 5))))))))
+          (intern (substring br2 0 (- (length br2) 5)))))
+      (recenter))))
 
 (defun mupad-run-move-flag-up (pt)
   (let ( (inhibit-read-only t) 
@@ -1793,8 +1789,7 @@ Available special keys:
           (forward-char 1))
         ((memq bra
            '(mupad-run-face-local-prompt      mupad-run-face-prompt
-             mupad-run-face-local-prompt-flag 
-             mupad-run-face-prompt-flag))
+             mupad-run-face-local-prompt-flag mupad-run-face-prompt-flag))
            (delete-region (point) brb))
         ((eq bra 'mupad-run-face-last-input) 
             (goto-char brb))
