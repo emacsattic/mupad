@@ -72,7 +72,7 @@
 (defvar mupad-help-method 'mupad-help-from-toc-to-buffer) ; pour l'option -R 
 ; (defvar mupad-help-method 'mupad-help-from-file-to-buffer) ; pour l'option -E
 
-(defun mupad-set-options (sym val)
+(defun mupad-run-set-options (sym val)
   (set sym val)
   (cond ((eq val '("-R" "-U" "EMACS"))
           (setq mupad-help-method 'mupad-help-from-toc-to-buffer))
@@ -84,12 +84,39 @@
 "Options given to the mupad process"
 :type '(choice (const ("-R" "-U" "EMACS")) (const ("-E" "-U" "EMACS")))
 :initialize 'custom-initialize-default
-:set 'mupad-set-options
+:set 'mupad-run-set-options
 :group 'mupad-run)
 
 (defcustom mupad-run-history-max 30
 "Nombre de commandes dans l'historique"
 :type 'integer :group 'mupad-run)
+
+(defun mupad-run-set-arrow-behaviour (symbol val)
+  "See `mupad-run-arrow-behaviour'"
+  (setq mupad-run-arrow-behaviour val)
+  (if (string= val "Usual")
+      (progn
+	(define-key mupad-run-mode-map [C-up]   (function mupad-run-previous-history))
+	(define-key mupad-run-mode-map [C-down] (function mupad-run-next-history))
+	(define-key mupad-run-mode-map [up]     (function forward-char))
+	(define-key mupad-run-mode-map [down]   (function backward-char)))
+    (define-key mupad-run-mode-map [up]   (function mupad-run-previous-history))
+    (define-key mupad-run-mode-map [down] (function mupad-run-next-history))
+    (define-key mupad-run-mode-map [C-up]     (function forward-char))
+    (define-key mupad-run-mode-map [C-down]   (function backward-char))))
+
+(defcustom mupad-run-arrow-behaviour
+"Usual"
+"Selects the behaviour of the arrow up and down:
+the usual behaviour corresponds to up and down
+while C-up and C-down correspond to history.
+When in Bash-Style, this behaviour in exchanbed."
+:type '(choice (const "Usual") (const "Bash-Style"))
+:initialize 'custom-initialize-default
+					;do not use mupad-run-set-arrow-behaviour
+					;initially since the map is not yet defined !
+:set 'mupad-run-set-arrow-behaviour
+:group 'mupad-run)
 
 (defvar mupad-run-system-trace 3) 
 ;; 0 - n'affiche ni les commandes envoyées au système ni les résultats
@@ -330,6 +357,8 @@ Available special keys:
     (set-marker mupad-run-edit (point))
     (setq mupad-run-todo (make-marker))
     (set-marker mupad-run-todo (point))
+; le fonctionnement des fleches
+    (mupad-run-set-arrow-behaviour nil mupad-run-arrow-behaviour)
 ; autres markeurs pour la complétion et les messages d'erreur
     (setq mupad-run-comp-edit (make-marker))
     (set-marker mupad-run-comp-edit nil)
@@ -346,7 +375,7 @@ Available special keys:
         (set-face-background (car a-face) (car (cddr a-face))))
       mupad-run-face)
 ; gestion de l'historique 
-    (setq mupad-run-hist-commands ())
+    (setq mupad-run-hist-commands '())
     (setq mupad-run-hist-index -1)
 ; lancement du programme 
     (setq mupad-run-output "")
