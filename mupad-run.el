@@ -516,12 +516,12 @@ Available special keys:
   (when (eq major-mode 'mupad-run-mode) 
     (switch-to-buffer (current-buffer))
     (when
-	(and 
-	 mupad-run-question-before-kill
-	 (not
-	  (yes-or-no-p "Mupad-run buffer not saved. Quit anyway (else save it first)? ")))
+      (and 
+        mupad-run-question-before-kill
+        (not (yes-or-no-p 
+          "Mupad-run buffer not saved.  Quit without save ? ")))
       (mupad-run-save))
-    (if 
+    (when 
       (and 
         (processp mupad-run-process) 
         (eq (process-status mupad-run-process) 'run))
@@ -1137,15 +1137,29 @@ Available special keys:
 ;;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 ;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 ;;
-(defun mupad-run-get-next-command () 
+(defun mupad-run-get-next-command (str) 
   (if (<= mupad-run-hist-index 0)   
     (error "end of history list")
     (setq mupad-run-hist-index (1- mupad-run-hist-index))
     (car (nthcdr mupad-run-hist-index mupad-run-hist-commands))))
+;(defun mupad-run-get-next-command (str) 
+;  (while (and (> mupad-run-hist-index 0) br1)
+;    (setq mupad-run-hist-index (1- mupad-run-hist-index))
+;    (setq br2 (nthcdr mupad-run-hist-index mupad-run-hist-commands))
+;    (when 
+;      (string= 
+;        str 
+;        (substring (car br2) 0 (min (length str) (length (car br2)))))
+;      (setq br1 nil)))
+;    (when br1 
+;      (car (nthcdr mupad-run-hist-index mupad-run-hist-commands))));
+;
+;    (error "end of history list")
+;
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
-(defun mupad-run-get-previous-command () 
+(defun mupad-run-get-previous-command (str) 
   (if (>= mupad-run-hist-index (1- (length mupad-run-hist-commands)))
     (error "end of history list")
     (setq mupad-run-hist-index (1+ mupad-run-hist-index))
@@ -1181,7 +1195,7 @@ Available special keys:
   (when (>= (point) (marker-position mupad-run-edit))
     (let
       ((br (buffer-substring mupad-run-edit (point-max)))
-       (br1 (mupad-run-get-previous-command)))
+       (br1 (mupad-run-get-previous-command "")))
       (delete-region mupad-run-edit (point-max))
      (goto-char mupad-run-edit)
      (insert br1)
@@ -1194,7 +1208,7 @@ Available special keys:
   (when (>= (point) (marker-position mupad-run-edit))
     (let 
       ((br (buffer-substring mupad-run-edit (point-max)))
-       (br1 (mupad-run-get-next-command)))
+       (br1 (mupad-run-get-next-command "")))
       (delete-region mupad-run-edit (point-max))
       (goto-char mupad-run-edit)
       (insert br1)
@@ -1530,9 +1544,9 @@ Available special keys:
         (to-be-tested 
           (list 
             "/usr/local/lib/MuPAD/emacs/" "/usr/local/share/lib/MuPAD/emacs/" 
+            "/usr/local/share/emacs/site-lisp/" "/usr/share/lib/MuPAD/"
             "/usr/share/lib/MuPAD/emacs/" "/usr/local/lib/MuPAD/"       
-            "/usr/local/share/lib/MuPAD/" "/usr/share/lib/MuPAD/"       
-            "/usr/local/share/emacs/site-lisp/" "/usr/share/emacs/site-lisp/")))
+            "/usr/local/share/lib/MuPAD/" "/usr/share/emacs/site-lisp/")))
 ;; Locate mupad.el-info:
       (mapcar 
         (lambda (afile) (if (file-exists-p afile) (setq where-it-is afile)))
@@ -1616,10 +1630,10 @@ Available special keys:
         ["Adapt TEXTWIDTH" mupad-bus-adapt-textwidth :active 
           (processp mupad-run-process)
           :help 
-	  "Set the textwidth of the mupad process to the actual width of your window"]
-        ["PrettyPrint switch" mupad-bus-prettyprint-switch :active (processp mupad-bus-my-mupad-run-process)
-         :help "Toggle the value of PRETTYPRINT"]
-	"--------------------"
+"Set the textwidth of the mupad process to the actual width of your window"]
+        ["PrettyPrint switch" mupad-bus-prettyprint-switch :active 
+          (processp mupad-run-process) :help "Toggle the value of PRETTYPRINT"]
+        "--------------------"
         ["Customize" mupad-run-customize-group :active t 
           :key-sequence nil])))))
 
