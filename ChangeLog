@@ -1,0 +1,941 @@
+2003-09-21  ramare  <ramare@eole>
+
+	* mupad.el:
+	( and ) are now declared also as constructors.
+
+	* sli-tools.el:
+	Comments added concerning constructors.
+
+2003-09-19  Nicolas M. Thiéry  <nthiery@users.sf.net>
+
+	* mupad.el-info: Added shortcuts suggestion from Jóhann.
+
+	* test-indentation.mu: Added test case / bug report.
+
+2003-09-11  ramare  <ramare@eole>
+
+	* mupad.el:
+	Indent after special-head inherits/category/domain modified.
+
+	* sli-tools.el:
+	Better handling of indentation with sli-special-head-offset-alist created.
+	More comments and explanations added.
+	sli-is-a-separator-fn-default surrounded by save-excursion and
+	save-match-data as should be.
+
+2003-09-05  Nicolas M. Thiéry  <nthiery@users.sf.net>
+
+	* TODO: *** empty log message ***
+
+	* mupad-run.el: Patch de Jóhann:
+
+	J'ai ici une patch pour mupad-run.el, J'ai change les clés par
+	defaut.  J'ai pris F5 et F6 parce que F5 - F9 sont reservé.  Et j'ai
+	ajuté M-p et M-n pour l'historique.
+
+	Donc, pour avoir la même fonction, je recommend ca dans .emacs
+
+	(add-hook 'mupad-run-mode-hook (lambda ()
+	           (local-set-key [f5] 'mupad-help-emacs-search)
+	           (local-set-key [f6] 'mupad-help-emacs-ask)))
+
+2003-09-02  Nicolas M. Thiéry  <nthiery@users.sf.net>
+
+	* test-indentation.mu: Update bug status.
+
+2003-09-02  ramare  <ramare@eole>
+
+	* mupad.el:
+	repeat followed by indent mupad-indent-level.
+	() is now a constructor.
+
+	* sli-tools.el:
+	Trailing spaces are removed after a (electric) newline.
+
+2003-09-02  Nicolas M. Thiéry  <nthiery@users.sf.net>
+
+	* test-indentation.mu: Added bug.
+
+2003-09-01  Nicolas M. Thiéry  <nthiery@users.sf.net>
+
+	* test-indentation.mu: Update of the bug status after Olivier's fixes.
+
+2003-08-29  ramare  <ramare@eole>
+
+	* sli-tools.el:
+	Forgot to shift line when inserting \n ... Done!
+
+2003-08-28  ramare  <ramare@eole>
+
+	* sli-tools.el:
+	Comments are handled: sli-tell-indent-within-long-comment.
+	Variables sli-block-comment-middle-offset and sli-block-comment-end-offset.
+	Bug removed: too many quotes in front of 'block-comment-start/end.
+	block-comment-start/end were sometimes considered regexp, sometimes
+	strings, there are now strictly strings.
+	Keys can now be of type CONSTRUCTOR.
+	SPECIAL-HEADs can be ended by several separators.
+	Older syntax is still supported though.
+	FIXED-KEYs have a modified definition.
+	A small bug in sli-show-sexp has been removed.
+	Todos: (1) now that block-comments are handled at the very beginning
+	           some part of the code is redundant.
+	       (2) sli-tell-indent-within-long-comment should be more
+	           clever with text-properties for indent-region.
+	       (3) M-q should reformat comments with an adaptative option.
+
+	* mupad.el:
+	Refined mupad-structures.
+	Added mupad-block-comment-middle-offset and mupad-block-comment-end-offset.
+
+	* mupad-cpl.el:
+	Added private, parallel, inherits
+
+2003-08-28  Nicolas M. Thiéry  <nthiery@users.sf.net>
+
+	* mupad-run.el: mupad-run-debug-message is more robust now.
+	Partial support for displaying variable lists in the debugger.
+
+	* test-indentation.mu: New test.
+	Updated bug status.
+
+	* BUGS: *** empty log message ***
+
+2003-08-28  ramare  <ramare@eole>
+
+	* mupad.el:
+	"end" added as possible ending of proc, domain and lots of others.
+
+	* sli-tools.el:
+	Errors in handling block-comment in sli-find-matching-keys
+	and in sli-get-first-non-end-keys. Corrected.
+
+2003-08-19  ramare  <ramare@eole>
+
+	* sli-tools.el:
+	A check command not encapsulated inside a (when sli-verbose ...) ... Removed.
+
+2003-08-18  ramare  <ramare@eole>
+
+	* sli-tools.el:
+	sli-verbose back to nil!
+
+	* sli-tools.el:
+	sli-prop-renew doesn't change (buffer-modified-p) anymore
+
+2003-07-31  ramare  <ramare@eole>
+
+	* sli-tools.el:
+	Less verbose !
+
+	* sli-tools.el:
+	-- sli-case-fold to mix uper/lowercase in keywords if required.
+	   Lots of modifications to take care of that.
+	-- sli-select-end-of-overlay: the overlay starts at the beginning
+	   of the keyword and ends where this (indirect) function tells.
+	-- sli-overlay-beg/end are defined within sli-tools to ensure
+	   the proper buffer has been set.
+	-- C-u f8 to force recomputation of overlays.
+	-- Default for sli-safe-place-regexp and better behaviour of
+	   sli-get-safe-forward/backward-place
+	-- Proper behaviour if sli-separators is nil.
+	-- Better syntactic support of keywords.
+	-- Comments.
+
+2003-07-22  ramare  <ramare@eole>
+
+	* sli-tools.el:
+	Added comments.
+
+2003-07-07  ramare  <ramare@eole>
+
+	* sli-tools.el:
+	sli-backward-to-indentation was bugged when tabs were being
+	used (serious) or when point was at beginning of buffer (laugh).
+
+2003-07-06  ramare  <ramare@eole>
+
+	* sli-tools.el:
+	sli-scan-sexps was not called for: only sli-forward-sexp
+	and sli-backward-sexp are required. De-advising scan-sexps
+	gave show-paren back.
+
+2003-07-01  Nicolas M. Thiéry  <nthiery@users.sf.net>
+
+	* Makefile.am: Added bootstrap to the distribution.
+
+	* mupad-run.el:
+	Added new customization variable mupad-run-completion-style.
+	If this is set to inline, then the completion list is displayed
+	directly inside the buffer, using a variation over the standard
+	emacs function momentary-string-display.
+
+	* BUGS: *** empty log message ***
+
+2003-05-31  Nicolas M. Thiéry  <nthiery@users.sf.net>
+
+	* BUGS: *** empty log message ***
+
+	* mupad-run.el, BUGS:
+	mupad-run-mode got confused if undo was called enough times to revert
+	the insertion of the last mupad output (the markers mupad-run-todo and
+	such probably become incoherent).
+
+	Fix: the undo list is now flushed after each command is inserted in
+	the todo list, and after each insertion of a prompt. See the comments
+	in the code. Any other places where we should do that?
+
+2003-05-27  Nicolas M. Thiéry  <nthiery@users.sf.net>
+
+	* mupad-run.el: Fixed default value for mupad-run-recenter-behaviour.
+
+	* mupad-help.el:
+	Fixed removal of extra indentation in mupad-help-select-example (in
+	lines with large indentation, the extra indentation was removed
+	several times).
+
+2003-05-22  Nicolas M. Thiéry  <nthiery@users.sf.net>
+
+	* site-start.d/mupacs.el.in:
+	Configure mupad-run-info "@lispdir@/mupad-run.el-info"
+
+	* mupad-run.el: Renaming:
+	 - mupad-run-pgm -> mupad-run-commandline.
+	 - mupad-run-ask-pgm-opt -> mupad-run-commandline-ask
+	 - mupad-run-recenter-aggressive -> mupad-run-recenter-behaviour
+	   It's now a radio button, with choice between nil and aggressive
+
+	Finalization of the recentering in aggressive mode to my own taste:
+	 - Francois: please check that the recentering in the default mode has
+	   not changed, and feel free to modify it to your taste.
+	 - Note: mupad-run-recenter is now supposed to be called after the point
+	   has been moved to its final position.
+
+2003-05-20  Nicolas M. Thiéry  <nthiery@users.sf.net>
+
+	* test-indentation.mu: Added a test for a currently buggy indentation.
+
+2003-05-14  maltey  <maltey@eole>
+
+	* mupad-run.el: maj recenter et mupad-run-pgm
+
+2003-05-14  Nicolas M. Thiéry  <nthiery@users.sf.net>
+
+	* mupad-run.el:
+	Rajout d'une variable mupad-run-recenter-on-history Recentrage
+	conditionnel lors des recherches dans l'historique, avec gestion plus
+	correcte du recentrage pour les commandes avec beaucoup de lignes
+	(plus que la taille de l'écran)
+
+	Rajout d'une variable mupad-run-recenter-bottom-margin
+
+	J'ai aussi remis en place mes quelques lignes code pour gérer le
+	rencentrage en fin de mupad-run-filter, en utilisant
+	mupad-run-recenter-bottom-margin. Mes quelques lignes sont un poil
+	plus compliqué que les tiennent, mais se comporte mieux lorsque le
+	curseur est dans un autre buffer (typiquement dans *MuPAD Help*).
+
+2003-05-13  Nicolas M. Thiéry  <nthiery@users.sf.net>
+
+	* mupad-run.el: François Maltey:
+
+	Voilà je pense que le déplacement dans l'historique est propre.  Il
+	tourne en rond avec un beep entre les extrémités mais c'est à
+	tester...
+
+	J'ai modifié l'affichage pour que l'écran soit << souvent >> le plus
+	rempli possible, mais en étant moins agressif qu'avant. ça à l'air de
+	me convenir mais est ce que ça te (Nicolas) convient ?
+
+	* .cvsignore, COPYING: Added .cvsignore and COPYING.
+
+2003-05-10  Nicolas M. Thiéry  <nthiery@users.sf.net>
+
+	* mupad-run.el: Undo of the incorrect "history-reset" fix.
+
+	* test-indentation.mu: *** empty log message ***
+
+	* config/sourceforge.am, Makefile.in:
+	Update of the autotools build system.
+
+	* BUGS: *** empty log message ***
+
+2003-05-08  Nicolas M. Thiéry  <nthiery@users.sf.net>
+
+	* config/ltmain.sh, Makefile.in, README, index.html, configure:
+	Update of the autotools build system.
+
+	* test-indentation.mu: *** empty log message ***
+
+	* TODO, BUGS, mupad-run.el:
+	 - Added more precise types in the defcustoms.
+	 - There is a separate history for the mupad command line, and the
+	   the default mupad command line is inserted by default.
+	 - Use EMACS=TRUE instead of EMACS in the mupad user options to
+	   get around a MuPAD bug in prog::testinit.
+	 - New customizable variable mupad-run-debug-level, and
+	   cleanup of the output of debug messages.
+	 - Fixed lost-of-synchro bug in completion. Emacs now waits for
+	   an answer of MuPAD before accepting any further input.
+	 - Set mupad-run-face-default to the global emacs default background
+	   and foreground.
+	 - Improved support of /tmp/debug* files in the debugger: they are opened
+	   read-only in mupad-mode, and reverted automatically when needed.
+	 - Embryon of support of tar files in the debugger.
+	 - Improved recentering heuristic when mupad output is received.
+	   It only happens if the buffer is visible, does scroll when
+	   an example is sent from the help buffer; the latter is not scrolled
+	   inadvertently anymore.
+	 - Improved recentering heuristic when navigating through multiline
+	   commands in the history. Some code factored between the 4 variants
+	   of moves through the history.
+	 - When a history search fails, let the next search start from the end
+	   of the history.
+
+	* mupad-help.el: New customizable variables:
+	 - mupad-help-examples-execute
+	 - mupad-help-examples-comment
+	Modified functions:
+	 - mupad-help-mode: it can now be called interactively to allow the
+	   user for opening any mupad ascii help file by hand.
+	 - mupad-help-select-example:
+	   This function now looks for two consecutive empty lines as end
+	   of example marker. This allow for single empty lines in the
+	   examples. The code is also a little bit shorter and hopefully
+	   more robust.
+	Fixed variable names: exemples -> examples
+
+	* mupad.el: Added more precise types in the defcustoms.
+
+	* COPYING.LIB: Fixed licence to GPL.
+
+	* README.in, index.html.in, configure.ac: Fixed licence to GPL.
+	Added links to the text documentation (README, ...) on the web page.
+
+	* site-start.d/mupacs.el.in, config/sourceforge.am, config/packages.spec.in, config/packages.m4, config/packages.info.in, config/packages.am, config/mupad.m4, config/mupad.am, config/mkinstalldirs, config/missing, config/install-sh, config/elisp-comp, config/depcomp, config/cvs.am, config/config.sub, config/config.guess, TODO, THANKS, README.in, QuickInstall, NEWS, Makefile.am, INSTALL, COPYING.LIB, configure.ac, ChangeLog, BUGS, bootstrap, AUTHORS:
+	Added autotools build system, including:
+	 - Building of .tar.gz and rpm distribution
+	 - Site-wide autoload of mupad emacs via site-start.d
+	 - All the usual TODO/INSTALL/AUTHORS file
+
+2003-04-26  Nicolas M. Thiéry  <nthiery@users.sf.net>
+
+	* test-indentation.mu:
+	One more indentation test which fails (:: in the name of a category)
+
+2003-04-16  ramare  <ramare@eole>
+
+	* sli-tools.el:
+	Gasp: sli-show-sexp was declaring buffer as modified ... What a dud.
+
+	* sli-tools.el:
+	sli-backward-to-indentation.
+	Word found by property was out of restricted region: mended.
+
+	* mupad.el:
+	mupad-shift-alist corrected
+	backspace linked to sli-backward-to-indentation
+	a switch to show or not sexp like show-paren-mode
+
+	* sli-tools.el:
+	sli-indent-region has been mended.
+	--> sli-get-first-non-end-key had a bug with block-comment-start
+	    sli-find-matching-key also.
+	nomathrelations is extended to noseparators also to speed things up.
+
+	* mupad.el:
+	":=" as a math relation to speed up things.
+
+2003-04-15  Nicolas M. Thiéry  <nthiery@users.sf.net>
+
+	* test-indentation.mu: Added indentation to empty lines.
+
+	* test-indentation.mu: Fixed indentation of line 27.
+
+	* test-indentation.mu: Fixed indentation of line 13 and 14.
+
+2003-04-15  ramare  <ramare@eole>
+
+	* sli-tools.el:
+	... sli-verbose to nil ...
+
+	* test-indentation.mu, mupad.el:
+	Small tidbits
+
+	* sli-tools.el:
+	Major change in sli-tools: use of text-properties. These are computed
+	lazily and help save time. Also forward-sexp, backward-sexp and scan-sexps
+	are advised to work with head/end constructs.
+	Finally a mecanism similar to show-paren-mode is set. By default, [f8]
+	will show the corresponding head/end.
+	Fixed-keys have been mended to work relatively to the previous line
+	as specified.
+
+	* mupad-cpl.el:
+	Added end to mupad-keywords-list.
+
+2003-04-11  ramare  <ramare@eole>
+
+	* sli-tools.el:
+	Mended the special-head part. Beginning of a proper scan-sexps.
+
+2003-04-09  Nicolas M. Thiéry  <nthiery@users.sf.net>
+
+	* mupad.el: Added axiom in mupad-keys-with-newline and end_axiom in
+	mupad-add-to-key-alist.
+
+	* test-indentation.mu: Added test file for the indentation.
+
+2003-04-09  ramare  <ramare@eole>
+
+	* mupad.el:
+	Added mupad-domain-indentation. Modified mupad-structures.
+
+	* sli-tools.el:
+	sli-find-matching-key --> use of sli-is-a-head
+
+	* mupad-cpl.el:
+	Added end_axiom as a key-word
+
+	* mupad-fontification.el:
+	mupad-default-face --> use custom-declare-face
+
+	* mupad-cpl.el, mupad-fontification.el, mupad.el, sli-tools.el:
+	*** empty log message ***
+
+2003-04-05  ramare  <ramare@eole>
+
+	* configure:
+
+	Support for MuPAD 2.5.2 added
+	:q
+	:quit
+	:exit
+
+2003-04-03  Nicolas M. Thiéry  <nthiery@users.sf.net>
+
+	* sli-tools.el: Reset sli-verbose to nil by default.
+	Little typo fixes in the comments.
+
+	* sli-tools.el:
+	Bug fix from Olivier to deal with several special heads with the same
+	name.
+
+2003-02-04  Nicolas M. Thiéry  <nthiery@users.sf.net>
+
+	* xemacsnotes.txt, sli-tools.el, mupad-xemacs.el, mupad-run.el-info, mupad-run.el, mupad-help.el, mupad-fontification.el, mupad.el, mupad-cpl.el, mupad-bus.el, FAQ:
+	Added cvs $Id$'s.
+
+2003-01-24  Nicolas M. Thiéry  <nthiery@users.sf.net>
+
+	* mupad.el-info: Ajout d'un entête avec $Id$ dans tous les fichiers.
+
+2003-01-22  Nicolas M. Thiéry  <nthiery@users.sf.net>
+
+	* mupad-run.el:
+	Added call to mupad-run-message-debug for debug messages in tab completion.
+	mupad-run-ask-pgm-opt now sets mupad-run-pgm. So the user can change
+	the name of the MuPAD program at the "Command to start MuPAD:" prompt.
+
+2003-01-13  maltey  <maltey@eole>
+
+	* mupad-run.el: maj
+
+2003-01-13  ramare  <ramare@eole>
+
+	* mupad-run.el, configure, mupad-bus.el, mupad-help.el, mupad.el:
+	*** empty log message ***
+
+2002-12-16  ramare  <ramare@eole>
+
+	* mupad-run.el:
+	des ptits trucs
+
+2002-12-15  maltey  <maltey@eole>
+
+	* mupad-run.el: maj
+
+2002-12-09  ramare  <ramare@eole>
+
+	* mupad-fontification.el, mupad.el:
+	...
+
+2002-12-04  ramare  <ramare@eole>
+
+	* mupad-fontification.el, mupad-run.el, mupad-xemacs.el, mupad.el:
+	ben j'ai corrige mes erreurs ... et debut de font-lock pour -run
+
+	* FAQ, configure, mupad-run.el, mupad-xemacs.el, mupad.el:
+	xemacs stuff
+
+2002-12-04  maltey  <maltey@eole>
+
+	* mupad-run.el, mupad-help.el: maj
+
+2002-12-03  ramare  <ramare@eole>
+
+	* mupad-xemacs.el, mupad.el:
+	(require 'mupad-wemacs) was toomuch !
+
+2002-12-03  Nicolas M. Thiéry  <nthiery@users.sf.net>
+
+	* mupad.el:
+	Ajout de axiom à l'intérieur de la déclaration d'un domaine.
+	Correction d'une parenthèse dans mupad-set-and-recompute-indentation.
+	La customisation de mupad-structures et autres ne fonctionnait pas.
+
+2002-12-03  ramare  <ramare@eole>
+
+	* mupad-xemacs.el:
+	mupad-xemacs.el ajoute.
+
+	* mupad.el:
+	proper completion for the read command in mupad-mode
+
+2002-12-02  maltey  <maltey@eole>
+
+	* mupad-run.el: maj
+
+2002-12-01  ramare  <ramare@eole>
+
+	* mupad-bus.el, mupad-cpl.el, mupad-fontification.el, mupad-help.el, mupad-run.el, mupad.el:
+	copyright stuff
+
+	* mupad-fontification.el, mupad-help.el, mupad-run.el, mupad.el:
+	complete --> mycomplete
+	mupad-local modified
+	keys in syntax understandable by xemacs
+
+2002-11-30  ramare  <ramare@eole>
+
+	* mupad.el:
+	changes in some keys
+
+2002-11-27  ramare  <ramare@eole>
+
+	* mupad-bus.el:
+	bug bug
+
+2002-11-27  maltey  <maltey@eole>
+
+	* mupad-run.el: maj
+
+2002-11-27  ramare  <ramare@eole>
+
+	* mupad-bus.el:
+	mupad-bus-adapt* doesn't chenge of buffer if buffer is in mupad-run-mode
+
+2002-11-26  maltey  <maltey@eole>
+
+	* mupad-run.el: maj
+
+2002-11-26  Nicolas M. Thiéry  <nthiery@users.sf.net>
+
+	* mupad-run.el, mupad-help.el:
+	Bug corrigé: la customisation de mupad-run-mode-hook de l'utilisateur
+	dans le .emacs était écrasée.
+
+2002-11-26  ramare  <ramare@eole>
+
+	* mupad.el:
+	I don't know...
+
+2002-11-25  maltey  <maltey@eole>
+
+	* mupad-run.el: maj
+
+	* mupad-help.el, mupad-run.el: maj pour xemacs
+
+2002-11-25  ramare  <ramare@eole>
+
+	* mupad-bus.el, mupad-run.el:
+	oh !
+
+	* mupad-bus.el, mupad-run.el:
+	compare strings --> test on the mode
+
+	* mupad-cpl.el, mupad-fontification.el, mupad.el, sli-tools.el:
+	end_category added to mupad-cpl.el
+	localization of "Colors" is not after "Debug ..." !!
+	sli-tools admits special-head-key = head-key
+
+2002-11-23  ramare  <ramare@eole>
+
+	* FAQ:
+	a FAQ
+
+2002-11-22  ramare  <ramare@eole>
+
+	* configure, mupad-fontification.el, mupad-help.el, mupad-run.el, mupad.el:
+	de xemacs a moins de xemacs ...
+
+2002-11-21  ramare  <ramare@eole>
+
+	* xemacsnotes.txt:
+	ben oui des notes sur xemacs et mupad.el
+
+	* mupad-fontification.el, mupad-help.el, mupad-run.el, mupad.el:
+	first steps towards xemacs
+
+2002-11-20  ramare  <ramare@eole>
+
+	* configure, mupad-cpl.el:
+	defcustom mupad-directory
+	2.00 --> 3.00
+
+	* mupad-bus.el, mupad-cpl.el, mupad-fontification.el, mupad-help.el, mupad-run.el, mupad.el:
+	version number added and changed
+
+	* configure, mupad-help.el, mupad.el:
+	defvar mupad-directory --> defcustom mupad-directory
+
+2002-11-18  ramare  <ramare@eole>
+
+	* sli-tools.el, INSTALL.txt, configure, mupad-bus.el, mupad-cpl.el, mupad-fontification.el, mupad-help.el, mupad-run.el, mupad-run.el-info, mupad.el, mupad.el-info:
+	Ben voila on passe a la vitesse superieure !
+
+	* mupad.el:
+	...
+
+2002-11-14  ramare  <ramare@eole>
+
+	* mupad-run.el:
+	customization
+
+2002-11-13  ramare  <ramare@eole>
+
+	* mupad-bus.el, mupad.el:
+	defcustom
+
+2002-11-12  ramare  <ramare@eole>
+
+	* mupad-run.el, mupad-run.el-info:
+	mupad-run-is-for-students --> mupad-run-less-questions
+
+	* mupad-run.el, mupad-run.el-info:
+	mupad-run-is-for-students
+
+	* mupad-run.el, mupad.el, configure, mupad-bus.el:
+
+	ask for arguments when starting a process
+
+2002-11-11  maltey  <maltey@eole>
+
+	* mupad-run.el: maj
+
+2002-11-11  ramare  <ramare@eole>
+
+	* mupad-bus.el:
+	compare-strings ...
+
+	* mupad-bus.el:
+	Le nom *MuPAD*
+
+2002-11-11  maltey  <maltey@eole>
+
+	* mupad-run.el: maj
+
+2002-11-11  ramare  <ramare@eole>
+
+	* mupad-run.el:
+	br
+
+	* mupad.el:
+	le debugger est parti d'ici !
+
+	* mupad-run.el, mupad.el, mupad-bus.el:
+	essai de window-maneger avec le debugger
+	Retsore wind-conf va mieux
+
+2002-11-11  maltey  <maltey@eole>
+
+	* mupad-run.el: maj
+
+2002-11-10  maltey  <maltey@eole>
+
+	* mupad-run.el: maj
+
+	* mupad-bus.el: evoie de commandes a mupad-run
+
+	* mupad-run.el: separation mupad-debug / mupad-run
+
+2002-11-08  Nicolas M. Thiéry  <nthiery@users.sf.net>
+
+	* mupad-run.el: Cleanup of the debugger code.
+	Breakpoints are functional.
+	Display of variables is functional.
+	Serious testing is in order.
+	The bug with code to be executed is fixed.
+
+2002-11-07  ramare  <ramare@eole>
+
+	* mupad.el:
+	un mupad-help-init en trop
+
+	* mupad-run.el:
+	Sorti mupad-help-method des variables locales
+	test de la presence de -E/-R dans les options
+	oter le mupad-bus-forward-extendedmupadword sur mou-2-choose-completion
+
+	* configure, mupad-help.el, mupad-run.el, mupad.el:
+	des broutilles
+
+2002-11-07  maltey  <maltey@eole>
+
+	* mupad-run.el, mupad-run.el-info: maj
+
+2002-11-07  ramare  <ramare@eole>
+
+	* mupad-fontification.el, mupad-help.el, mupad-run.el:
+	simplifications trop brutales sur la derniere version...
+
+2002-11-06  maltey  <maltey@eole>
+
+	* mupad-run.el, mupad-help.el: maj
+
+2002-11-06  ramare  <ramare@eole>
+
+	* mupad-fontification.el, mupad-run.el, mupad.el:
+	les (eval mupad-comment) ...
+	barre de menu debugguee
+
+2002-11-06  maltey  <maltey@eole>
+
+	* mupad-run.el: maj
+
+2002-11-06  ramare  <ramare@eole>
+
+	* INSTALL.txt, configure:
+	Ben voila
+
+	* mupad-run.el:
+	quit appelle mupad-end au lieu de mupad-run-end en mupad-mode
+
+2002-11-05  Nicolas M. Thiéry  <nthiery@users.sf.net>
+
+	* mupad-run.el: Added experimental support for the MuPAD debugger.
+	Most command work, except l, D, P, S which are still buggy.
+
+2002-11-03  ramare  <ramare@eole>
+
+	* mupad.el:
+	stdlib added as library with no methods in mupad-completion-array
+	M-C-i for completion .. it does not work under linux !!
+
+	* mupad-help.el:
+	bah rien je vous dis ...
+
+	* mupad-run.el:
+	commentaires ...
+
+	* mupad-cpl.el, mupad-run.el, mupad.el:
+	modif due a Francois et a moi d'un seul coup ...
+
+2002-11-03  maltey  <maltey@eole>
+
+	* mupad-run.el: maj
+
+2002-11-03  ramare  <ramare@eole>
+
+	* mupad.el:
+	Le share du manual ..
+
+	* mupad-cpl.el, mupad.el:
+	la barre de /bin/manual
+	extension de mupad-cpl
+
+2002-11-02  ramare  <ramare@eole>
+
+	* mupad-help.el, mupad-run.el, mupad.el:
+	quelques commentaires, c'est tout
+
+	* mupad.el:
+	Ce fichier avait ete double !!
+
+2002-11-02  maltey  <maltey@eole>
+
+	* mupad-run.el: filtre sur historique
+
+2002-11-01  maltey  <maltey@eole>
+
+	* mupad-run.el-info, mupad-run.el: maj
+
+2002-11-01  ramare  <ramare@eole>
+
+	* mupad-run.el, mupad.el:
+	blabla pas grand chose
+
+	* mupad.el:
+	trivias
+
+2002-11-01  maltey  <maltey@eole>
+
+	* mupad-run.el: maj mupad-run.el (parteille)
+
+2002-11-01  ramare  <ramare@eole>
+
+	* mupad.el, mupad-bus.el, mupad-run.el:
+	confirmation inversee por sauvegarder en muipad-run
+	un nom pour le process appele depuis mupad-script
+
+2002-11-01  maltey  <maltey@eole>
+
+	* mupad-run.el: maj mupad-run.el
+
+	* mupad-help.el: maj mupad-help.el
+
+2002-10-31  ramare  <ramare@eole>
+
+	* mupad-run.el-info:
+	userinit.mu simplifier
+
+	* mupad-bus.el:
+	backward-wind-conf ne bouge plus le point
+
+2002-10-31  Nicolas M. Thiéry  <nthiery@users.sf.net>
+
+	* mupad-run.el-info: Relecture
+
+2002-10-31  ramare  <ramare@eole>
+
+	* mupad-bus.el, mupad.el:
+	PrettyPrint switch
+
+2002-10-30  maltey  <maltey@eole>
+
+	* mupad-help.el: maj mupad-help
+
+2002-10-30  ramare  <ramare@eole>
+
+	* mupad-cpl.el, mupad-fontification.el, mupad-run.el:
+	debug ...
+	barre de menu avec quit en mupad-mode
+
+	* mupad-run.el, mupad-run.el-info:
+	vcam fonctionne !!
+
+	* mupad-run.el:
+	mupad-run-show-info corrige
+	defalias dans le bon ordre !
+
+2002-10-28  ramare  <ramare@eole>
+
+	* mupad-fontification.el, mupad-run.el, mupad.el:
+	Added :help in menu-bars for emacs 21
+	Corrected some trivias.
+
+2002-10-28  maltey  <maltey@eole>
+
+	* mupad-run.el: prise en compte des modif du28/10/2002
+
+2002-10-27  ramare  <ramare@eole>
+
+	* mupad-run.el:
+	mupad-run-arrow-behaviour
+
+	* mupad-help.el, mupad-run.el:
+	mupad-bus-get-help n'existe pas ...
+	mupad-directory contient /share/ ...
+
+	* mupad-help.el:
+	introduction de mupad-directory
+
+	* mupad-fontification.el:
+	fontification ok pour emacs 21.2 et 20.7
+	face mupad-info mieux documentee
+
+2002-10-26  ramare  <ramare@eole>
+
+	* mupad-run.el:
+	alire ==> el-info
+	run-mupad en alias de mupad-run
+
+	* mupad-fontification.el:
+	Ote les anciennes variables pour mupad-shell-mode
+
+2002-10-24  ramare  <ramare@eole>
+
+	* mupad-bus.el:
+	petits problemes avec tar ...
+
+	* mupad-bus.el, mupad-run.el, mupad.el:
+	modification pour le point d'ancrage : /usr/share/emacs/site-lisp
+	Modification du terme "alire" en "el-info
+
+2002-10-17  maltey  <maltey@eole>
+
+	* mupad-run.el: maj mineure
+
+2002-10-17  ramare  <ramare@eole>
+
+	* mupad.el-info, sli-tools.el, mupad-bus.el, mupad-cpl.el, mupad-fontification.el, mupad-help.el, mupad-run.el, mupad-run.el-info, mupad.el:
+	Version distribuee le 17 Octobre 2002 sur la page web
+
+	* mupad-run.alire:
+	mupad-run.alire a ete remplace par mupad-run.el-info
+
+	* mupad-run.el-info:
+	mupad-run.alire --> mupad-run.el-info
+
+2002-10-15  ramare  <ramare@eole>
+
+	* mupad-bus.el, mupad-help.el, mupad.el:
+	deplacement de backward-extended-mupad-word et forward-extended-mupad-word
+	dans mupad-bus.el et nouveau noms commencant par mupad-bus-
+
+2002-10-14  ramare  <ramare@eole>
+
+	* mupad.el:
+	Added key-sequence for fun-to-proc in menu-bar
+
+	* mupad.el-info:
+	2.00 info file
+
+2002-10-14  maltey  <maltey@eole>
+
+	* mupad-run.el: FMy maj banale mupad-run.el
+
+2002-10-14  ramare  <ramare@eole>
+
+	* mupad-bus.el:
+	mupad-bus-switch-to-mupad adapte la longueur de ligne sur une
+	creation de buffer *MuPAD*
+
+	* mupad.el:
+	Modif de la condition pour la barre de menu sur DIGITS :
+	la variable mupad-run-process est devenue locale donc incorrecte ici.
+
+	* mupad.el:
+	Oter un message parasite
+
+	* mupad.el:
+	Barre de menu corrigee
+
+2002-10-13  ramare  <ramare@eole>
+
+	* mupad-fontification.el, mupad-help.el, mupad.el:
+	Modifications issues des modifs de Francois !
+
+	* mupad-bus.el:
+	                      treoubles !!!
+
+2002-10-13  maltey  <maltey@eole>
+
+	* mupad-run.el: FMy : maj mupad-run.el
+
+	* mupad-help.el: FMy : maj mupad-help.el
+
+	* mupad-run.el: FMy : maj mupad-run.el
+
+2002-10-12  maltey  <maltey@eole>
+
+	* mupad-cpl.el, mupad-fontification.el, mupad-help.el, mupad-run.alire, mupad-run.el, mupad.el, mupad.el-info, sli-tools.el:
+	New file.
+
+	* mupad-cpl.el, mupad-fontification.el, mupad-help.el, mupad-run.alire, mupad-run.el, mupad.el, mupad.el-info, sli-tools.el:
+	Sources originales
+
+	* mupad-bus.el: New file.
+
+	* mupad-bus.el: Sources originales
+
