@@ -54,9 +54,18 @@ and furthering of constructs"
 "MuPAD customization subgroup dedicated to less important switches"
 :group 'mupad :prefix "mupad-")
 
+(defun mupad-set-mupad-directory (sym val)
+  (set sym val)
+  (setq mupad-manual-command (concat mupad-directory "/share/bin/manual"))
+  (when (featurep 'mupad-help)
+    (setq  mupad-help-tree (concat mupad-directory "/share/doc/"))))
+
 ;; This variable should be set by a CONFIGURE if it ever exists...
-(defvar mupad-directory "/usr/local/src/MuPAD"
-"Used for initializing some variables below.")
+(defcustom mupad-directory "/usr/local/src/MuPAD"
+"Used for initializing `mupad-manual-command' and `mupad-help-tree'."
+:initialize 'custom-initialize-default
+:set 'mupad-set-mupad-directory
+:type 'string :group 'mupad)
 
 (defcustom mupad-manual-command
 ;"netscape file:/usr/local/MuPAD/mupad_html_help/Automated/index.html"
@@ -71,6 +80,7 @@ put for instance \"netscape file:/usr/local/MuPAD/mupad_html_help/index.html\""
 
 (defcustom mupad-temp-directory "/tmp/"
   "Directory in which to create temporary files."
+
 :type 'string :group 'mupad)
 
 (defcustom mupad-electric-p t

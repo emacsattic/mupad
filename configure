@@ -50,7 +50,7 @@ if test -f mupad.el; then
    fi
    # file mupad.el-info and variable mupad-directory in mupad.el:
    # and do not complain when compiling:
-   sed -e "s|(defcustom mupad-el-info .*mupad.el-info|(defcustom mupad-el-info \"$LISP_INSTALL_DIR/mupad\.el-info|" -e "s|/usr/local/src/MuPAD/share/|$MUPAD_INSTALL_DIR|" -e "s|  (setq byte-compile-warnings '(free-vars unresolved callargs redefine obsolete))|  ;(setq byte-compile-warnings '(free-vars unresolved callargs redefine obsolete))|" -e "s|  ;(setq byte-compile-warnings '(unresolved redefine obsolete))|  (setq byte-compile-warnings '(unresolved redefine obsolete))|" mupad.el > mupad-bis.el
+   sed -e "s|(defcustom mupad-el-info .*mupad.el-info|(defcustom mupad-el-info \"$LISP_INSTALL_DIR/mupad\.el-info|" -e "s|/usr/local/src/MuPAD/share/|$MUPAD_INSTALL_DIR|"  -e "s|(defcustom mupad-directory \".*\"|(defcustom mupad-directory \"$MUPAD_INSTALL_DIR/\"|" -e "s|  (setq byte-compile-warnings '(free-vars unresolved callargs redefine obsolete))|  ;(setq byte-compile-warnings '(free-vars unresolved callargs redefine obsolete))|" -e "s|  ;(setq byte-compile-warnings '(unresolved redefine obsolete))|  (setq byte-compile-warnings '(unresolved redefine obsolete))|" mupad.el > mupad-bis.el
 
    rm mupad.el
    mv mupad-bis.el mupad.el
@@ -107,7 +107,7 @@ if test -f mupad-help.el; then
    echo "  Online help allowed."
 
    #Variable mupad-directory in mupad-help.el:
-   sed -e "s|/usr/local/src/MuPAD/share/|$MUPAD_INTALL_DIR|" -e "s|(defvar mupad-directory \".*\"|(defvar mupad-directory \"$MUPAD_INSTALL_DIR/\"|" mupad-help.el > mupad-help-bis.el
+   sed -e "s|/usr/local/src/MuPAD/share/|$MUPAD_INTALL_DIR|" -e "s|(defcustom mupad-directory \".*\"|(defcustom mupad-directory \"$MUPAD_INSTALL_DIR/\"|" mupad-help.el > mupad-help-bis.el
    
    rm mupad-help.el
    mv mupad-help-bis.el mupad-help.el

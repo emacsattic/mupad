@@ -16,9 +16,18 @@
 (require 'mupad-bus)
 (defconst mupad-help-mode-version "2.00" "Version of `mupad-help.el'.")
 
+(defun mupad-set-mupad-directory (sym val)
+  (set sym val)
+  (setq mupad-manual-command (concat mupad-directory "/share/bin/manual"))
+  (when (featurep 'mupad-help)
+    (setq  mupad-help-tree (concat mupad-directory "/share/doc/"))))
+
 ;; This variable should be set by a CONFIGURE if it ever exists...
-(defvar mupad-directory "/usr/local/src/MuPAD/"
-"Used for initializing some variables below.")
+(defcustom mupad-directory "/usr/local/src/MuPAD"
+"Used for initializing `mupad-manual-command' and `mupad-help-tree'."
+:initialize 'custom-initialize-default
+:set 'mupad-set-mupad-directory
+:type 'string :group 'mupad)
 
 (defcustom mupad-help-tree (concat mupad-directory "/share/doc/")
 "Location of the help files.
