@@ -289,7 +289,7 @@ sli-special-head-previous-keys-alist sli-ends-head-alist sli-head-regexp
 sli-strong-regexp sli-relevant-alist sli-ancestors-alist sli-fixed-keys-alist
 sli-fixed-regexp sli-companion-strong-keys-alist sli-soft-alist
 sli-first-offset-alist sli-second-offset-alist sli-relation-offset-alist
-sli-shift-alist sli-maid-alist sli-ambiguous-keys))
+sli-maid-alist sli-ambiguous-keys))
 
 ;;;-----------------------------------------------------------------------------
 ;;; This section is devoted to some precomputations from sli-structures.
@@ -930,6 +930,40 @@ If beg1 = beg2= ... = begN, we answer (beg1 end1 end2 ... endN)."
               (buffer-substring-no-properties (line-beginning-position) pt)))
     only-spacep))
 
+(defun sli-only-spaces-on-line-before nil
+  "t if point is between beginning-of-line
+and first non-whitespace character, nil else.
+nil if point is at beginning of line."
+  (let (res (beg (line-beginning-position)))
+    (save-excursion
+      (save-restriction
+        (narrow-to-region beg (line-end-position))
+        (skip-syntax-forward " ") ; beware: linefeed/newline are whitespaces
+        (setq res
+              (if (= (point) beg)
+                  nil
+                (= (current-indentation) (- (point) beg)))))
+      (widen))
+    res))
+
+(defun sli-backward-to-indentation nil
+  (interactive)
+  (if (not (sli-only-spaces-on-line-before))
+      (delete-char -1)
+    (let ((foundp nil) (cc (current-indentation)) ncc)
+      (save-excursion
+        (while (and (not (eobp)) (not foundp))
+          (forward-line -1)
+          (beginning-of-line) ; for the eobp to work
+          (setq foundp (> cc (setq ncc (current-indentation))))))
+      (save-restriction
+        (narrow-to-region (line-beginning-position) (line-end-position))
+        (skip-syntax-forward " ")
+        (if (not foundp)
+            (delete-char (- cc))
+          (delete-char (- ncc cc)))
+        (widen)))))
+
 (defsubst sli-point-to-indent (pt)
   (save-excursion
     (progn (goto-char pt) (current-column))))
@@ -1553,13 +1587,12 @@ Answer POINT of where to go."
           (run-with-idle-timer (if (featurep 'lisp-float-type) (/ (float 1) (float 8)) 1)
                                t 'sli-show-sexp)))
    ((= 0 arg)
-    (setq sli-overlay-beg (make-overlay (point-min) (point-min))
-          sli-overlay-end (make-overlay (point-min) (point-min)))
+    (move-overlay sli-overlay-beg (point-min) (point-min))
+    (move-overlay sli-overlay-end (point-min) (point-min))
     (local-set-key [f8] 'sli-show-sexp))
    (t 
-    (setq sli-overlay-beg (make-overlay (point-min) (point-min))
-          sli-overlay-end (make-overlay (point-min) (point-min)))
-    nil)))
+    (move-overlay sli-overlay-beg (point-min) (point-min))
+    (move-overlay sli-overlay-end (point-min) (point-min)))))
 
 (defadvice forward-sexp (around sli-handles-forward-sexp (&optional arg))
   (interactive)
@@ -1592,15 +1625,16 @@ Answer POINT of where to go."
   (save-excursion
     (save-restriction
       (unwind-protect
-	  (let (aux)
+	  (let (aux wd)
 	    (narrow-to-region (progn (beginning-of-line) (point)) pt)
 	    (skip-chars-forward " \t")
             ;(princ "\n") (princ (list "(sli-get-first-fixed-or-strong-or-end-or-soft)" (point)))
 	    (cond ((setq aux (sli-prop-has-type (point)))
                    (cond ((member aux '(block-comment-end block-comment-start))
                           (cons aux (point)))
-                         ((or (member aux '(end strong soft))
-                              (assoc (sli-prop-word (point)) sli-fixed-keys-alist))
+                         ((and (or (member aux '(end strong soft))
+                                   (assoc (setq wd (sli-prop-word (point))) sli-fixed-keys-alist))
+                               (<= (next-property-change (point)) pt))
                           (sli-prop-full-key (point)))
                          (t nil)))
                   ((posix-looking-at (regexp-opt (append sli-comment-starts (list block-comment-start))))
@@ -1990,7 +2024,7 @@ In a program, use `sli-indent-line'."
               (let (this-indent next-indent only-spacep)
                 (sli-remove-trailing-spaces)
                 (setq only-spacep (sli-only-spacep))
-					;  (princ "\n") (princ (list "only-spacep = " only-spacep))
+				; (princ "\n") (princ (list "only-spacep = " only-spacep))
                 (sli-insert-indent (setq this-indent (sli-tell-indent)))
                 (unless only-spacep (sli-safe-insert " "))
                                         ;--> in case of thendo with point between then and do.
@@ -2004,7 +2038,7 @@ In a program, use `sli-indent-line'."
 		;(princ "\n") (princ (list "(sli-electric-terminate-line) inserting indent at: " (point)))
                 (sli-insert-indent next-indent))
               (when sli-verbose
-                (princ (list "(sli-show-sexp) number of text-properties used:" sli-prop-used))))
+                (princ (list "(sli-electric-terminate-line) number of text-properties USED:" sli-prop-used))))
           (widen))
       (error (princ "\n(sli-electric-terminate-line): ") (princ err) nil))))
 
@@ -2206,6 +2240,8 @@ which behave like `newline-and-indent' and
 `indent-line-function' is `sli-electric-tab'
 and
 `indent-region-function' is `sli-indent-region'.
+Finally `sli-backward-to-indentation' is a good
+function to bind [backspace] to.
 
 When `sli-handles-sexp' is t then forward-sexp,
 backward-sexp and scan-sexps are advised so that
@@ -2216,6 +2252,8 @@ ways: either showsexpp is t, either showsexpp is nil
 in which case one should press [f8] to see the
 corresponding key.
 
+C-M-f/C-M-b run forward-sexp/backward-sexp in a special
+way: head
 Finally, `sli-maid' tries to further constructs for you
 while `sli-tutor' strives to end all constructs.
 
@@ -2258,4 +2296,4 @@ and the syntax table should be ok."
         (sli-precomputations))
     (error (princ "\nSomething went wrong in sli-tools: ")(princ err) nil)))
 
-;;------------------ sli-tools ends here. 2234 lines ??
+;;------------------ sli-tools ends here. 2299 lines ??
