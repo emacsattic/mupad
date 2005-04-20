@@ -16,15 +16,10 @@ lang="en">
 <h1>@PKG_SHORTDESCRIPTION@</h1>
 
 <a
-href="http://www-gat.univ-lille1.fr/~ramare/ServeurPerso/MuPADCombined/PageMuPAD.html">@PACKAGE@</a> is an open-source MuPAD mode for the text editor emacs.
+href="http://mupacs.sf.net/">@PACKAGE@</a> is an open-source MuPAD mode for the text editor emacs.
 
 <h2><a href="http://sourceforge.net/projects/mupacs/">
     MuPACS project page on sourceforge for download, bug reports, CVS access</a></h2>
-
-
-<h2><a
-href="http://www-gat.univ-lille1.fr/~ramare/ServeurPerso/MuPADCombined/PageMuPAD.html">MuPACS
-home page, in French</a></h2>
 
 <hr>
 <h2><a name="news">News</a></h2>
