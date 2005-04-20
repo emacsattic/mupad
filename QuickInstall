@@ -1,6 +1,9 @@
 Quick installation procedure
 ============================
 
+Unix, including Darwin:
+-----------------------
+
 In short, this package uses the standard installation procedure:
 unpacking, ./configure, make, make check, make install. This file
 describes this with some more details. Depending on your architecture
@@ -97,3 +100,34 @@ root access. See --prefix and lispdir options below.
     Otherwise, send an e-mail to mupacs-users@lists.sourceforge.net.
 
 9.  That's all folks!
+
+------------------------------------------------------------------------------
+
+Windows:
+--------
+
+MuPACS has not been tested *at all* under windows. From now on, you are
+on your own. Please report any positive or negative experience!
+
+Obviously, you need to have emacs installed first. Then, unpack the
+content of mupacs-<version>.tar.gz wherever you like; typically:
+
+	<emacsdir>\site-lisp\mupacs\
+
+Copy the file
+
+	<emacsdir>\site-lisp\mupacs\site-start.d/mupad.el.in.in
+
+to
+
+	<emacsdir>\site-lisp\site-start.d\mupad.el
+
+Edit this file and replace all occurences of @MuPADdir@ and @lispdir@
+by whatever is appropriate; typically:
+
+	@MuPADdir@ =>  C:\Program Files\Sciface\MuPAD Pro 3.1.0\
+	@lispdir@  =>  <emacsdir>\site-lisp\mupacs\).
+
+Start emacs, and open a file blah.mu in a buffer. The buffer should
+automatically turn to mupad-mode, and do syntax highlighting and the
+like. Recall that mupad-run will certainly not work.
