@@ -8,29 +8,45 @@
 //////////////////////////////////////////////////////////////////////////////
 
 /**
+ * Test that keywords in comments do not influence the indentation
+ * 2005/07/07: The category keyword below causes an incorrect indentation of i
+ **/
+
+proc()
+begin
+  // category
+  i;
+end_proc:
+
+/**
  * 2004/01/11 Bug: the indentation of axiom and bla below is incorrect
  * See email discussion of 12/01/2004 fixed 2004-???
  **/
-domain bla
+domain bla // OK
   category ble, bli;
   axiom bla;
   bla;
 end_domain;
 
 // Variants with other characters
-domain bla
+domain bla // Broken
   category ble([1]);
-  axiom bla;
+  bla;
 end_domain;
 
-domain bla
+domain bla // Broken
   category ble({1});
   axiom bla;
 end_domain;
 
-domain bla
+domain bla // OK
   category ble("a");
   axiom bla;
+end_domain;
+
+domain bla // Broken
+  category ble(Parameters="a");
+  bla;
 end_domain;
 
 /**
