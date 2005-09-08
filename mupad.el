@@ -273,6 +273,7 @@ See `mupad-describe-this-proc' and `mupad-user-mail-address'."
     (["::" constructor 3])
     (["(" constructor 1])
     ([")" constructor 1])
+    (["," constructor 1])
     (["()" constructor 3])
     )
 "See `sli-structures'.
@@ -1416,25 +1417,25 @@ unique completion can be done."
         
         (if (not (string-equal where-it-is ""))
             (progn
-              ;; We switch to the buffer *MuPAD Help* and erase its content:
-              (set-buffer (get-buffer-create "*MuPAD Help*"))
+              ;; We switch to the buffer *MuPAD*Help* and erase its content:
+              (set-buffer (get-buffer-create "*MuPAD*Help*"))
               (erase-buffer)
               (message where-it-is)  ;; tell *Messages* which version is used.
               (insert-file where-it-is)
               ;; Show the help buffer and tell user how to remove help window:
-              (mupad-bus-window-manager "*MuPAD Help*" 'mupad-show-help)
+              (mupad-bus-window-manager "*MuPAD*Help*" 'mupad-show-help)
               (setq buffer-read-only t)
               (search-forward "Usage" nil t)
               (beginning-of-line) (set-window-start (selected-window) (point))
               (mupad-info-wind-conf)
               (select-window wind))
           ;; Tell the user the file was not found:
-          (mupad-bus-window-manager "*MuPAD Help*" 'mupad-beginning-temp)
+          (mupad-bus-window-manager "*MuPAD*Help*" 'mupad-beginning-temp)
           (insert "The file mupad.el-info was not found. You should discover where it is, say in the directory /usr/local/lib/MuPAD/emacs/ and add the line\n (setq load-path (concat load-path \"/usr/local/lib/MuPAD/emacs/\"))\nto your .emacs file (create it if it doesn't already exist).")
-          (setq fill-column (1- (window-width (get-buffer-window "*MuPAD Help*"))))
+          (setq fill-column (1- (window-width (get-buffer-window "*MuPAD*Help*"))))
           (fill-individual-paragraphs (point-min) (point-max) 'left)
           ;; Remove help window :
-          (mupad-bus-window-manager "*MuPAD Help*" 'mupad-remove-help-old-config)
+          (mupad-bus-window-manager "*MuPAD*Help*" 'mupad-remove-help-old-config)
           (mupad-restore-wind-conf)))
     (error (princ "An error occured in mupad-info: ")(princ err) nil)))
 

@@ -236,8 +236,8 @@ CLOSING-STATEMENT can be \";\". See `mupad-region' for more information."
     ;; and first try to use the help window, else the
     ;; starting window.
     (mupad-store-wind-conf)
-    (cond ((get-buffer-window "*MuPAD Help*")
-	   (select-window (get-buffer-window "*MuPAD Help*"))
+    (cond ((get-buffer-window "*MuPAD*Help*")
+	   (select-window (get-buffer-window "*MuPAD*Help*"))
 	   (switch-to-buffer buff))
 	  (t (switch-to-buffer-other-window buff)))))
 
@@ -259,7 +259,7 @@ The variable OPTION is
   -- mupad-show-help.
   -- nil when it is the end of a call.
 The variable MY-BUFFER-NAME is one of
-\"*MuPAD*\"  \"*MuPAD Help*\". "
+\"*MuPAD*\"  \"*MuPAD*Help*\". "
 
   (cond ((and (eq buffer-future-mode 'mupad-run-mode)
               (eq option 'mupad-beginning)
@@ -293,9 +293,9 @@ The variable MY-BUFFER-NAME is one of
          (kill-buffer my-buffer-name))
 
 	((and ;(get-buffer "*MuPAD*")
-              (string= my-buffer-name "*MuPAD Help*")
+              (string= my-buffer-name "*MuPAD*Help*")
               (eq option 'mupad-remove-help-now))
-         ;; A buffer displaying "*MuPAD Help*" exists.
+         ;; A buffer displaying "*MuPAD*Help*" exists.
          ;; We want to remove the message.
          (let ((buffer-to-select ""))
            (save-excursion
@@ -311,10 +311,10 @@ The variable MY-BUFFER-NAME is one of
 	     (mupad-restore-wind-conf))))
 
         ((and (get-buffer my-buffer-name)
-              (string= my-buffer-name "*MuPAD Help*")
+              (string= my-buffer-name "*MuPAD*Help*")
               (memq option '(mupad-remove-help-old-config
                              mupad-remove-help-now-old-config)))
-         ;; A buffer displaying "*MuPAD Help*" exists.
+         ;; A buffer displaying "*MuPAD*Help*" exists.
          ;; We want to remove the message without touching
          ;; to the window-configuration.
          (cond ((eq option 'mupad-remove-help-old-config)
@@ -322,35 +322,35 @@ The variable MY-BUFFER-NAME is one of
                 (read-event)))
          (let ((inhibit-read-only t)) (kill-buffer my-buffer-name)))
 
-        ((and (string= my-buffer-name "*MuPAD Help*")
+        ((and (string= my-buffer-name "*MuPAD*Help*")
               (memq option '(mupad-beginning mupad-show-help))
-              (get-buffer-window "*MuPAD Help*"))
-         ;; We go to *MuPAD Help* and a window already exists with this buffer.
-         (select-window (get-buffer-window "*MuPAD Help*"))
+              (get-buffer-window "*MuPAD*Help*"))
+         ;; We go to *MuPAD*Help* and a window already exists with this buffer.
+         (select-window (get-buffer-window "*MuPAD*Help*"))
          (or (eq option 'mupad-show-help) (erase-buffer)))
 
-        ((and (string= my-buffer-name "*MuPAD Help*")
+        ((and (string= my-buffer-name "*MuPAD*Help*")
               (eq option 'mupad-beginning-temp)
-              (get-buffer-window "*MuPAD Help*"))
-         ;; We go temporarily to *MuPAD Help* and a window already exists with
+              (get-buffer-window "*MuPAD*Help*"))
+         ;; We go temporarily to *MuPAD*Help* and a window already exists with
          ;; this buffer.
          (mupad-store-wind-conf)
-         (select-window (get-buffer-window "*MuPAD Help*"))
+         (select-window (get-buffer-window "*MuPAD*Help*"))
          (erase-buffer))
 
-        ((and (string= my-buffer-name "*MuPAD Help*")
+        ((and (string= my-buffer-name "*MuPAD*Help*")
               (memq option '(mupad-beginning mupad-beginning-temp mupad-show-help))
-              (not (get-buffer-window "*MuPAD Help*")))
-         ;; We go to *MuPAD Help* and a window doesn't exist with this buffer.
+              (not (get-buffer-window "*MuPAD*Help*")))
+         ;; We go to *MuPAD*Help* and a window doesn't exist with this buffer.
          (mupad-store-wind-conf)
          (if (= (count-windows) 1)
              (progn (select-window (split-window-vertically))
-                    (switch-to-buffer "*MuPAD Help*"))
+                    (switch-to-buffer "*MuPAD*Help*"))
              (cond ((and (get-buffer-window "*MuPAD*")
                      (not (eq (get-buffer-window "*MuPAD*") (selected-window))))
                     (select-window (get-buffer-window "*MuPAD*"))
-                    (switch-to-buffer "*MuPAD Help*"))
-                   (t (switch-to-buffer-other-window "*MuPAD Help*"))))
+                    (switch-to-buffer "*MuPAD*Help*"))
+                   (t (switch-to-buffer-other-window "*MuPAD*Help*"))))
          (or (eq option 'mupad-show-help) (erase-buffer)))
         ))  ;; end of 'mupad-bus-window-manager
 
@@ -401,20 +401,20 @@ has more than  mupad-max-nb-wind-conf items [numbered
        (setq mupad-registers-list (cons next mupad-registers-list))))
 
 (defun mupad-restore-wind-conf (&optional arg)
-  "Restore previous window-configuration, killing the *MuPAD Help* buffer
+  "Restore previous window-configuration, killing the *MuPAD*Help* buffer
 if it was and is no more displayed. When called with prefix ^U, just now
 does nothing !"
   (interactive "P")
   (condition-case err
       (if (and arg (= (car arg) 4)) ;; Meaning that the call has been C-u-M-o
           nil
-        (let ((had-help-windowp (and (get-buffer "*MuPAD Help*")
-                                     (get-buffer-window "*MuPAD Help*"))))
+        (let ((had-help-windowp (and (get-buffer "*MuPAD*Help*")
+                                     (get-buffer-window "*MuPAD*Help*"))))
           (mupad-backward-wind-conf)
-          ;; Kill the buffer *MuPAD Help* if it is not displayed anymore:
+          ;; Kill the buffer *MuPAD*Help* if it is not displayed anymore:
           (if had-help-windowp
-              (if (not (get-buffer-window "*MuPAD Help*"))
-                  (let ((inhibit-read-only t)) (kill-buffer "*MuPAD Help*")))))
+              (if (not (get-buffer-window "*MuPAD*Help*"))
+                  (let ((inhibit-read-only t)) (kill-buffer "*MuPAD*Help*")))))
         ;; When called from menu-bar, write nothing in the minibuffer:
         (message ""))
     (error (princ err) nil)))

@@ -597,7 +597,7 @@ Used in mupad-update-fontification-buffers.")
             (colors-list (if (fboundp 'x-defined-colors)
                              (sort (x-defined-colors) 'string-lessp)
                              '("No colours found !!!"))))
-           (mupad-bus-window-manager "*MuPAD Help*" 'mupad-beginning-temp)
+           (mupad-bus-window-manager "*MuPAD*Help*" 'mupad-beginning-temp)
            (insert msg)
            (fill-region (point-min) (point-max) 'left)
            ;; Following taken from list-colors-display of facemenu.el:
