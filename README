@@ -6,7 +6,7 @@ General information
 ===================
 
 Name		: mupacs
-Version		: 3.2.3
+Version		: 3.2.4
 Summary		: MuPACS -- a MuPAD mode for emacs
 License		: GPL
 Vendor:		: Nicolas M. Thiéry <nthiery@users.sourceforge.net>
