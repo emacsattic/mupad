@@ -33,7 +33,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; emacs <= 20.7 ?
-(if (not (symbolp 'mapc))
+(if (not (functionp 'mapc))
     (defun mapc (FUNCTION SEQUENCE)
       "Apply FUNCTION to each element of SEQUENCE for side effects only.
 Unlike `mapcar', don't accumulate the results.  Return SEQUENCE.
@@ -42,7 +42,7 @@ Slow lisp emulation provided by mupacs for emacsen that miss it as builtin."
       (mapcar FUNCTION SEQUENCE) SEQUENCE))
 
 ;; emacs <= 20.7 ?
-(if (not (symbolp 'bound-and-true-p))
+(if (not (functionp 'bound-and-true-p))
     (defmacro bound-and-true-p (var)
   "Return the value of symbol VAR if it is bound, else nil.
 Provided by mupacs for emacsen that miss it."
