@@ -873,7 +873,7 @@ Available special keys:
 (defun mupad-run-end () 
   "Kill the first buffer in mupad-run-mode"
   (interactive)
-  (mupad-run-delete-windows "*MuPAD Completions*")
+  (mupad-run-delete-windows "*MuPAD*Completions*")
   (let ((bfl (buffer-list)) (inhibit-read-only t))
     (save-excursion
       (while bfl
@@ -912,7 +912,7 @@ Available special keys:
 (defun mupad-run-insert-last-session ()
   "Insert the last MuPAD session"
   (interactive)
-  (mupad-run-delete-windows "*MuPAD Completions*")
+  (mupad-run-delete-windows "*MuPAD*Completions*")
   (when mupad-run-last-session  
     (goto-char (point-max))
     (unless (eq (char-before (point)) ?\n) (insert "\n"))
@@ -1247,6 +1247,10 @@ Available special keys:
 ;; FIXME: rename as mupad-run-print-callback-... ?
 
 (defun mupad-run-print-result (string type)
+  (if (string-match "^DISPLAY HELP FILE: \\(\\S-+\\)$" string)
+      (let ((file (match-string 1 string)))
+	(save-excursion (mupad-help-display-help-file file))
+	(setq string "")))
   (mupad-run-print string
 		   'mupad-run-face-result
 		   (marker-position mupad-run-todo) type nil))
@@ -1280,10 +1284,16 @@ Available special keys:
 		       'to-insert "///--- Erreur dans ce bloc\n")
     (put-text-property (1- mupad-run-todo) mupad-run-todo  
 		       'to-insert "///--- Fin du bloc avec une erreur\n"))
-  (if (string-match "^Error:.*\\[file \\(\\S-+\\), line \\([0-9]+\\), col \\([0-9]+\\)\\];$" string)
-      (let ((file (match-string 1 output-str))
-	    (line (string-to-number (match-string 2 output-str)))
-	    (col  (string-to-number (match-string 3 output-str))))
+  ;; When the error message contains a file/line/col information, open
+  ;; the file at this position in a separate buffer
+  ;; First get rid of linesplits by the MuPAD pretty printer
+  (setq string (mapconcat 'identity (split-string string "\\\\\n") ""))
+  (if (string-match
+       "^Error:.*\\[file \\(\\S-+\\), line \\([0-9]+\\), col \\([0-9]+\\)\\];$"
+       string)
+      (let ((file (match-string 1 string))
+	    (line (string-to-number (match-string 2 string)))
+	    (col  (string-to-number (match-string 3 string))))
 	(mupad-run-display-line file line col)))
   )
 
@@ -1375,7 +1385,7 @@ Available special keys:
 		  "Sorry, no completion available for `"
 		  prefix "' !"))
 	(when (eq mupad-run-completion-style 'temporary-buffer)
-	  (mupad-run-delete-windows "*MuPAD Completions*")))
+	  (mupad-run-delete-windows "*MuPAD*Completions*")))
 
     (insert common-completion)
 
@@ -1383,7 +1393,7 @@ Available special keys:
 	;; Multiple completions: display the completion list
 	(cond
 	 ((eq mupad-run-completion-style 'temporary-buffer)
-	  (with-output-to-temp-buffer "*MuPAD Completions*"
+	  (with-output-to-temp-buffer "*MuPAD*Completions*"
 	    (display-completion-list completions)))
 	 ((eq mupad-run-completion-style 'inline)
 	  (mupad-run-momentary-string-display
@@ -1392,7 +1402,7 @@ Available special keys:
       ;; A single completion
       (message "Complete identifier")
       (when (eq mupad-run-completion-style 'temporary-buffer)
-	(mupad-run-delete-windows "*MuPAD Completions*")))))
+	(mupad-run-delete-windows "*MuPAD*Completions*")))))
 
 ;;-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 ;; Process filter call back: accumulate completions at the end of the
@@ -1882,7 +1892,7 @@ Available special keys:
 ;                
 (defun mupad-run-creturn ()
   (interactive)
-  (mupad-run-delete-windows "*MuPAD Completions*")
+  (mupad-run-delete-windows "*MuPAD*Completions*")
   (cond 
     ((>= (point) (marker-position mupad-run-edit)) (insert "\n"))
     ((or 
@@ -1901,7 +1911,7 @@ Available special keys:
 (defun mupad-run-return ()
   (interactive)
   (mupad-run-debug-message 'input "Return")
-  (mupad-run-delete-windows "*MuPAD Completions*") 
+  (mupad-run-delete-windows "*MuPAD*Completions*") 
   (cond 
     ((>= (point) (marker-position mupad-run-edit))
       (mupad-run-from-edit-to-todo)
@@ -1930,7 +1940,7 @@ Available special keys:
 (defun mupad-run-suppression () 
   ""
   (interactive)
-  (mupad-run-delete-windows "*MuPAD Completions*")
+  (mupad-run-delete-windows "*MuPAD*Completions*")
   (let ((br (point)) (inhibit-read-only t))
     (cond 
 ; caractère modifiable 
@@ -1981,7 +1991,7 @@ Available special keys:
 (defun mupad-run-backspace () 
   "" 
   (interactive) 
-  (mupad-run-delete-windows "*MuPAD Completions*")
+  (mupad-run-delete-windows "*MuPAD*Completions*")
   (when (and (> (point) 1) (/= (point) (marker-position mupad-run-edit)))
     (backward-char) (mupad-run-suppression)))
 ;;
@@ -2201,7 +2211,7 @@ Available special keys:
 (defun mupad-run-previous-history-search ()
 ; Search and display the previous command with the same beginning of line.
   (interactive)
-  (mupad-run-delete-windows "*MuPAD Completions*")
+  (mupad-run-delete-windows "*MuPAD*Completions*")
   (when (>= (point) (marker-position mupad-run-edit))
     (let 
       ( (br (buffer-substring mupad-run-edit (point-max))) 
@@ -2226,7 +2236,7 @@ Available special keys:
 (defun mupad-run-previous-history ()
 ; Display the previous command.
   (interactive)
-  (mupad-run-delete-windows "*MuPAD Completions*")
+  (mupad-run-delete-windows "*MuPAD*Completions*")
   (when (>= (point) (marker-position mupad-run-edit))
     (let 
       ( (br (buffer-substring mupad-run-edit (point-max)))
@@ -2249,7 +2259,7 @@ Available special keys:
 (defun mupad-run-next-history-search ()
 ; Search and display the next command with the same beginning of line.
   (interactive)
-  (mupad-run-delete-windows "*MuPAD Completions*")
+  (mupad-run-delete-windows "*MuPAD*Completions*")
   (when (>= (point) (marker-position mupad-run-edit))
     (let 
       ( (br (buffer-substring mupad-run-edit (point-max))) 
@@ -2274,7 +2284,7 @@ Available special keys:
 (defun mupad-run-next-history ()
 ; Display the next command.
   (interactive)
-  (mupad-run-delete-windows "*MuPAD Completions*")
+  (mupad-run-delete-windows "*MuPAD*Completions*")
   (when (>= (point) (marker-position mupad-run-edit))
     (let 
       ( (br (buffer-substring mupad-run-edit (point-max)))
@@ -2304,7 +2314,7 @@ Available special keys:
 ;;
 (defun mupad-run-left () 
   (interactive)
-  (mupad-run-delete-windows "*MuPAD Completions*")
+  (mupad-run-delete-windows "*MuPAD*Completions*")
   (goto-char (or (previous-single-property-change (point) 'item) (point-min)))
   (beginning-of-line))
 ;;
@@ -2312,7 +2322,7 @@ Available special keys:
 ;;
 (defun mupad-run-right () 
   (interactive)
-  (mupad-run-delete-windows "*MuPAD Completions*")
+  (mupad-run-delete-windows "*MuPAD*Completions*")
   (end-of-line)
   (goto-char (or (next-single-property-change (point) 'item) (point-max))))
 ;;
@@ -2320,7 +2330,7 @@ Available special keys:
 ;;
 (defun mupad-run-hide () 
   (interactive)
-  (mupad-run-delete-windows "*MuPAD Completions*")
+  (mupad-run-delete-windows "*MuPAD*Completions*")
   (let (br bra brb (inhibit-read-only t))
     (cond 
       ((and mupad-run-last-prompt (>= (point) mupad-run-last-prompt)) 
@@ -2346,7 +2356,7 @@ Available special keys:
 ;;
 (defun mupad-run-show () 
   (interactive)
-  (mupad-run-delete-windows "*MuPAD Completions*")
+  (mupad-run-delete-windows "*MuPAD*Completions*")
   (let (br1 br2 (inhibit-read-only t))
     (when (not (eobp)) (forward-char 1) (mupad-run-left))
     (setq br1 (get-text-property (point) 'hide))
@@ -2654,19 +2664,19 @@ Available special keys:
         (setq where-it-is mupad-run-info))
       (cond 
         ((not (string-equal where-it-is ""))
-;; We switch to the buffer *MuPAD Help* and erase its content:
-          (set-buffer (get-buffer-create "*MuPAD Help*"))
+;; We switch to the buffer *MuPAD*Help* and erase its content:
+          (set-buffer (get-buffer-create "*MuPAD*Help*"))
           (erase-buffer)
           (message where-it-is)  ;; tell *Messages* which version is used.
           (insert-file where-it-is)
 ;; Show the help buffer and tell user how to remove help window:
-          (mupad-bus-window-manager "*MuPAD Help*" 'mupad-show-help)
+          (mupad-bus-window-manager "*MuPAD*Help*" 'mupad-show-help)
           (setq buffer-read-only t)
           (mupad-info-wind-conf)
           (select-window wind))
 ;; Tell the user the file was not found:
         (t 
-          (mupad-bus-window-manager "*MuPAD Help*" 'mupad-beginning-temp)
+          (mupad-bus-window-manager "*MuPAD*Help*" 'mupad-beginning-temp)
           (insert 
              (concat 
                "The file mupad-run.el-info was not found."
@@ -2676,12 +2686,12 @@ Available special keys:
                "(concat load-path \"/usr/local/share/emacs/sitelisp\"))\n"
             "to your .emacs file (create it if it doesn't already exist)."))
           (setq fill-column 
-            (1- (window-width (get-buffer-window "*MuPAD Help*"))))
+            (1- (window-width (get-buffer-window "*MuPAD*Help*"))))
           (fill-individual-paragraphs (point-min) (point-max) 'left)
 ;; Remove help window :
           (setq buffer-read-only t)
           (mupad-bus-window-manager 
-            "*MuPAD Help*" 'mupad-remove-help-old-config)
+            "*MuPAD*Help*" 'mupad-remove-help-old-config)
           (mupad-restore-wind-conf))))
     (error (princ "An error occured in mupad-info: ") (princ err) nil)))
 

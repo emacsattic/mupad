@@ -174,8 +174,8 @@ Used to set `mupad-help-file-name-tar' and `mupad-help-file-name-toc'."
       (setq br (cdr br)))
     (unless br (error (concat "Help file `" ind "` is missing in ascii format")))
 ; création d'un tampon d'aide et remise à zéro s'il existe déjà.
-    (mupad-bus-window-manager "*MuPAD Help*" 'mupad-show-help)
-    (set-buffer "*MuPAD Help*")
+    (mupad-bus-window-manager "*MuPAD*Help*" 'mupad-show-help)
+    (set-buffer "*MuPAD*Help*")
     (setq buffer-read-only nil)
     (erase-buffer)
 ; insertion de l'aide en ligne
@@ -186,6 +186,24 @@ Used to set `mupad-help-file-name-tar' and `mupad-help-file-name-toc'."
 ; bascule en mode mupad-help
       (mupad-help-mode)
   ))
+
+; We probably can rewrite most of the functions that deal with tar
+; files using just this one-window
+(defun mupad-help-display-help-file (file)
+  ; Take as argument a file name, and displays it in the *MuPAD*Help* 
+  ; buffer. The file name may be of the form file.tar#subfile.
+  ; example: (mupad-help-display-help-file "/usr/local/MuPAD-dev/share/doc/ascii.tar#ascii/combinat_partitions.help")
+    (mupad-bus-window-manager "*MuPAD*Help*" 'mupad-show-help)
+    (set-buffer "*MuPAD*Help*")
+    (setq buffer-read-only nil)
+    (erase-buffer)
+    (if (string-match "^\\(.*.tar\\)#\\(.*\\)$" file)
+	(let ((tarfile (match-string 1 file))
+	      (file    (match-string 2 file)))
+	  (call-process "tar" nil t nil "--to-stdout" "-xf" tarfile file))
+      (call-process "cat" file t nil))
+    (mupad-help-mode)
+  )
 
 (defun mupad-help-mode ()
   "Major mode version `mupad-help-mode-version' for searching in Mupad help.
@@ -279,7 +297,7 @@ Available special keys:
 ;
 (defun mupad-help-quit () 
   (interactive)
-  (mupad-bus-window-manager "*MuPAD Help*" 'mupad-remove-help-now))
+  (mupad-bus-window-manager "*MuPAD*Help*" 'mupad-remove-help-now))
 
 (defun mupad-help-next-example ()
   (interactive)
@@ -320,7 +338,7 @@ Available special keys:
   (interactive)
   (save-excursion
     (let ((brp (point)) brs brp2 br br2)
-      ; Get the text of the example from the *MuPAD Help* buffer
+      ; Get the text of the example from the *MuPAD*Help* buffer
       (beginning-of-line)
       (goto-char brp)
       (re-search-forward "\012\\s *\012\\s *\012")
