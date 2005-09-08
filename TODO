@@ -1,3 +1,4 @@
+completion in read("...<TAB> automatically adds the '")' at the end.
 ------------------------------------------------------------------------------
 module name completion in module(...)
 Steps:

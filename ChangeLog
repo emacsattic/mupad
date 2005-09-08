@@ -1,3 +1,109 @@
+2005-09-08  Nicolas M. Thiéry  <nthiery@users.sf.net>
+
+	* README, Makefile.in, index.html, configure:
+	Update of the autotools build system.
+
+	* QuickInstall: Added note about --with-lisp-dir
+
+	* TODO, BUGS: Update.
+
+	* Makefile.am: Typo fix in a comment.
+
+	* configure.ac: Update for mupacs 3.2.4.
+
+	* mupad-run.el, mupad-help.el:
+	Renamed all buffers *MuPAD ...* to MuPAD*...* to make buffer name
+	completion faster (no need to add the * at the end to switch back to
+	the MuPAD buffer).
+	Bug fix in the "file and position display on error" mechanism.
+	Added hook to allow for MuPAD to ask for opening a specified help-file
+	(output starting with DISPLAY HELP FILE).
+
+	* mupad-fontification.el, mupad.el, mupad-bus.el:
+	Renamed all buffers *MuPAD ...* to MuPAD*...* to make buffer name
+	completion faster (no need to add the * at the end to switch back to
+	the MuPAD buffer).
+
+	* site-start.d/mupacs.el.in.in:
+	Bug fix: the test whether mapc and bound-and-true-p are missing were
+	broken.  Hence mapc and bound-and-true-p were left undefined in emacs
+	<= 20.7.
+
+2005-07-07  Nicolas M. Thiéry  <nthiery@users.sf.net>
+
+	* test-indentation.mu: Added new indentation bug characterization
+
+2005-04-20  Nicolas M. Thiéry  <nthiery@users.sf.net>
+
+	* index.html.in: Removed outdated links to Olivier's MuPACS page.
+
+	* QuickInstall: Added sample installation instruction for windows.
+
+2005-03-11  Nicolas M. Thiéry  <nthiery@users.sf.net>
+
+	* mupad-run.el:
+	Displays file/line/col on errors (when MuPAD gives this information)
+	Improved code factorisation
+	Now fully independent of gud
+	Bug fixes
+
+	* NEWS: Update.
+
+	* mupad-help.el:
+	Specify the missing file name when raising an error about missing
+	ascii help file.
+
+	* TODO, BUGS, test-indentation.mu: Update.
+
+2005-03-08  Nicolas M. Thiéry  <nthiery@users.sf.net>
+
+	* mupad-run.el:
+	New customization variable: mupad-run-buffer-distinct-colorisation
+	If t, the mupad buffers *MuPAD*, *MuPAD*<2>, and *MuPAD*<3> use
+	distinct faces (and in particular text colors) to tell them apart.
+	Set by default for backward compatibility.
+
+2005-01-31  Nicolas M. Thiéry  <nthiery@users.sf.net>
+
+	* mupad-run.el: Removed spurious debugging print.
+
+	* test-indentation.mu:
+	More tests for indentation after category declarations using special
+	characters.
+
+	* TODO, NEWS, mupad-run.el:
+	Support for file-name completion for read in mupad-run inputs.
+	Cleanup of the completion code in mupad-run; plenty of dead code removed.
+	Beware for crawling bugs!
+
+2005-01-30  Nicolas M. Thiéry  <nthiery@users.sf.net>
+
+	* Makefile.in, README, configure, index.html:
+	Update of the autotools build system.
+
+	* TODO: Update.
+
+	* QuickInstall, mupad-run.el-info, mupad.el-info, index.html.in:
+	Update of the documentation.
+	At some point, all the English documentation should be either in
+	QuickInstall or in the modes description.
+
+	* mupad-run.el:
+	Made mupad-run-system-exception a customizable variable.
+	Improved the mupad-run-mode documentation.
+	Added menu item for accessing this documentation.
+
+	* configure.ac: Rewrote mupacs as MuPACS in the descriptions.
+
+	* BUGS: Added new comment about system
+
+2005-01-21  Nicolas M. Thiéry  <nthiery@users.sf.net>
+
+	* ChangeLog: Update.
+
+	* mupad-run.el, BUGS:
+	Fixed missing dependency of mupad-run on mupad (for mupad-start-manual).
+
 2005-01-21  Isil  <nthiery@eole.rouba.net>
 
 	* mupad-run.el, BUGS:
