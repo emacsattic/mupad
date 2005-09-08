@@ -29,7 +29,7 @@ KNOWN_EMACS_SITE_START_DIRECTORIES = /etc/emacs/site-start.d /usr/share/emacs/si
 
 # Yes, $(DESTDIR) is missing in test -d $$dir.
 # This is voluntary so that when building the rpm package, the
-# initialization file gets properly installed $(DESTDIR)/$$dir
+# initialization file gets properly installed in $(DESTDIR)/$$dir
 # coherently with actual host's site-start.d dir.
 # I hope this won't break something else.
 install-data-local:
