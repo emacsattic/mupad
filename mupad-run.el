@@ -1316,16 +1316,25 @@ Available special keys:
       (let ((prefix (match-string 1)))
 	(let ((directory        (or (file-name-directory prefix) ""))
 	      (partial-file-name (file-name-nondirectory prefix)))
-	  (mupad-run-completion-insert-or-display-completions
-	   prefix
-	   ;; The list of completions
-	   (file-name-all-completions partial-file-name directory)
-	   ;; The common part to be inserted for all completions
-	   (let ((common-prefix
-		  (file-name-completion partial-file-name directory)))
+	  (let ((completions
+		 (file-name-all-completions partial-file-name directory))
+		(common-prefix
+		 (file-name-completion partial-file-name directory)))
+	    (mupad-run-completion-insert-or-display-completions
+	     prefix
+	     completions
 	     (if common-prefix
-		 (substring (concat directory common-prefix)
-			    (length prefix))
+		(progn
+		  (if (eq common-prefix t)
+		      ;; the file name is already complete
+		      ;; (cf. file-name-completion)
+		      (setq common-prefix partial-file-name))
+		  (if (eq (length completions) 1)
+		      ;; single completion; prepend ") to close the read("
+		      (setq common-prefix (concat common-prefix "\")")))
+		  ;; Strips away the prefix
+		  (substring (concat directory common-prefix)
+			     (length prefix)))
 	       nil)))))
     ;; Identifier/keyword/... completion by MuPAD
     (when (not (memq mupad-run-state '(wait-input)))
@@ -1371,7 +1380,7 @@ Available special keys:
 (defun mupad-run-completion-insert-or-display-completions
   (prefix            ; The string being completed
    completions       ; The list of all completions, nil if there is none
-                     ; This is intended for display, so the entries may
+                     ; This is intended for display only, so the entries may
                      ; be abbreviated/decorated in any suitable way
    common-completion ; The common part of all completions that
                      ; can be inserted right away in the buffer
