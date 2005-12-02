@@ -29,7 +29,7 @@ root access. See --prefix and lispdir options below.
     If configure does not find MuPAD, or if you want to override the
     default location, you can use something like:
 
-	./configure --with-lispdir=/usr/ MUPAD=mupad2
+	./configure --with-lispdir=/usr/share/emacs/site-lisp/ MUPAD=mupad2
 
     Here is the complete list of variables you can override:
 
