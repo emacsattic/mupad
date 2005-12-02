@@ -1,4 +1,3 @@
-completion in read("...<TAB> automatically adds the '")' at the end.
 ------------------------------------------------------------------------------
 module name completion in module(...)
 Steps:
@@ -32,6 +31,10 @@ Ou demander `a mupad-bus d'envoyer les commandes qui vont bien à MuPAD ?
 
 ------------------------------------------------------------------------------
 Option so that the cursor occurs just after the prompt without newline
+
+------------------------------------------------------------------------------
+(done 3.2.4)
+completion in read("...<TAB> automatically adds the '")' at the end.
 
 ------------------------------------------------------------------------------
 (done 3.2)
