@@ -1329,8 +1329,10 @@ Available special keys:
 		      ;; the file name is already complete
 		      ;; (cf. file-name-completion)
 		      (setq common-prefix partial-file-name))
-		  (if (eq (length completions) 1)
-		      ;; single completion; prepend ") to close the read("
+		  (if (and (eq (length completions) 1)
+			   (not (string-match "/$" (car completions))))
+		      ;; a single completion which is not a directory;
+		      ;; prepend ") to close the read("
 		      (setq common-prefix (concat common-prefix "\")")))
 		  ;; Strips away the prefix
 		  (substring (concat directory common-prefix)
