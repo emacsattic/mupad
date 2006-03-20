@@ -1084,7 +1084,7 @@ Available special keys:
            (setq mupad-run-state 'wait-input)
 	   )
 	((eq brt 35)      ; display variable MPRCmdb_disp_list
-	 (mupad-run-print-result (concat output-str "\n")) brt)
+	 (mupad-run-print-result (concat output-str "\n") brt))
         ((or (eq brt 9)   ; error message
 	     (eq brt 63)) ; NT: debugger error message
 	 (mupad-run-print-error output-str brt))
