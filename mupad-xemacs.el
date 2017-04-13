@@ -15,10 +15,6 @@
 (defun match-string-no-properties (num &optional string)
   (match-string num string))
 
-;; Oh! The enormous hack!!!!
-(provide 'lazy-lock)
-
-
 (defvar font-lock-builtin-face		'font-lock-builtin-face
   "Face name to use for builtins.")
 
